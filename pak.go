@@ -1,11 +1,11 @@
 package pak
 
 import (
-	"launchpad.net/goyaml"
-	"io/ioutil"
-	"path/filepath"
-	"os"
 	"fmt"
+	"io/ioutil"
+	"launchpad.net/goyaml"
+	"os"
+	"path/filepath"
 )
 
 type PakInfo struct {
@@ -13,7 +13,7 @@ type PakInfo struct {
 }
 
 const (
-	pakfile = "Pakfile"
+	pakfile   = "Pakfile"
 	pakBranch = "pak"
 )
 
@@ -44,15 +44,15 @@ func Init() {
 
 	err = ioutil.WriteFile(pakfile, []byte(PakfileTemplate), os.FileMode(0644))
 	if err != nil {
-	    panic(err)
+		panic(err)
 	}
 
 	return
 }
 
 type GetOptions struct {
-	All bool
-	Repo string
+	All    bool
+	Repo   string
 	Branch string
 }
 
@@ -69,9 +69,9 @@ func readPakfile() (pakInfo PakInfo) {
 	for true {
 		absPakfilePath, err := filepath.Abs(pakfilePath)
 		if err != nil {
-		    panic(err)
+			panic(err)
 		}
-		if absPakfilePath == os.Getenv("GOPATH") + "./Pakfile" {
+		if absPakfilePath == os.Getenv("GOPATH")+"./Pakfile" {
 			fmt.Println("Can't find Pakfile.")
 			return
 		}
@@ -87,7 +87,7 @@ func readPakfile() (pakInfo PakInfo) {
 
 	pakInfoBytes, err := ioutil.ReadFile(pakfilePath)
 	if err != nil {
-	    panic(err)
+		panic(err)
 	}
 	goyaml.Unmarshal(pakInfoBytes, &pakInfo)
 
@@ -103,6 +103,5 @@ func Update() {
 
 		return
 	}
-
 
 }

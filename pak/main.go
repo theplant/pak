@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/theplant/pak"
 	"flag"
 	"fmt"
+	"github.com/theplant/pak"
 )
 
 var (

@@ -1,17 +1,18 @@
 package pak
 
 import (
+	"io/ioutil"
 	. "launchpad.net/gocheck"
 	"launchpad.net/goyaml"
-	"testing"
-	"io/ioutil"
 	"os"
+	"testing"
 )
 
 // Hook up gocheck into the gotest runner.
 func Test(t *testing.T) { TestingT(t) }
 
 type PakSuite struct{}
+
 var _ = Suite(&PakSuite{})
 
 func (s *PakSuite) TestInitPakFile(c *C) {
@@ -32,7 +33,7 @@ func (s *PakSuite) TestInitPakFile(c *C) {
 
 var pakfilePaths = []struct {
 	path string
-	msg string
+	msg  string
 }{
 	{pakfile, "Can read Pakfile in curreint Folder"},
 	{"../" + pakfile, "Can read Pakfile in parent Folder"},
