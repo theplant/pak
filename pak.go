@@ -99,8 +99,7 @@ func Update() {
 	// gopath := os.Getenv("GOPATH")
 
 	if len(pakInfo.Packages) == 0 {
-		fmt.Println("Your Pakfile is empty.")
-
+		fmt.Println("No packages need to be updated.")
 		return
 	}
 
