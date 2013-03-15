@@ -5,15 +5,51 @@ import (
 	. "launchpad.net/gocheck"
 	"launchpad.net/goyaml"
 	"os"
+	"os/exec"
 	"testing"
+	"fmt"
 )
 
 // Hook up gocheck into the gotest runner.
 func Test(t *testing.T) { TestingT(t) }
 
+var fp = fmt.Printf
+
 type PakSuite struct{}
 
 var _ = Suite(&PakSuite{})
+
+func (s *PakSuite) SetUpSuite(c *C) {
+	var err error
+	err = exec.Command("git", "clone", "fixtures/package1", "../package1").Run()
+	if err != nil {
+	    panic(err)
+	}
+	err = exec.Command("git", "clone", "fixtures/package2", "../package2").Run()
+	if err != nil {
+	    panic(err)
+	}
+	err = exec.Command("git", "clone", "fixtures/package3", "../package3").Run()
+	if err != nil {
+	    panic(err)
+	}
+}
+
+func (s *PakSuite) TearDownSuite(c *C) {
+	var err error
+	err = (exec.Command("rm", "-rf", "../package1").Run())
+	if err != nil {
+		panic(err)
+	}
+	err = (exec.Command("rm", "-rf", "../package2").Run())
+	if err != nil {
+		panic(err)
+	}
+	err = (exec.Command("rm", "-rf", "../package3").Run())
+	if err != nil {
+		panic(err)
+	}
+}
 
 func (s *PakSuite) TestInit(c *C) {
 	os.Remove(pakfile)
@@ -34,10 +70,11 @@ func (s *PakSuite) TestInit(c *C) {
 var pakfilePaths = []struct {
 	path string
 	msg  string
+	pakfileState bool
 }{
-	{pakfile, "Can read Pakfile in curreint Folder"},
-	{"../" + pakfile, "Can read Pakfile in parent Folder"},
-	{os.Getenv("GOPATH") + "/../Pakfile", "Won't go beyond GOPATH to find Pakfile"},
+	{pakfile, "Can read Pakfile in curreint Folder", true},
+	{"../" + pakfile, "Can read Pakfile in parent Folder", true},
+	{gopath + "/../Pakfile", "Won't go beyond GOPATH to find Pakfile", false},
 }
 
 func (s *PakSuite) TestReadPakfile(c *C) {
@@ -46,9 +83,10 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 		pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
 		ioutil.WriteFile(pakfilePath.path, pakInfoBytes, os.FileMode(0644))
 
-		pakInfo2 := readPakfile()
+		pakfileExist, pakInfo2 := readPakfile()
 		c.Log(pakfilePath.msg)
-		c.Check(SamePakInfo(pakInfo, pakInfo2), Equals, true)
+		c.Check(pakfileExist, Equals, pakfilePath.pakfileState)
+		c.Check(SamePakInfo(pakInfo, pakInfo2), Equals, pakfilePath.pakfileState)
 
 		os.Remove(pakfilePath.path)
 	}
