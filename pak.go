@@ -19,7 +19,7 @@ const (
 	pakfile   = "Pakfile"
 	paklock   = "Pakfile.lock"
 	pakbranch = "pak"
-	paktag 	  = "_pak_lastest_"
+	paktag 	  = "_pak_latest_"
 )
 
 var gopath = os.Getenv("GOPATH")
