@@ -1,13 +1,14 @@
 package pak
 
 import (
-	"fmt"
+	// "fmt"
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	"os"
-	// "os/exec"
-	// "bytes"
+	"os/exec"
+	"bytes"
 	"path/filepath"
+	"errors"
 )
 
 type PakInfo struct {
@@ -40,46 +41,58 @@ func SamePakInfo(pakInfo1, pakInfo2 PakInfo) (result bool) {
 	return
 }
 
-func MustRun(cmd *exec.Cmd) (out bytes.Buffer) {
+func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
 	cmd.Stdout = &out
-
-	err := cmd.Run()
-	if err != nil {
-		panic(err)
-	}
+	err = cmd.Run()
 
 	return
 }
 
-func readPakfile() (exist bool, pakInfo PakInfo) {
-	pakfilePath := "./Pakfile"
+func readPakfile() (pakInfo PakInfo, err error) {
+	var pakInfoBytes []byte
+	pakInfoBytes, err = pakRead(pakfile)
+	if err != nil {
+		return
+	}
+
+	err = goyaml.Unmarshal(pakInfoBytes, &pakInfo)
+
+	return
+}
+
+func readPaklockInfo() (paklockInfo PaklockInfo, err error) {
+	var content []byte
+	content, err = pakRead(paklock)
+	if err != nil {
+		return
+	}
+
+	err = goyaml.Unmarshal(content, &paklockInfo)
+
+	return
+}
+
+func pakRead(filePath string) (fileContent []byte, err error) {
+	absPakfilePath := ""
 	for true {
-		absPakfilePath, err := filepath.Abs(pakfilePath)
+		absPakfilePath, err = filepath.Abs(filePath)
 		if err != nil {
-			panic(err)
+			return
 		}
 		if absPakfilePath == gopath + "/Pakfile" {
-			fmt.Println("Can't find Pakfile.")
+			err = errors.New("Can't find Pakfile.")
 
-			exist = false
 			return
 		}
 
-		_, err = os.Stat(pakfilePath)
+		_, err = os.Stat(filePath)
 		if os.IsNotExist(err) {
-			pakfilePath = "../" + pakfilePath
+			filePath = "../" + filePath
 			continue
 		}
 
 		break
 	}
 
-	exist = true
-	pakInfoBytes, err := ioutil.ReadFile(pakfilePath)
-	if err != nil {
-		panic(err)
-	}
-	goyaml.Unmarshal(pakInfoBytes, &pakInfo)
-
-	return
+	return ioutil.ReadFile(filePath)
 }

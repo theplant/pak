@@ -3,7 +3,6 @@ package pak
 import (
 	"fmt"
 	"os/exec"
-	"bytes"
 )
 
 type GitPkg struct {
@@ -38,57 +37,84 @@ func getGitWorkTreeOpt(pkgPath string) string {
 	return fmt.Sprintf("--work-tree=%s", pkgPath)
 }
 
-func (this GitPkg) DeletePakbranch(branch string) {
-	out := MustRun(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-d", pakbranch))
+func (this GitPkg) DeletePakbranch(branch string) (err error) {
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-d", pakbranch))
+
+	return
 }
 
-func (this GitPkg) NewBranch(targetBranch string) (result bool) {
-	out := MustRun(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", pakbranch, targetBranch))
+func (this GitPkg) NewBranch(targetBranch string) (result bool, err error) {
+	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", pakbranch, targetBranch))
+	if err != nil {
+	    return
+	}
 
 	result = out.String() == fmt.Sprintf("Switched to a new branch '%s'", pakbranch)
-
 	if result {
-		this.TagPakbranch()
+		checksum, err := this.GetChecksumHash(this.Pakbranch)
+		if err != nil {
+		    return false, err
+		}
+		err = this.TagPakbranch(checksum)
 	}
 
 	return
 }
 
-func (this GitPkg) TagPakbranch(checksumHash string) {
-	MustRun(exec.Command("git", this.GitDir, this.WorkTree, "tag", paktag, checksumHash))
+func (this GitPkg) TagPakbranch(checksumHash string) (err error) {
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", paktag, checksumHash))
+
+	return
 }
 
-func (this GitPkg) DeletePaktag() {
-	MustRun(exec.Command("git", this.GitDir, this.WorkTree, "tag", "-d", paktag))
+func (this GitPkg) DeletePaktag() (err error) {
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", "-d", paktag))
+
+	return
 }
 
-func (this GitPkg) EqualPakBranchAndTag() bool {
-	pakbranchHash := this.GetChecksumHash(this.Pakbranch)
-	paktagHash := this.GetChecksumHash(this.Paktag)
-
-	if paktagHash == pakbranchHash {
-		return true
+func (this GitPkg) EqualPakBranchAndTag() (bool, error) {
+	pakbranchHash, err := this.GetChecksumHash(this.Pakbranch)
+	if err != nil {
+	    return false, err
+	}
+	paktagHash, err := this.GetChecksumHash(this.Paktag)
+	if err != nil {
+	    return false, err
 	}
 
-	return false
+	if paktagHash == pakbranchHash {
+		return true, err
+	}
+
+	return false, err
 }
 
-func (this GitPkg) ContainsPakbranch() bool {
-	return this.GetChecksumHash(this.Pakbranch) != ""
+func (this GitPkg) ContainsPakbranch() (bool, error) {
+	contain, err := this.GetChecksumHash(this.Pakbranch)
+
+	return contain != "", err
 }
 
-func (this GitPkg) ContainPaktag() bool {
-	return this.GetChecksumHash(this.Paktag) != ""
+func (this GitPkg) ContainPaktag() (bool, error) {
+	contain, err := this.GetChecksumHash(this.Paktag)
+	return contain != "", err
 }
 
-func (this GitPkg) IsClean() bool {
-	out := MustRun(exec.Command("git", this.GitDir, this.WorkTree, "status", "--porcelain", "--untracked-files=no"))
+func (this GitPkg) IsClean() (bool, error) {
+	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "status", "--porcelain", "--untracked-files=no"))
 
-	return out.String() == ""
+	return out.String() == "", err
 }
 
-func (this GitPkg) GetChecksumHash(target string) string {
-	out := MustRun(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", target, "--hash"))
+func (this GitPkg) GetChecksumHash(target string) (string, error) {
+	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", target, "--hash"))
 
-	return out.String()
+	return out.String(), err
+}
+
+func (this GitPkg) Fetch() (error) {
+	_, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch"))
+
+	return err
 }

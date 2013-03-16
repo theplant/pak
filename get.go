@@ -1,7 +1,7 @@
 package pak
 
 import (
-	"os"
+	// "os"
 )
 
 type GetOptions struct {
@@ -11,16 +11,5 @@ type GetOptions struct {
 }
 
 func Get(option GetOptions) {
-	_, err := os.Stat(paklock)
-	if os.IsNotExist(err) {
-
-	} else {
-
-	}
-
-	if option.All {
-
-	} else {
-
-	}
+	// pakInfo, err := readPakfile
 }

@@ -2,23 +2,18 @@ package pak
 
 import (
 	"os"
-	"fmt"
+	// "fmt"
 	"io/ioutil"
+	"errors"
 )
 
-func Init() {
+func Init() error {
 	_, err := os.Stat(pakfile)
 	if err == nil {
-		fmt.Println("Pakfile already existed.")
-		return
+		return errors.New("Pakfile already existed.")
 	} else if !os.IsNotExist(err) {
-		panic(err)
+		return err
 	}
 
-	err = ioutil.WriteFile(pakfile, []byte(PakfileTemplate), os.FileMode(0644))
-	if err != nil {
-		panic(err)
-	}
-
-	return
+	return ioutil.WriteFile(pakfile, []byte(PakfileTemplate), os.FileMode(0644))
 }
