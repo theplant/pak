@@ -14,4 +14,7 @@
 #
 
 packages:
-- github.com
+- github.com/theplant/package1
+- github.com/theplant/package2@dev
+- github.com/theplant/package3@origin/dev
+- github.com/theplant/package4@nonorigin/dev

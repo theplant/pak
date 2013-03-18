@@ -2,14 +2,29 @@ package pak
 
 import (
 	// "os"
+	// "fmt"
+	// "errors"
+	// "launchpad.net/goyaml"
 )
 
 type GetOptions struct {
-	All    bool
-	Repo   string
-	Branch string
+	GitPkgs     []GitPkg
+	FetchLatest bool
+	Force       bool
+	UseChecksum bool
 }
 
-func Get(option GetOptions) {
-	// pakInfo, err := readPakfile
+// TODO: GitPkgs generation need be verified by Pakfile at first
+func Get(options GetOptions) (PaklockInfo, error) {
+	paklockInfo := PaklockInfo{}
+
+	for _, gitPkg := range options.GitPkgs {
+		checksum, err := gitPkg.Get(options.FetchLatest, options.Force, options.UseChecksum)
+		if err != nil {
+		    return nil, err
+		}
+		paklockInfo[gitPkg.Name] = checksum
+	}
+
+	return paklockInfo, nil
 }

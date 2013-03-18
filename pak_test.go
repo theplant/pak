@@ -14,9 +14,9 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 var fp = fmt.Printf
+var fl = fmt.Println
 
 type PakSuite struct{}
-
 var _ = Suite(&PakSuite{})
 
 func (s *PakSuite) SetUpSuite(c *C) {
@@ -83,13 +83,29 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 		pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
 		ioutil.WriteFile(pakfilePath.path, pakInfoBytes, os.FileMode(0644))
 
-		pakInfo2, err := readPakfile()
+		pakInfo2, err := GetPakInfo()
 		c.Log(pakfilePath.msg)
 		c.Check(err == nil, Equals, pakfilePath.pakfileState)
-		c.Check(SamePakInfo(pakInfo, pakInfo2), Equals, pakfilePath.pakfileState)
+		c.Check(samePakInfo(pakInfo, pakInfo2), Equals, pakfilePath.pakfileState)
 
 		os.Remove(pakfilePath.path)
 	}
+}
+
+func samePakInfo(pakInfo1, pakInfo2 PakInfo) (result bool) {
+	result = len(pakInfo1.Packages) == len(pakInfo2.Packages)
+	if !result {
+		return
+	}
+
+	for i, pak := range pakInfo1.Packages {
+		result = pak == pakInfo2.Packages[i]
+		if !result {
+			return
+		}
+	}
+
+	return
 }
 
 // func (s *PakSuite) TestUpdate(c *C) {
