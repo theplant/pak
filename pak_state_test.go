@@ -1,13 +1,11 @@
 package pak
 
 import (
-	// "io/ioutil"
 	. "launchpad.net/gocheck"
-	// "launchpad.net/goyaml"
-	// "os"
 	"os/exec"
-	// "testing"
 	"fmt"
+	"github.com/theplant/pak/gitpkg"
+	. "github.com/theplant/pak/share"
 )
 
 type PakStateSuite struct{}
@@ -23,25 +21,25 @@ func (s *PakStateSuite) TearDownSuite(c *C) {
 }
 
 func (s *PakStateSuite) TestParsePakfile(c *C) {
-	gitPkgs, err := parsePakfile()
-	expectedGitPkgs := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package4", "nonorigin", "dev"),
+	pakPkgs, err := parsePakfile()
+	expectedGitPkgs := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "nonorigin", "dev")},
 	}
 
 	c.Check(err, Equals, nil)
-	c.Check(fmt.Sprintf("%s", gitPkgs), Equals, fmt.Sprintf("%s", expectedGitPkgs))
+	c.Check(fmt.Sprintf("%s", pakPkgs), Equals, fmt.Sprintf("%s", expectedGitPkgs))
 }
 
 func (s *PakStateSuite) TestEqualPakfileNPakfileLock(c *C) {
 	// Pakfile <===> Pakfile.lock
-	sampleGitpkgs := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package4", "nonorigin", "dev"),
+	sampleGitpkgs := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "nonorigin", "dev")},
 	}
 	samplePakLockInfo := PaklockInfo{
 		"github.com/theplant/package1": "whoop-fake-checksum-hash",
@@ -51,27 +49,27 @@ func (s *PakStateSuite) TestEqualPakfileNPakfileLock(c *C) {
 	}
 
 	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
-	expectedToUpdateGps := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package4", "nonorigin", "dev"),
+	expectedToUpdateGps := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "nonorigin", "dev")},
 	}
 	for i := 0; i < 4; i++ {
 		expectedToUpdateGps[i].Checksum = "whoop-fake-checksum-hash"
 	}
 
-	c.Check(fmt.Sprintf("%s", obtainedNewGps), Equals, fmt.Sprintf("%s", []GitPkg{}))
+	c.Check(fmt.Sprintf("%s", obtainedNewGps), Equals, fmt.Sprintf("%s", []PakPkg{}))
 	c.Check(fmt.Sprintf("%s", obtainedToUpdateGps), Equals, fmt.Sprintf("%s", expectedToUpdateGps))
-	c.Check(fmt.Sprintf("%s", obtainedToRemoteGps), Equals, fmt.Sprintf("%s", []GitPkg{}))
+	c.Check(fmt.Sprintf("%s", obtainedToRemoteGps), Equals, fmt.Sprintf("%s", []PakPkg{}))
 }
 
 func (s *PakStateSuite) TestAddNewPkgs(c *C) {
-	sampleGitpkgs := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package4", "nonorigin", "dev"),
+	sampleGitpkgs := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "nonorigin", "dev")},
 	}
 	samplePakLockInfo := PaklockInfo{
 		"github.com/theplant/package1": "whoop-fake-checksum-hash",
@@ -80,26 +78,26 @@ func (s *PakStateSuite) TestAddNewPkgs(c *C) {
 	}
 
 	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
-	expectedToUpdateGps := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
+	expectedToUpdateGps := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
 	}
 	for i := 0; i < 3; i++ {
 		expectedToUpdateGps[i].Checksum = "whoop-fake-checksum-hash"
 	}
-	expectedNewGps := []GitPkg{NewGitPkg("github.com/theplant/package4", "nonorigin", "dev")}
+	expectedNewGps := []PakPkg{{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "nonorigin", "dev")}}
 
 	c.Check(fmt.Sprintf("%s", obtainedNewGps), Equals, fmt.Sprintf("%s", expectedNewGps))
 	c.Check(fmt.Sprintf("%s", obtainedToUpdateGps), Equals, fmt.Sprintf("%s", expectedToUpdateGps))
-	c.Check(fmt.Sprintf("%s", obtainedToRemoteGps), Equals, fmt.Sprintf("%s", []GitPkg{}))
+	c.Check(fmt.Sprintf("%s", obtainedToRemoteGps), Equals, fmt.Sprintf("%s", []PakPkg{}))
 }
 
 func (s *PakStateSuite) TestRemovePkgs(c *C) {
-	sampleGitpkgs := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
+	sampleGitpkgs := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
 	}
 	samplePakLockInfo := PaklockInfo{
 		"github.com/theplant/package1": "whoop-fake-checksum-hash",
@@ -109,27 +107,27 @@ func (s *PakStateSuite) TestRemovePkgs(c *C) {
 	}
 
 	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
-	expectedToUpdateGps := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
+	expectedToUpdateGps := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
 	}
 	for i := 0; i < 3; i++ {
 		expectedToUpdateGps[i].Checksum = "whoop-fake-checksum-hash"
 	}
-	expectedToRemoveGps := []GitPkg{NewGitPkg("github.com/theplant/package4", "", "")}
+	expectedToRemoveGps := []PakPkg{{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "", "")}}
 	expectedToRemoveGps[0].Checksum = "whoop-fake-checksum-hash"
 
-	c.Check(fmt.Sprintf("%s", obtainedNewGps), Equals, fmt.Sprintf("%s", []GitPkg{}))
+	c.Check(fmt.Sprintf("%s", obtainedNewGps), Equals, fmt.Sprintf("%s", []PakPkg{}))
 	c.Check(fmt.Sprintf("%s", obtainedToUpdateGps), Equals, fmt.Sprintf("%s", expectedToUpdateGps))
 	c.Check(fmt.Sprintf("%s", obtainedToRemoteGps), Equals, fmt.Sprintf("%s", expectedToRemoveGps))
 }
 
 func (s *PakStateSuite) TestNewUpdateRemovePkgs(c *C) {
-	sampleGitpkgs := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
-		NewGitPkg("github.com/theplant/package3", "origin", "dev"),
+	sampleGitpkgs := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")},
 	}
 	samplePakLockInfo := PaklockInfo{
 		"github.com/theplant/package1": "whoop-fake-checksum-hash",
@@ -138,15 +136,15 @@ func (s *PakStateSuite) TestNewUpdateRemovePkgs(c *C) {
 	}
 
 	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
-	expectedNewGps := []GitPkg{NewGitPkg("github.com/theplant/package3", "origin", "dev")}
-	expectedToUpdateGps := []GitPkg{
-		NewGitPkg("github.com/theplant/package1", "origin", "master"),
-		NewGitPkg("github.com/theplant/package2", "origin", "dev"),
+	expectedNewGps := []PakPkg{{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package3", "origin", "dev")}}
+	expectedToUpdateGps := []PakPkg{
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
+		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},
 	}
 	for i := 0; i < 2; i++ {
 		expectedToUpdateGps[i].Checksum = "whoop-fake-checksum-hash"
 	}
-	expectedToRemoveGps := []GitPkg{NewGitPkg("github.com/theplant/package4", "", "")}
+	expectedToRemoveGps := []PakPkg{{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package4", "", "")}}
 	expectedToRemoveGps[0].Checksum = "whoop-fake-checksum-hash"
 
 	c.Check(fmt.Sprintf("%s", obtainedNewGps), Equals, fmt.Sprintf("%s", expectedNewGps))

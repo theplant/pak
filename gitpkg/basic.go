@@ -155,7 +155,7 @@ func (this *GitPkg) Sync() (err error) {
 	return
 }
 
-// not mean the pakbranch, just to check out if there is a branch named refs/heads/pak
+// Not to check out the pakbranch, but just a branch named refs/heads/pak
 func (this *GitPkg) ContainsPakbranch() (bool, error) {
 	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
 	if err != nil {

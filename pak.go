@@ -5,26 +5,14 @@ import (
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	"os"
-	// "os/exec"
-	// "bytes"
 	"path/filepath"
-	// "errors"
     . "github.com/theplant/pak/share"
 )
 
-// type PakInfo struct {
-//     Packages []string
-// }
-// type PaklockInfo map[string]string
-//
-// const (
-//     Pakfile   = "Pakfile"
-//     paklock   = "Pakfile.lock"
-//     pakbranch = "pak"
-//     paktag    = "_pak_latest_"
-// )
-//
-// var gopath = os.Getenv("GOPATH")
+type PakPkg struct {
+    gitpkg.GitPkg
+    GetOption
+}
 
 func GetPakInfo() (pakInfo PakInfo, err error) {
 	var pakInfoBytes []byte

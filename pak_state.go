@@ -6,27 +6,27 @@ import (
 	"strings"
 )
 
-func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (newGitPkgs []gitpkg.GitPkg, toUpdateGitPkgs []gitpkg.GitPkg, toRemoveGitPkgs []gitpkg.GitPkg) {
+func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []PakPkg, toUpdatePkgs []PakPkg, toRemovePkgs []PakPkg) {
 	if paklockInfo != nil {
-		for _, gitPkg := range pakfileGitPkgs {
-			if paklockInfo[gitPkg.Name] != "" {
-                // gitPkg.Checksum = paklockInfo[gitPkg.Name]
-				toUpdateGitPkgs = append(toUpdateGitPkgs, gitPkg)
-				delete(paklockInfo, gitPkg.Name)
+		for _, pakPkg := range pakfilePakPkgs {
+			if paklockInfo[pakPkg.Name] != "" {
+                pakPkg.Checksum = paklockInfo[pakPkg.Name]
+				toUpdatePkgs = append(toUpdatePkgs, pakPkg)
+				delete(paklockInfo, pakPkg.Name)
 			} else {
-				newGitPkgs = append(newGitPkgs, gitPkg)
+				newPkgs = append(newPkgs, pakPkg)
 			}
 		}
 		if len(paklockInfo) != 0 {
 			for key, val := range paklockInfo {
-				gitPkg := gitpkg.NewGitPkg(key, "", "")
+				pakPkg := PakPkg{GitPkg: gitpkg.NewGitPkg(key, "", "")}
                 _ = val
-                // gitPkg.Checksum = val
-				toRemoveGitPkgs = append(toRemoveGitPkgs, gitPkg)
+                pakPkg.Checksum = val
+				toRemovePkgs = append(toRemovePkgs, pakPkg)
 			}
 		}
 	} else {
-		newGitPkgs = pakfileGitPkgs
+		newPkgs = pakfilePakPkgs
 	}
 
 	return
@@ -36,13 +36,14 @@ func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (new
 // "github.com/theplant/package2"
 // "github.com/theplant/package2@dev"
 // "github.com/theplant/package2@origin/dev"
-func parsePakfile() ([]gitpkg.GitPkg, error) {
+func parsePakfile() ([]PakPkg, error) {
 	pakInfo, err := GetPakInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	gitPkgs := []gitpkg.GitPkg{}
+    // gitPkgs := []PakPkg{}
+    pakPkgs := []PakPkg{}
 	for _, pkg := range pakInfo.Packages {
 		atIndex := strings.LastIndex(pkg, "@")
 		var name, remote, branch string
@@ -63,8 +64,8 @@ func parsePakfile() ([]gitpkg.GitPkg, error) {
 			branch = "master"
 		}
 
-		gitPkgs = append(gitPkgs, gitpkg.NewGitPkg(name, remote, branch))
+        pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(name, remote, branch)})
 	}
 
-	return gitPkgs, nil
+	return pakPkgs, nil
 }
