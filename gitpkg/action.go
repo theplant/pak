@@ -1,122 +1,106 @@
 package gitpkg
 
-import(
+import (
 	"fmt"
+	. "github.com/theplant/pak/share"
 	"os/exec"
 )
 
+// Usage of Gitpkg
+// gitPkg.New
+// gitPkg.Sync
+// gitPkg.Report
+// gitPkg.Get
+// gitPkg.Sync
+
 func (this *GitPkg) Report() error {
-    if !this.State.IsClean {
+	if !this.State.IsClean {
 		return fmt.Errorf("Package %s is not clean. Please clean it and re-start pak.", this.Name)
 	}
 
-    if !this.State.IsRemoteBranchExist {
+	if !this.State.IsRemoteBranchExist {
 		return fmt.Errorf("`%s` does not contain reference `%s`", this.Name, this.RemoteBranch)
 	}
 
 	return nil
 }
 
-func (this *GitPkg) Get(fetchLatest bool, force bool) (string, error) {
-	// fetch pkg before check out
-	if fetchLatest {
+func (this *GitPkg) Get(option GetOption) (string, error) {
+	// Fetch pkg Before Check Out
+	if option.Fetch {
 		err := this.Fetch()
 		if err != nil {
 			return "", err
 		}
 	}
 
-    if this.State.UnderPak {
-        err := this.RemovePak()
-        if err != nil {
-            return "", err
-        }
-    }
-
-	// create pakbranch
-	var checksum string
-    var err error
-    checksum, err = this.GetPak()
+	err := this.Unpak(option.Force)
 	if err != nil {
 		return "", err
 	}
 
-    return checksum, err
+	var ref = this.RemoteBranch
+	if option.Checksum != "" {
+		ref = option.Checksum
+	}
+
+	return this.Pak(ref)
 }
 
-func (this *GitPkg) Unpak() (err error) {
-    return
-}
-
-// NOTE: will also try to delete pak tag
-func (this *GitPkg) RemovePak() (err error) {
-    // move to master branch
-    _, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "master"))
-    if err != nil {
-        return fmt.Errorf("git %s %s checkout master\n%s", this.GitDir, this.WorkTree, err.Error())
-    }
-
-	// delete pakbranch
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-d", pakbranch))
-	if err != nil {
-		return fmt.Errorf("git %s %s branch -d %s\n%s\n", this.GitDir, this.WorkTree, pakbranch, err.Error())
+func (this *GitPkg) Unpak(force bool) (err error) {
+	if this.State.OnPakbranch && !force {
+		return nil
 	}
 
-	// delete paktag if contains
-	var containTag bool
-	containTag, err = this.ContainsPaktag()
-	if err != nil {
-		return err
+	if this.State.ContainsBranchNamedPak && !this.State.UnderPak && !force {
+		return fmt.Errorf("Package %s is not Managed by pak.\n Please use -f flag or remove branch named pak in the package.\n", this.Name)
 	}
-	if !containTag {
-		return
-	}
-	err = this.removePaktag()
+
+	// Move to Master Branch
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "master"))
 	if err != nil {
-		return err
+		return fmt.Errorf("git %s %s checkout master\n%s", this.GitDir, this.WorkTree, err.Error())
+	}
+
+	// Delete Pakbranch
+	if this.State.ContainsBranchNamedPak {
+		_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-d", Pakbranch))
+		if err != nil {
+			return fmt.Errorf("git %s %s branch -d %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, err.Error())
+		}
+	}
+
+	// Delete Paktag
+	if this.State.ContainsPaktag {
+		_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", "-d", Paktag))
+		if err != nil {
+			err = fmt.Errorf("git %s %s tag -d %s\n%s\n", this.GitDir, this.WorkTree, Paktag, err.Error())
+		}
 	}
 
 	return
 }
 
-func (this *GitPkg) removePaktag() (err error) {
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", "-d", paktag))
-	if err != nil {
-		err = fmt.Errorf("git %s %s tag -d %s\n%s\n", this.GitDir, this.WorkTree, paktag, err.Error())
+func (this *GitPkg) Pak(checksumOrRemoteBranchRef string) (checksum string, err error) {
+	if this.State.OnPakbranch {
+		return "", nil
 	}
 
-	return
-}
-
-func (this *GitPkg) GetPak() (string, error) {
-	return this.metaGetPak(this.Remote+"/"+this.Branch)
-}
-
-func (this *GitPkg) GetPakByChecksum() (string, error) {
-	return this.metaGetPak(this.Checksum)
-}
-
-// try to figure out the plumbing command for git-checkout
-func (this *GitPkg) metaGetPak(checksumOrRemoteBranchRef string) (checksum string, err error) {
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", pakbranch, checksumOrRemoteBranchRef))
+	// Create Pakbranch
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", Pakbranch, checksumOrRemoteBranchRef))
 	if err != nil {
-		err = fmt.Errorf("git %s %s checkout -b %s %s\n%s\n", this.GitDir, this.WorkTree, pakbranch, checksumOrRemoteBranchRef, err.Error())
+		err = fmt.Errorf("git %s %s checkout -b %s %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, checksumOrRemoteBranchRef, err.Error())
 		return
 	}
 
+	// Create Paktag
 	checksum, err = this.GetChecksum(this.Pakbranch)
 	if err != nil {
 		return
 	}
-	err = this.tagPakbranch(checksum)
-
-	return
-}
-
-func (this *GitPkg) tagPakbranch(checksumHash string) (err error) {
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", paktag, checksumHash))
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", Paktag, checksum))
 	if err != nil {
-		err = fmt.Errorf("git %s %s tag %s %s\n%s\n", this.GitDir, this.WorkTree, paktag, checksumHash, err.Error())
+		err = fmt.Errorf("git %s %s tag %s %s\n%s\n", this.GitDir, this.WorkTree, Paktag, checksum, err.Error())
 	}
 
 	return
