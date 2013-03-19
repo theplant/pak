@@ -9,25 +9,26 @@ import (
 	// "bytes"
 	"path/filepath"
 	// "errors"
+    . "github.com/theplant/pak/share"
 )
 
-type PakInfo struct {
-	Packages []string
-}
-type PaklockInfo map[string]string
-
-const (
-	pakfile   = "Pakfile"
-	paklock   = "Pakfile.lock"
-	pakbranch = "pak"
-	paktag    = "_pak_latest_"
-)
-
-var gopath = os.Getenv("GOPATH")
+// type PakInfo struct {
+//     Packages []string
+// }
+// type PaklockInfo map[string]string
+//
+// const (
+//     Pakfile   = "Pakfile"
+//     paklock   = "Pakfile.lock"
+//     pakbranch = "pak"
+//     paktag    = "_pak_latest_"
+// )
+//
+// var gopath = os.Getenv("GOPATH")
 
 func GetPakInfo() (pakInfo PakInfo, err error) {
 	var pakInfoBytes []byte
-	pakInfoBytes, err = pakRead(pakfile)
+	pakInfoBytes, err = pakRead(Pakfile)
 	if err != nil {
 		return
 	}
@@ -39,7 +40,7 @@ func GetPakInfo() (pakInfo PakInfo, err error) {
 
 func GetPaklockInfo() (paklockInfo PaklockInfo, err error) {
 	var content []byte
-	content, err = pakRead(paklock)
+	content, err = pakRead(Paklock)
 	if err != nil {
 		return
 	}
@@ -58,7 +59,7 @@ func pakRead(file string) (fileContent []byte, err error) {
 		if err != nil {
 			return
 		}
-		if absPakfilePath == gopath+"/Pakfile" {
+		if absPakfilePath == Gopath+"/Pakfile" {
 			return nil, fmt.Errorf("Can't find %s" + originalFile)
 		}
 
@@ -80,5 +81,5 @@ func writePaklockInfo(paklockInfo PaklockInfo) error {
 		return err
 	}
 
-	return ioutil.WriteFile(paklock, content, os.FileMode(0644))
+	return ioutil.WriteFile(Paklock, content, os.FileMode(0644))
 }

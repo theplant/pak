@@ -2,6 +2,7 @@ package pak
 
 import (
 	"github.com/theplant/pak/gitpkg"
+	. "github.com/theplant/pak/share"
 	"strings"
 )
 
@@ -9,7 +10,7 @@ func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (new
 	if paklockInfo != nil {
 		for _, gitPkg := range pakfileGitPkgs {
 			if paklockInfo[gitPkg.Name] != "" {
-				gitPkg.Checksum = paklockInfo[gitPkg.Name]
+                // gitPkg.Checksum = paklockInfo[gitPkg.Name]
 				toUpdateGitPkgs = append(toUpdateGitPkgs, gitPkg)
 				delete(paklockInfo, gitPkg.Name)
 			} else {
@@ -18,8 +19,9 @@ func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (new
 		}
 		if len(paklockInfo) != 0 {
 			for key, val := range paklockInfo {
-				gitPkg := NewGitPkg(key, "", "")
-				gitPkg.Checksum = val
+				gitPkg := gitpkg.NewGitPkg(key, "", "")
+                _ = val
+                // gitPkg.Checksum = val
 				toRemoveGitPkgs = append(toRemoveGitPkgs, gitPkg)
 			}
 		}
@@ -61,7 +63,7 @@ func parsePakfile() ([]gitpkg.GitPkg, error) {
 			branch = "master"
 		}
 
-		gitPkgs = append(gitPkgs, NewGitPkg(name, remote, branch))
+		gitPkgs = append(gitPkgs, gitpkg.NewGitPkg(name, remote, branch))
 	}
 
 	return gitPkgs, nil
