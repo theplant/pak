@@ -66,16 +66,6 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 	c.Check(testGitPkg.Fetch(), Equals, nil)
 }
 
-func (s *GitPkgSuite) TestRemovable(c *C) {
-    testGitPkg.RemovePak()
-    testGitPkg.GetPak()
-    removable, _ := testGitPkg.PakbranchRemovable()
-    c.Check(removable, Equals, true)
-    onPak, _ := testGitPkg.EqualPakBranchAndTag()
-    c.Check(onPak, Equals, true)
-}
-
-
 func (s *GitPkgSuite) TestSimpleGet(c *C) {
 	testGitPkg.Get(true, true, false)
 

@@ -6,8 +6,8 @@ import (
 	"launchpad.net/goyaml"
 	"os"
 	// "os/exec"
-	"testing"
 	"fmt"
+	"testing"
 )
 
 // Hook up gocheck into the gotest runner.
@@ -17,6 +17,7 @@ var fp = fmt.Printf
 var fl = fmt.Println
 
 type PakSuite struct{}
+
 var _ = Suite(&PakSuite{})
 
 func (s *PakSuite) SetUpSuite(c *C) {
@@ -68,8 +69,8 @@ func (s *PakSuite) TestInit(c *C) {
 }
 
 var pakfilePaths = []struct {
-	path string
-	msg  string
+	path         string
+	msg          string
 	pakfileState bool
 }{
 	{pakfile, "Can read Pakfile in curreint Folder", true},

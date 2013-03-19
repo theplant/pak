@@ -1,8 +1,8 @@
 package pak
 
 import (
-	"strings"
 	"github.com/theplant/pak/gitpkg"
+	"strings"
 )
 
 func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (newGitPkgs []gitpkg.GitPkg, toUpdateGitPkgs []gitpkg.GitPkg, toRemoveGitPkgs []gitpkg.GitPkg) {
@@ -37,7 +37,7 @@ func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (new
 func parsePakfile() ([]gitpkg.GitPkg, error) {
 	pakInfo, err := GetPakInfo()
 	if err != nil {
-	    return nil, err
+		return nil, err
 	}
 
 	gitPkgs := []gitpkg.GitPkg{}

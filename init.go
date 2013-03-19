@@ -3,8 +3,8 @@ package pak
 import (
 	"os"
 	// "fmt"
-	"io/ioutil"
 	"errors"
+	"io/ioutil"
 )
 
 func Init() error {

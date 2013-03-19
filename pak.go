@@ -20,7 +20,7 @@ const (
 	pakfile   = "Pakfile"
 	paklock   = "Pakfile.lock"
 	pakbranch = "pak"
-	paktag 	  = "_pak_latest_"
+	paktag    = "_pak_latest_"
 )
 
 var gopath = os.Getenv("GOPATH")
@@ -58,7 +58,7 @@ func pakRead(file string) (fileContent []byte, err error) {
 		if err != nil {
 			return
 		}
-		if absPakfilePath == gopath + "/Pakfile" {
+		if absPakfilePath == gopath+"/Pakfile" {
 			return nil, fmt.Errorf("Can't find %s" + originalFile)
 		}
 
@@ -77,7 +77,7 @@ func pakRead(file string) (fileContent []byte, err error) {
 func writePaklockInfo(paklockInfo PaklockInfo) error {
 	content, err := goyaml.Marshal(&paklockInfo)
 	if err != nil {
-	    return err
+		return err
 	}
 
 	return ioutil.WriteFile(paklock, content, os.FileMode(0644))

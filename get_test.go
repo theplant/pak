@@ -1,11 +1,12 @@
 package pak
 
-import(
-	"os/exec"
+import (
 	. "launchpad.net/gocheck"
+	"os/exec"
 )
 
 type GetSuite struct{}
+
 var _ = Suite(&GetSuite{})
 
 func (s *GetSuite) dSetUpSuite(c *C) {
@@ -25,9 +26,9 @@ func (s *GetSuite) dSetUpSuite(c *C) {
 }
 
 func (s *GetSuite) dTearDownSuite(c *C) {
-    exec.Command("rm", "-rf", "../package1").Run()
-    exec.Command("rm", "-rf", "../package2").Run()
-    exec.Command("rm", "-rf", "../package3").Run()
+	exec.Command("rm", "-rf", "../package1").Run()
+	exec.Command("rm", "-rf", "../package2").Run()
+	exec.Command("rm", "-rf", "../package3").Run()
 }
 
 func (s *GetSuite) TestGet(c *C) {
@@ -41,34 +42,34 @@ func (s *GetSuite) TestGet(c *C) {
 		gitPkgs = append(gitPkgs, NewGitPkg(key, val[0], val[1]))
 	}
 	getOptions := GetOptions{gitPkgs, true, true, false}
-    gotExpected := true
-    expectedPaklockInfo := PaklockInfo{
-        "github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
-        "github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
-        "github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
-    }
+	gotExpected := true
+	expectedPaklockInfo := PaklockInfo{
+		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
+		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
+		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
+	}
 
-    paklockInfo, err := Get(getOptions)
+	paklockInfo, err := Get(getOptions)
 
-    for key, val := range expectedPaklockInfo {
-        if val != paklockInfo[key] {
-            gotExpected = false
-            break
-        }
-    }
+	for key, val := range expectedPaklockInfo {
+		if val != paklockInfo[key] {
+			gotExpected = false
+			break
+		}
+	}
 
-    c.Check(err, Equals, nil)
-    c.Check(gotExpected, Equals, true)
+	c.Check(err, Equals, nil)
+	c.Check(gotExpected, Equals, true)
 
-    // gitPkg1 := getOptions.GitPkgs[0]
-    // gitPkg1.GetPak()
+	// gitPkg1 := getOptions.GitPkgs[0]
+	// gitPkg1.GetPak()
 
-    paklockInfo, err = Get(getOptions)
+	paklockInfo, err = Get(getOptions)
 
-    c.Check(err, Equals, nil)
+	c.Check(err, Equals, nil)
 
-    // exec.Command("cp", "fixtures/Pakfile", ".").Run()
-    // exec.Command("rm", "Pakfile").Run()
+	// exec.Command("cp", "fixtures/Pakfile", ".").Run()
+	// exec.Command("rm", "Pakfile").Run()
 
 	// getOptions2 := GetOptions{gitPkgs, true, false}
 	// fl(Get(getOptions2))

@@ -37,7 +37,7 @@ type GitPkg struct {
 	Name         string // github.com/theplant/pak
 	Remote       string // origin, etc
 	Branch       string // master, dev, etc
-    Checksum     string // 0218f9eda0a90203265bc1482c6afec538a83576, etch
+    // Checksum     string // 0218f9eda0a90203265bc1482c6afec538a83576, etch
 	Path         string // $GOPATH/src/:Name
 	RemoteBranch string // refs/remotes/:Remote/:Branch
 	Pakbranch    string // refs/heads/pak
@@ -179,7 +179,6 @@ func (this *GitPkg) Sync() (err error) {
     return
 }
 
-
 // should make sure both pakbranch and paktag are exist
 func (this *GitPkg) EqualPakBranchAndTag() (bool, error) {
 	pakbranchHash, err := this.GetChecksum(this.Pakbranch)
@@ -246,37 +245,6 @@ func (this *GitPkg) Fetch() error {
 	return err
 }
 
-var unrecognizedPakbranch = "Found unrecognized Pakbranch in %s.\n Please rename your branch or use -f to force Override it."
-func (this *GitPkg) PakbranchRemovable() (bool, error) {
-	containPakbranch, err := this.ContainsPakbranch()
-	if err != nil {
-		return false, err
-	}
-
-	if containPakbranch {
-		containPaktag, err := this.ContainsPaktag()
-		if err != nil {
-			return false, err
-		}
-		if !containPaktag {
-			return false, fmt.Errorf(unrecognizedPakbranch, this.Name)
-		}
-
-		equal, err := this.EqualPakBranchAndTag()
-		if err != nil {
-			return false, err
-		}
-
-		if !equal {
-			return false, fmt.Errorf(unrecognizedPakbranch, this.Name)
-		}
-	} else {
-		return false, nil
-	}
-
-	return true, nil
-}
-
 func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
 	if err != nil {
@@ -284,21 +252,6 @@ func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 	}
 
 	return strings.Contains(out.String(), " "+this.RemoteBranch+"\n"), nil
-}
-
-// TODO: remove
-func (this *GitPkg) EqualChecksumAndPakbranch() (bool, error) {
-    // checksumChecksum, err := this.GetChecksum(this.Checksum)
-    // if err != nil {
-    //     return false, err
-    // }
-    //
-    pakbranchChecksum, err := this.GetChecksum(this.Pakbranch)
-    if err != nil {
-        return false, err
-    }
-
-    return this.Checksum == pakbranchChecksum, nil
 }
 
 func (this *GitPkg) GetHeadRefName() (string, error) {

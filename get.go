@@ -22,7 +22,7 @@ func Get(options GetOptions) (PaklockInfo, error) {
 	for _, gitPkg := range options.GitPkgs {
 		checksum, err := gitPkg.Get(options.FetchLatest, options.Force, options.UseChecksum)
 		if err != nil {
-		    return nil, err
+			return nil, err
 		}
 		paklockInfo[gitPkg.Name] = checksum
 	}

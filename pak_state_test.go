@@ -11,6 +11,7 @@ import (
 )
 
 type PakStateSuite struct{}
+
 var _ = Suite(&PakStateSuite{})
 
 func (s *PakStateSuite) SetUpSuite(c *C) {

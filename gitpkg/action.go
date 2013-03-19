@@ -5,19 +5,19 @@ import(
 	"os/exec"
 )
 
-// func (this *GitPkg) Report() error {
-//
-// }
-//
-func (this *GitPkg) Get(fetchLatest bool, force bool, useChecksum bool) (string, error) {
+func (this *GitPkg) Report() error {
     if !this.State.IsClean {
-		return "", fmt.Errorf("Package %s is not clean. Please clean it and re-start pak.", this.Name)
+		return fmt.Errorf("Package %s is not clean. Please clean it and re-start pak.", this.Name)
 	}
 
     if !this.State.IsRemoteBranchExist {
-		return "", fmt.Errorf("`%s` does not contain reference `%s`", this.Name, this.RemoteBranch)
+		return fmt.Errorf("`%s` does not contain reference `%s`", this.Name, this.RemoteBranch)
 	}
 
+	return nil
+}
+
+func (this *GitPkg) Get(fetchLatest bool, force bool) (string, error) {
 	// fetch pkg before check out
 	if fetchLatest {
 		err := this.Fetch()
@@ -46,39 +46,6 @@ func (this *GitPkg) Get(fetchLatest bool, force bool, useChecksum bool) (string,
 
 func (this *GitPkg) Unpak() (err error) {
     return
-    // containPakbranch, err := this.ContainsPakbranch()
-    // if err != nil {
-    //     return "", err
-    // }
-    //
-    // // Remove pakbranch
-    // onPakbranch := false
-    // if containPakbranch {
-    //     removable, err := this.PakbranchRemovable();
-    //     if err != nil {
-    //         return "", err
-    //     }
-    //
-    //     if !removable && !force {
-    //         return "", fmt.Errorf(unrecognizedPakbranch)
-    //     }
-    //
-    //     // using checksum means pak is getting pkgs by Pakfile.lock
-    //     if useChecksum {
-    //         var err error
-    //         onPakbranch, err = this.EqualChecksumAndPakbranch()
-    //         if err != nil {
-    //             return "", err
-    //         }
-    //     }
-    //
-    //     if !onPakbranch {
-    //         err := this.RemovePak()
-    //         if err != nil {
-    //             return "", err
-    //         }
-    //     }
-    // }
 }
 
 // NOTE: will also try to delete pak tag
