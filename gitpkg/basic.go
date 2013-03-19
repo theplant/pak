@@ -14,6 +14,7 @@ import (
 // still can't make sure the pkg is on the pak branch or it's status is wanted
 // by Pakfile or Pakfile.lock.
 type GitPkgState struct {
+	UnderGitControl		   bool
 	ContainsBranchNamedPak bool
 	ContainsPaktag         bool
 	UnderPak               bool
@@ -74,6 +75,14 @@ func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
 }
 
 func (this *GitPkg) Sync() (err error) {
+	// Should be Under the Control of Git
+	var state bool
+	state, err = this.IsUnderGitControl()
+	if err != nil {
+	    return err
+	}
+	this.State.UnderGitControl = state
+
 	var info string
 	info, err = this.GetHeadRefName()
 	if err != nil {
@@ -86,7 +95,6 @@ func (this *GitPkg) Sync() (err error) {
 
 	// Retrieve State
 	// Branch Named Pak
-	var state bool
 	state, err = this.ContainsPakbranch()
 	if err != nil {
 		return
@@ -153,6 +161,15 @@ func (this *GitPkg) Sync() (err error) {
 	this.State.IsRemoteBranchExist = state
 
 	return
+}
+
+func (this *GitPkg) IsUnderGitControl() (bool, error) {
+	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "rev-parse", "--is-inside-work-tree"))
+	if err != nil {
+	    return false, fmt.Errorf("Package: %s\n%s", this.Name, out.String())
+	}
+
+	return true, nil
 }
 
 // Not to check out the pakbranch, but just a branch named refs/heads/pak

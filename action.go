@@ -20,27 +20,61 @@ func Init() error {
 	return ioutil.WriteFile(Pakfile, []byte(PakfileTemplate), os.FileMode(0644))
 }
 
-// type GetOptions struct {
-// 	GitPkgs     []gitpkg.GitPkg
-// 	FetchLatest bool
-// 	Force       bool
-// 	UseChecksum bool
-// }
+func Get(option PakOption) error {
+	// Parse
+	pakPkgs, err := parsePakfile()
+	if err != nil {
+	    return err
+	}
+	paklockInfo, err := GetPaklockInfo()
+	if err != nil {
+	    return err
+	}
 
-// TODO: GitPkgs generation need be verified by Pakfile at first
-func Get(options GetOption) (PaklockInfo, error) {
-	// paklockInfo := PaklockInfo{}
-	//
-	// for _, gitPkg := range options.GitPkgs {
-	// 	checksum, err := gitPkg.Get(option)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	paklockInfo[gitPkg.Name] = checksum
-	// }
-	//
-	// return paklockInfo, nil
-	return nil, nil
+	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
+
+	// Assign GetOption && Sync && Report Erorrs
+	for _, pakPkg := range pakPkgs {
+		pakPkg.GetOption.Fetch = option.Fetch
+		pakPkg.GetOption.Force = option.Force
+
+		err = pakPkg.Sync()
+		if err != nil {
+		    return err
+		}
+		err = pakPkg.Report()
+		if err != nil {
+		    return err
+		}
+	}
+
+	// Pak
+	newPaklockInfo := PaklockInfo{}
+	var checksum string
+	for _, pakPkg := range newPakPkgs {
+		checksum, err = pakPkg.Pak(pakPkg.GetOption)
+		if err != nil {
+		    return err
+		}
+
+		newPaklockInfo[pakPkg.Name] = checksum
+	}
+	for _, pakPkg := range toUpdatePakPkgs {
+		checksum, err = pakPkg.Pak(pakPkg.GetOption)
+		if err != nil {
+		    return err
+		}
+
+		newPaklockInfo[pakPkg.Name] = checksum
+	}
+	for _, pakPkg := range toRemovePakPkgs {
+		err = pakPkg.Unpak(pakPkg.Force)
+		if err != nil {
+		    return err
+		}
+	}
+
+	return writePaklockInfo(newPaklockInfo)
 }
 
 func Update() {

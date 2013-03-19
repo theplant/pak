@@ -25,7 +25,7 @@ func (this *GitPkg) Report() error {
 	return nil
 }
 
-func (this *GitPkg) Get(option GetOption) (string, error) {
+func (this *GitPkg) Pak(option GetOption) (string, error) {
 	// Fetch pkg Before Check Out
 	if option.Fetch {
 		err := this.Fetch()
@@ -44,7 +44,28 @@ func (this *GitPkg) Get(option GetOption) (string, error) {
 		ref = option.Checksum
 	}
 
-	return this.Pak(ref)
+	if this.State.OnPakbranch {
+		return this.PakbranchChecksum, nil
+	}
+
+	// Create Pakbranch
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", Pakbranch, ref))
+	if err != nil {
+		err = fmt.Errorf("git %s %s checkout -b %s %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, ref, err.Error())
+		return "", err
+	}
+
+	// Create Paktag
+	checksum, err := this.GetChecksum(this.Pakbranch)
+	if err != nil {
+		return "", err
+	}
+	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", Paktag, checksum))
+	if err != nil {
+		err = fmt.Errorf("git %s %s tag %s %s\n%s\n", this.GitDir, this.WorkTree, Paktag, checksum, err.Error())
+	}
+
+	return checksum, err
 }
 
 func (this *GitPkg) Unpak(force bool) (err error) {
@@ -76,31 +97,6 @@ func (this *GitPkg) Unpak(force bool) (err error) {
 		if err != nil {
 			err = fmt.Errorf("git %s %s tag -d %s\n%s\n", this.GitDir, this.WorkTree, Paktag, err.Error())
 		}
-	}
-
-	return
-}
-
-func (this *GitPkg) Pak(checksumOrRemoteBranchRef string) (checksum string, err error) {
-	if this.State.OnPakbranch {
-		return "", nil
-	}
-
-	// Create Pakbranch
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", Pakbranch, checksumOrRemoteBranchRef))
-	if err != nil {
-		err = fmt.Errorf("git %s %s checkout -b %s %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, checksumOrRemoteBranchRef, err.Error())
-		return
-	}
-
-	// Create Paktag
-	checksum, err = this.GetChecksum(this.Pakbranch)
-	if err != nil {
-		return
-	}
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", Paktag, checksum))
-	if err != nil {
-		err = fmt.Errorf("git %s %s tag %s %s\n%s\n", this.GitDir, this.WorkTree, Paktag, checksum, err.Error())
 	}
 
 	return

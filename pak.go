@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
     . "github.com/theplant/pak/share"
+    "github.com/theplant/pak/gitpkg"
 )
 
 type PakPkg struct {

@@ -24,3 +24,8 @@ type GetOption struct {
 	Force    bool
 	Checksum string
 }
+
+type PakOption struct {
+	Fetch bool
+	Force bool
+}

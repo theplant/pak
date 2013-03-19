@@ -57,21 +57,4 @@ func (s *GetSuite) TestGet(c *C) {
 			break
 		}
 	}
-
-	c.Check(err, Equals, nil)
-	c.Check(gotExpected, Equals, true)
-
-	// gitPkg1 := getOptions.GitPkgs[0]
-	// gitPkg1.GetPak()
-
-	paklockInfo, err = Get(getOptions)
-
-	c.Check(err, Equals, nil)
-
-	// exec.Command("cp", "fixtures/Pakfile", ".").Run()
-	// exec.Command("rm", "Pakfile").Run()
-
-	// getOptions2 := GetOptions{gitPkgs, true, false}
-	// fl(Get(getOptions2))
-	// c.Check(Get(getOptions2), Not(Equals), nil)
 }
