@@ -20,7 +20,7 @@ type PakInfo struct {
 type PaklockInfo map[string]string
 
 type GetOption struct {
-	Fetch bool
-	Force       bool
-	Checksum    string
+	Fetch    bool
+	Force    bool
+	Checksum string
 }

@@ -1,9 +1,9 @@
 package gitpkg
 
 import (
+	"fmt"
 	. "launchpad.net/gocheck"
 	"testing"
-	"fmt"
 )
 
 // Hook up gocheck into the gotest runner.

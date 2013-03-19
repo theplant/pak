@@ -1,13 +1,14 @@
 package gitpkg
 
-import(
-	"os/exec"
+import (
 	"fmt"
-	. "launchpad.net/gocheck"
 	. "github.com/theplant/pak/share"
+	. "launchpad.net/gocheck"
+	"os/exec"
 )
 
 type GitPkgSuite struct{}
+
 var _ = Suite(&GitPkgSuite{})
 
 var testGitPkg GitPkg
@@ -18,13 +19,13 @@ func (s *GitPkgSuite) SetUpTest(c *C) {
 	var err error
 	err = exec.Command("git", "clone", "fixtures/package1", "../../package1").Run()
 	if err != nil {
-	    panic(fmt.Errorf("GitPkgSuite.SetUpSuite: %s", err.Error()))
+		panic(fmt.Errorf("GitPkgSuite.SetUpSuite: %s", err.Error()))
 	}
 
-    err = testGitPkg.Sync()
-    if err != nil {
-        panic(err)
-    }
+	err = testGitPkg.Sync()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *GitPkgSuite) TearDownTest(c *C) {
@@ -44,7 +45,7 @@ func (s *GitPkgSuite) TestClean(c *C) {
 	var err error
 	err = exec.Command("mv", "../../package1/file3", "../../package1/file3m").Run()
 	if err != nil {
-	    panic(err)
+		panic(err)
 	}
 
 	clean, _ = testGitPkg.IsClean()
@@ -121,7 +122,6 @@ func (s *GitPkgSuite) TestWeakGet(c *C) {
 	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
 	c.Check(testGitPkg.State.IsClean, Equals, true)
 }
-
 
 func (s *GitPkgSuite) TestForcefulGet(c *C) {
 	exec.Command("git", testGitPkg.WorkTree, testGitPkg.GitDir, "branch", "pak").Run()
