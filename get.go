@@ -5,10 +5,11 @@ import (
 	// "fmt"
 	// "errors"
 	// "launchpad.net/goyaml"
+	"github.com/theplant/pak/gitpkg"
 )
 
 type GetOptions struct {
-	GitPkgs     []GitPkg
+	GitPkgs     []gitpkg.GitPkg
 	FetchLatest bool
 	Force       bool
 	UseChecksum bool

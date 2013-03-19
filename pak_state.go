@@ -2,9 +2,10 @@ package pak
 
 import (
 	"strings"
+	"github.com/theplant/pak/gitpkg"
 )
 
-func ParsePakState(pakfileGitPkgs []GitPkg, paklockInfo PaklockInfo) (newGitPkgs []GitPkg, toUpdateGitPkgs []GitPkg, toRemoveGitPkgs []GitPkg) {
+func ParsePakState(pakfileGitPkgs []gitpkg.GitPkg, paklockInfo PaklockInfo) (newGitPkgs []gitpkg.GitPkg, toUpdateGitPkgs []gitpkg.GitPkg, toRemoveGitPkgs []gitpkg.GitPkg) {
 	if paklockInfo != nil {
 		for _, gitPkg := range pakfileGitPkgs {
 			if paklockInfo[gitPkg.Name] != "" {
@@ -33,13 +34,13 @@ func ParsePakState(pakfileGitPkgs []GitPkg, paklockInfo PaklockInfo) (newGitPkgs
 // "github.com/theplant/package2"
 // "github.com/theplant/package2@dev"
 // "github.com/theplant/package2@origin/dev"
-func parsePakfile() ([]GitPkg, error) {
+func parsePakfile() ([]gitpkg.GitPkg, error) {
 	pakInfo, err := GetPakInfo()
 	if err != nil {
 	    return nil, err
 	}
 
-	gitPkgs := []GitPkg{}
+	gitPkgs := []gitpkg.GitPkg{}
 	for _, pkg := range pakInfo.Packages {
 		atIndex := strings.LastIndex(pkg, "@")
 		var name, remote, branch string
