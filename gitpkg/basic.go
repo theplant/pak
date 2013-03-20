@@ -236,11 +236,11 @@ func (this *GitPkg) GetChecksum(ref string) (string, error) {
 	return checksum, nil
 }
 
-func (this *GitPkg) Pull() error {
+func (this *GitPkg) Fetch() error {
 	// _, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch", this.Remote, this.Branch))
-	_, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "pull"))
+	_, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch"))
 	if err != nil {
-		err = fmt.Errorf("git %s %s fetch %s %s\n%s", this.GitDir, this.WorkTree, this.Remote, this.Branch, err.Error())
+		err = fmt.Errorf("git %s %s fetch\n%s", this.GitDir, this.WorkTree, err.Error())
 	}
 
 	return err
