@@ -9,7 +9,7 @@ import (
 
 var (
 	getLatestFlag bool
-	forceFlag bool
+	forceFlag     bool
 )
 
 func init() {
@@ -36,14 +36,14 @@ func main() {
 	case "get":
 		err := pak.Get(PakOption{UsePakfileLock: true, Pull: getLatestFlag, Force: forceFlag})
 		if err != nil {
-		    fmt.Printf("%s\n", err)
+			fmt.Printf("%s\n", err)
 		}
 	case "update":
 		option := PakOption{UsePakfileLock: false, Pull: true, Force: true}
 		option.PakMeter = flag.Args()[1:]
 		err := pak.Get(option)
 		if err != nil {
-		    fmt.Printf("%s\n", err)
+			fmt.Printf("%s\n", err)
 		}
 	default:
 		flag.Usage()

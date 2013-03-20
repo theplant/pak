@@ -2,17 +2,17 @@ package pak
 
 import (
 	"fmt"
+	"github.com/theplant/pak/gitpkg"
+	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	"os"
 	"path/filepath"
-    . "github.com/theplant/pak/share"
-    "github.com/theplant/pak/gitpkg"
 )
 
 type PakPkg struct {
-    gitpkg.GitPkg
-    GetOption
+	gitpkg.GitPkg
+	GetOption
 }
 
 func GetPakInfo() (pakInfo PakInfo, err error) {
@@ -41,6 +41,7 @@ func GetPaklockInfo() (paklockInfo PaklockInfo, err error) {
 
 var PakfileNotExist = fmt.Errorf("Can't find %s", Pakfile)
 var PakfileLockNotExist = fmt.Errorf("Can't find %s", Paklock)
+
 func pakRead(file string) (fileContent []byte, err error) {
 	absPakfilePath := ""
 	originalFile := file
@@ -51,9 +52,9 @@ func pakRead(file string) (fileContent []byte, err error) {
 		}
 		if absPakfilePath == Gopath+"/"+originalFile {
 			if originalFile == Pakfile {
-			    return nil, PakfileNotExist
+				return nil, PakfileNotExist
 			} else {
-			    return nil, PakfileLockNotExist
+				return nil, PakfileLockNotExist
 			}
 		}
 

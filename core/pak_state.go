@@ -10,7 +10,7 @@ func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []
 	if paklockInfo != nil {
 		for _, pakPkg := range pakfilePakPkgs {
 			if paklockInfo[pakPkg.Name] != "" {
-                pakPkg.Checksum = paklockInfo[pakPkg.Name]
+				pakPkg.Checksum = paklockInfo[pakPkg.Name]
 				toUpdatePkgs = append(toUpdatePkgs, pakPkg)
 				delete(paklockInfo, pakPkg.Name)
 			} else {
@@ -20,8 +20,8 @@ func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []
 		if len(paklockInfo) != 0 {
 			for key, val := range paklockInfo {
 				pakPkg := PakPkg{GitPkg: gitpkg.NewGitPkg(key, "", "")}
-                _ = val
-                pakPkg.Checksum = val
+				_ = val
+				pakPkg.Checksum = val
 				toRemovePkgs = append(toRemovePkgs, pakPkg)
 			}
 		}
@@ -42,8 +42,8 @@ func parsePakfile() ([]PakPkg, error) {
 		return nil, err
 	}
 
-    // gitPkgs := []PakPkg{}
-    pakPkgs := []PakPkg{}
+	// gitPkgs := []PakPkg{}
+	pakPkgs := []PakPkg{}
 	for _, pkg := range pakInfo.Packages {
 		atIndex := strings.LastIndex(pkg, "@")
 		var name, remote, branch string
@@ -64,7 +64,7 @@ func parsePakfile() ([]PakPkg, error) {
 			branch = "master"
 		}
 
-        pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(name, remote, branch)})
+		pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(name, remote, branch)})
 	}
 
 	return pakPkgs, nil

@@ -1,10 +1,10 @@
 package pak
 
 import (
-	. "launchpad.net/gocheck"
-	"os/exec"
 	"github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
+	. "launchpad.net/gocheck"
+	"os/exec"
 )
 
 type GetSuite struct{}
@@ -14,7 +14,7 @@ var _ = Suite(&GetSuite{})
 func mustRun(cmd *exec.Cmd) {
 	err := cmd.Run()
 	if err != nil {
-	    panic(err)
+		panic(err)
 	}
 }
 

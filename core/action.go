@@ -1,10 +1,10 @@
 package pak
 
 import (
-	"os"
-	"fmt"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"os"
 	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 )
@@ -24,14 +24,14 @@ func Get(option PakOption) error {
 	// Parse
 	allPakPkgs, err := parsePakfile()
 	if err != nil {
-	    return err
+		return err
 	}
 	var paklockInfo PaklockInfo
 	if option.UsePakfileLock {
 		var err error
 		paklockInfo, err = GetPaklockInfo()
 		if err != nil && err != PakfileLockNotExist {
-		    return err
+			return err
 		}
 	}
 
@@ -61,11 +61,11 @@ func Get(option PakOption) error {
 
 		err = pakPkgs[i].Sync()
 		if err != nil {
-		    return err
+			return err
 		}
 		err = pakPkgs[i].Report()
 		if err != nil {
-		    return err
+			return err
 		}
 	}
 
@@ -77,7 +77,7 @@ func Get(option PakOption) error {
 	for i := 0; i < len(newPakPkgs); i++ {
 		checksum, err = newPakPkgs[i].Pak(newPakPkgs[i].GetOption)
 		if err != nil {
-		    return err
+			return err
 		}
 
 		newPaklockInfo[newPakPkgs[i].Name] = checksum
@@ -85,15 +85,15 @@ func Get(option PakOption) error {
 	for i := 0; i < len(toUpdatePakPkgs); i++ {
 		checksum, err = toUpdatePakPkgs[i].Pak(toUpdatePakPkgs[i].GetOption)
 		if err != nil {
-		    return err
+			return err
 		}
 
 		newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
 	}
-	for i:=0; i<len(toRemovePakPkgs); i++  {
+	for i := 0; i < len(toRemovePakPkgs); i++ {
 		err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
 		if err != nil {
-		    return err
+			return err
 		}
 	}
 

@@ -1,14 +1,14 @@
 package pak
 
 import (
+	"fmt"
+	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	. "launchpad.net/gocheck"
 	"launchpad.net/goyaml"
 	"os"
-	"fmt"
-	"testing"
-	. "github.com/theplant/pak/share"
 	"reflect"
+	"testing"
 )
 
 // Hook up gocheck into the gotest runner.
