@@ -35,7 +35,23 @@ func Get(option PakOption) error {
 		}
 	}
 
+	// Assign GetOption && Sync && Report Erorrs
+	for i := 0; i < len(allPakPkgs); i++ {
+		allPakPkgs[i].GetOption.Fetch = option.Fetch
+		allPakPkgs[i].GetOption.Force = option.Force
+
+		err = allPakPkgs[i].Sync()
+		if err != nil {
+			return err
+		}
+		err = allPakPkgs[i].Report()
+		if err != nil {
+			return err
+		}
+	}
+
 	pakPkgs := []PakPkg{}
+	newPaklockInfo := PaklockInfo{}
 	if len(option.PakMeter) != 0 {
 		for _, pakPkgName := range option.PakMeter {
 			described := false
@@ -44,6 +60,8 @@ func Get(option PakOption) error {
 					pakPkgs = append(pakPkgs, pakPkg)
 					described = true
 					break
+				// } else {
+					// newPaklockInfo :=
 				}
 			}
 			if !described {
@@ -54,25 +72,10 @@ func Get(option PakOption) error {
 		pakPkgs = allPakPkgs
 	}
 
-	// Assign GetOption && Sync && Report Erorrs
-	for i := 0; i < len(pakPkgs); i++ {
-		pakPkgs[i].GetOption.Pull = option.Pull
-		pakPkgs[i].GetOption.Force = option.Force
-
-		err = pakPkgs[i].Sync()
-		if err != nil {
-			return err
-		}
-		err = pakPkgs[i].Report()
-		if err != nil {
-			return err
-		}
-	}
-
+	// categorize pakpkgs
 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
 
-	// Pak
-	newPaklockInfo := PaklockInfo{}
+	// Pak dependencies
 	var checksum string
 	for i := 0; i < len(newPakPkgs); i++ {
 		checksum, err = newPakPkgs[i].Pak(newPakPkgs[i].GetOption)
