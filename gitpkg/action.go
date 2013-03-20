@@ -69,12 +69,8 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 }
 
 func (this *GitPkg) Unpak(force bool) (err error) {
-	if this.State.OnPakbranch && !force {
-		return nil
-	}
-
-	if this.State.ContainsBranchNamedPak && !this.State.UnderPak && !force {
-		return fmt.Errorf("Package %s is not Managed by pak.\n Please use -f flag or remove branch named pak in the package.\n", this.Name)
+	if this.State.ContainsBranchNamedPak && !this.State.OnPakbranch && !force {
+		return fmt.Errorf("Package %s Contains Branch Named pak.\n Please use -f flag or manually remove the branch in the package.\n", this.Name)
 	}
 
 	// Move to Master Branch
