@@ -39,17 +39,22 @@ func GetPaklockInfo() (paklockInfo PaklockInfo, err error) {
 	return
 }
 
-// var ErrorNotFound = errors.New("Can't find.")
+var PakfileNotExist = fmt.Errorf("Can't find %s", Pakfile)
+var PakfileLockNotExist = fmt.Errorf("Can't find %s", Paklock)
 func pakRead(file string) (fileContent []byte, err error) {
 	absPakfilePath := ""
 	originalFile := file
 	for true {
 		absPakfilePath, err = filepath.Abs(file)
 		if err != nil {
-			return
+			return nil, err
 		}
-		if absPakfilePath == Gopath+"/Pakfile" {
-			return nil, fmt.Errorf("Can't find %s" + originalFile)
+		if absPakfilePath == Gopath+"/"+originalFile {
+			if originalFile == Pakfile {
+			    return nil, PakfileNotExist
+			} else {
+			    return nil, PakfileLockNotExist
+			}
 		}
 
 		_, err = os.Stat(file)

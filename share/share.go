@@ -26,6 +26,8 @@ type GetOption struct {
 }
 
 type PakOption struct {
-	Fetch bool
-	Force bool
+	PakMeter       []string
+	UsePakfileLock bool
+	Fetch          bool
+	Force          bool
 }

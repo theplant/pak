@@ -26,6 +26,10 @@ func (this *GitPkg) Report() error {
 }
 
 func (this *GitPkg) Pak(option GetOption) (string, error) {
+	if this.State.OnPakbranch {
+		return this.PakbranchChecksum, nil
+	}
+
 	// Fetch pkg Before Check Out
 	if option.Fetch {
 		err := this.Fetch()
@@ -42,10 +46,6 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	var ref = this.RemoteBranch
 	if option.Checksum != "" {
 		ref = option.Checksum
-	}
-
-	if this.State.OnPakbranch {
-		return this.PakbranchChecksum, nil
 	}
 
 	// Create Pakbranch

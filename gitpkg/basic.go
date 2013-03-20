@@ -136,15 +136,12 @@ func (this *GitPkg) Sync() (err error) {
 	this.State.UnderPak = state
 
 	// on Pakbranch
+	// TODO: add OnPakbranch Test(same checksum but different refs)
 	state = false
 	if this.State.UnderPak {
-		var pakbranchChecksum string
-		pakbranchChecksum, err = this.GetChecksum(this.Pakbranch)
-		if err != nil {
-			return
+		if this.PakbranchChecksum == this.HeadChecksum && this.Pakbranch == this.HeadRefsName {
+			state = true
 		}
-
-		state = pakbranchChecksum == this.HeadChecksum
 	}
 	this.State.OnPakbranch = state
 
@@ -253,3 +250,12 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 	refs := out.String()
 	return refs[:len(refs)-1], err
 }
+
+// func (this *GitPkg) Install() error {
+// 	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", "--hash", headBranch))
+// 	if err != nil {
+// 		// err = fmt.Errorf("go", "install", "")
+// 	}
+//
+// 	return err
+// }
