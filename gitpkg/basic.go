@@ -85,7 +85,7 @@ func (this *GitPkg) Sync() (err error) {
 	}
 	this.State.IsPkgExist = state
 	if !this.State.IsPkgExist {
-		return fmt.Errorf("Package %s Is Not Exist.\n", this.Name)
+		return fmt.Errorf("Package %s Is Not Exist.", this.Name)
 	}
 
     state, err = this.IsUnderGitControl()
@@ -201,7 +201,7 @@ func (this *GitPkg) IsUnderGitControl() (bool, error) {
 func (this *GitPkg) ContainsPakbranch() (bool, error) {
     out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
     if err != nil {
-        return false, fmt.Errorf("git %s %s show-ref\n%s\n", this.GitDir, this.WorkTree, err.Error())
+        return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
     }
 
     return strings.Contains(out.String(), " "+this.Pakbranch+"\n"), nil
@@ -210,7 +210,7 @@ func (this *GitPkg) ContainsPakbranch() (bool, error) {
 func (this *GitPkg) ContainsPaktag() (bool, error) {
     out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
     if err != nil {
-        return false, fmt.Errorf("git %s %s show-ref\n%s\n", this.GitDir, this.WorkTree, err.Error())
+        return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
     }
 
     return strings.Contains(out.String(), " "+this.Paktag+"\n"), nil
@@ -219,7 +219,7 @@ func (this *GitPkg) ContainsPaktag() (bool, error) {
 func (this *GitPkg) IsClean() (bool, error) {
     out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "status", "--porcelain", "--untracked-files=no"))
     if err != nil {
-        return false, fmt.Errorf("git %s %s status --porcelain --untracked-files=no\n%s\n", this.GitDir, this.WorkTree, err.Error())
+        return false, fmt.Errorf("git %s %s status --porcelain --untracked-files=no\n%s", this.GitDir, this.WorkTree, err.Error())
     }
 
     return out.String() == "", nil
@@ -228,7 +228,7 @@ func (this *GitPkg) IsClean() (bool, error) {
 func (this *GitPkg) GetChecksum(ref string) (string, error) {
     out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", ref, "--hash"))
     if err != nil {
-        return "", fmt.Errorf("git %s %s show-ref %s --hash\n%s\n", this.GitDir, this.WorkTree, ref, err.Error())
+        return "", fmt.Errorf("git %s %s show-ref %s --hash\n%s", this.GitDir, this.WorkTree, ref, err.Error())
     }
 
     checksum := out.String()[:40]
@@ -239,7 +239,7 @@ func (this *GitPkg) GetChecksum(ref string) (string, error) {
 func (this *GitPkg) Fetch() error {
     _, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch", this.Remote, this.Branch))
     if err != nil {
-        err = fmt.Errorf("git %s %s fetch %s %s\n%s\n", this.GitDir, this.WorkTree, this.Remote, this.Branch, err.Error())
+        err = fmt.Errorf("git %s %s fetch %s %s\n%s", this.GitDir, this.WorkTree, this.Remote, this.Branch, err.Error())
     }
 
     return err
@@ -248,7 +248,7 @@ func (this *GitPkg) Fetch() error {
 func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
     out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
     if err != nil {
-        return false, fmt.Errorf("git %s %s show-ref\n%s\n", this.GitDir, this.WorkTree, err.Error())
+        return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
     }
 
     return strings.Contains(out.String(), " "+this.RemoteBranch+"\n"), nil
