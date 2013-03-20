@@ -19,6 +19,7 @@ func init() {
 		fmt.Printf("%spak init\n", spaces)
 		fmt.Printf("%spak [-uf] get\n", spaces)
 		fmt.Printf("%spak update [package]\n", spaces)
+		fmt.Printf("%spak version\n", spaces)
 		// fmt.Printf("%spak open\n", spaces)
 		// fmt.Printf("%spak list\n", spaces)
 		// fmt.Printf("%spak scan\n", spaces)
@@ -45,6 +46,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("%s\n", err)
 		}
+	case "version":
+		fmt.Println("1.0.0")
 	default:
 		flag.Usage()
 	}

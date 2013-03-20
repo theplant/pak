@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 )
@@ -27,12 +28,19 @@ func Get(option PakOption) error {
 		return err
 	}
 	var paklockInfo PaklockInfo
-	if option.UsePakfileLock {
-		var err error
-		paklockInfo, err = GetPaklockInfo()
-		if err != nil && err != PakfileLockNotExist {
+	newPaklockInfo := PaklockInfo{}
+	paklockInfo, err = GetPaklockInfo()
+	if err != nil {
+		if err == PakfileLockNotExist {
+			paklockInfo = nil
+		} else {
 			return err
 		}
+	} else {
+		newPaklockInfo = paklockInfo
+	}
+	if !option.UsePakfileLock {
+		paklockInfo = nil
 	}
 
 	// Assign GetOption && Sync && Report Erorrs
@@ -50,20 +58,41 @@ func Get(option PakOption) error {
 		}
 	}
 
+	// Pick up PakPkg to be updated this time
 	pakPkgs := []PakPkg{}
-	newPaklockInfo := PaklockInfo{}
 	if len(option.PakMeter) != 0 {
 		for _, pakPkgName := range option.PakMeter {
 			described := false
+			// full-name match
 			for _, pakPkg := range allPakPkgs {
 				if pakPkg.Name == pakPkgName {
 					pakPkgs = append(pakPkgs, pakPkg)
 					described = true
 					break
-				// } else {
-					// newPaklockInfo :=
 				}
 			}
+			// partial matching
+			if !described {
+				matchedResult := []string{}
+				for _, pakPkg := range allPakPkgs {
+					pakPkgNameReg := regexp.MustCompile(pakPkgName)
+					if pakPkgNameReg.MatchString(pakPkg.Name) {
+						pakPkgs = append(pakPkgs, pakPkg)
+						described = true
+
+						matchedResult = append(matchedResult, pakPkg.Name)
+					}
+				}
+				if len(matchedResult) > 1 {
+					nameString := ""
+					for _, pkg := range matchedResult {
+						nameString = fmt.Sprintf("%s    %s\n", nameString, pkg)
+					}
+					return fmt.Errorf("More than 1 matched packages:\n%sCan't update with ambiguous package matching.", nameString)
+				}
+			}
+
+			// non-matching package
 			if !described {
 				return fmt.Errorf("Package %s Is Not Included in Pakfile.", pakPkgName)
 			}
@@ -98,7 +127,11 @@ func Get(option PakOption) error {
 		if err != nil {
 			return err
 		}
+
+		// TODO: Add tests for removing Pakfile.lock record
+		delete(newPaklockInfo, toRemovePakPkgs[i].Name)
 	}
 
+	// TODO: Add Tests for Writing Pakfile.Lock
 	return writePaklockInfo(newPaklockInfo)
 }
