@@ -19,16 +19,16 @@ func mustRun(cmd *exec.Cmd) {
 }
 
 func (s *GetSuite) SetUpTest(c *C) {
-	mustRun(exec.Command("git", "clone", "fixtures/package1", "../package1"))
-	mustRun(exec.Command("git", "clone", "fixtures/package2", "../package2"))
-	mustRun(exec.Command("git", "clone", "fixtures/package3", "../package3"))
+	mustRun(exec.Command("git", "clone", "fixtures/package1", "../../package1"))
+	mustRun(exec.Command("git", "clone", "fixtures/package2", "../../package2"))
+	mustRun(exec.Command("git", "clone", "fixtures/package3", "../../package3"))
 	mustRun(exec.Command("cp", "fixtures/Pakfile3", "Pakfile"))
 }
 
 func (s *GetSuite) TearDownTest(c *C) {
-	mustRun(exec.Command("rm", "-rf", "../package1"))
-	mustRun(exec.Command("rm", "-rf", "../package2"))
-	mustRun(exec.Command("rm", "-rf", "../package3"))
+	mustRun(exec.Command("rm", "-rf", "../../package1"))
+	mustRun(exec.Command("rm", "-rf", "../../package2"))
+	mustRun(exec.Command("rm", "-rf", "../../package3"))
 	mustRun(exec.Command("rm", "-rf", "Pakfile"))
 	mustRun(exec.Command("rm", "-rf", "Pakfile.lock"))
 }

@@ -26,7 +26,7 @@ func (this *GitPkg) Report() error {
 }
 
 func (this *GitPkg) Pak(option GetOption) (string, error) {
-	if this.State.OnPakbranch {
+	if this.State.OnPakbranch && !option.Force {
 		return this.PakbranchChecksum, nil
 	}
 
@@ -70,7 +70,7 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 
 func (this *GitPkg) Unpak(force bool) (err error) {
 	if this.State.ContainsBranchNamedPak && !this.State.OnPakbranch && !force {
-		return fmt.Errorf("Package %s Contains Branch Named pak.\n Please use -f flag or manually remove the branch in the package.\n", this.Name)
+		return fmt.Errorf("Package %s Contains Branch Named pak. Please use pak with -f flag or manually remove/rename the branch in the package.", this.Name)
 	}
 
 	// Move to Master Branch
@@ -81,9 +81,9 @@ func (this *GitPkg) Unpak(force bool) (err error) {
 
 	// Delete Pakbranch
 	if this.State.ContainsBranchNamedPak {
-		_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-d", Pakbranch))
+		_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-D", Pakbranch))
 		if err != nil {
-			return fmt.Errorf("git %s %s branch -d %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, err.Error())
+			return fmt.Errorf("git %s %s branch -D %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, err.Error())
 		}
 	}
 

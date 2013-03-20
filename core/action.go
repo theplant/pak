@@ -47,14 +47,12 @@ func Get(option PakOption) error {
 				}
 			}
 			if !described {
-				return fmt.Errorf("Package %s DO NOT Be Included in Pakfile.", pakPkgName)
+				return fmt.Errorf("Package %s Is Not Included in Pakfile.", pakPkgName)
 			}
 		}
 	} else {
 		pakPkgs = allPakPkgs
 	}
-
-	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
 
 	// Assign GetOption && Sync && Report Erorrs
 	for i := 0; i < len(pakPkgs); i++ {
@@ -70,6 +68,8 @@ func Get(option PakOption) error {
 		    return err
 		}
 	}
+
+	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
 
 	// Pak
 	newPaklockInfo := PaklockInfo{}

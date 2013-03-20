@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/theplant/pak"
+	"github.com/theplant/pak/core"
 	. "github.com/theplant/pak/share"
 )
 
@@ -18,7 +18,7 @@ func init() {
 		fmt.Printf("Usage:\n")
 		fmt.Printf("%spak init\n", spaces)
 		fmt.Printf("%spak [-uf] get\n", spaces)
-		fmt.Printf("%spak [-f] update [package]\n", spaces)
+		fmt.Printf("%spak update [package]\n", spaces)
 		// fmt.Printf("%spak open\n", spaces)
 		// fmt.Printf("%spak list\n", spaces)
 		// fmt.Printf("%spak scan\n", spaces)
@@ -34,11 +34,17 @@ func main() {
 	case "init":
 		pak.Init()
 	case "get":
-		pak.Get(PakOption{UsePakfileLock: true, Fetch: getLatestFlag, Force: forceFlag})
+		err := pak.Get(PakOption{UsePakfileLock: true, Fetch: getLatestFlag, Force: forceFlag})
+		if err != nil {
+		    fmt.Printf("%s\n", err)
+		}
 	case "update":
-		option := PakOption{UsePakfileLock: false, Fetch: true, Force: forceFlag}
+		option := PakOption{UsePakfileLock: false, Fetch: true, Force: true}
 		option.PakMeter = flag.Args()[1:]
-		pak.Get(option)
+		err := pak.Get(option)
+		if err != nil {
+		    fmt.Printf("%s\n", err)
+		}
 	default:
 		flag.Usage()
 	}
