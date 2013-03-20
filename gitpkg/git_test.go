@@ -61,8 +61,8 @@ func (s *GitPkgSuite) TestGetChecksum(c *C) {
 	c.Check(err, Not(Equals), nil)
 }
 
-func (s *GitPkgSuite) TestFetch(c *C) {
-	c.Check(testGitPkg.Fetch(), Equals, nil)
+func (s *GitPkgSuite) TestPull(c *C) {
+	c.Check(testGitPkg.Pull(), Equals, nil)
 }
 
 func (s *GitPkgSuite) TestSimplePak(c *C) {

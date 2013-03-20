@@ -56,7 +56,7 @@ func Get(option PakOption) error {
 
 	// Assign GetOption && Sync && Report Erorrs
 	for i := 0; i < len(pakPkgs); i++ {
-		pakPkgs[i].GetOption.Fetch = option.Fetch
+		pakPkgs[i].GetOption.Pull = option.Pull
 		pakPkgs[i].GetOption.Force = option.Force
 
 		err = pakPkgs[i].Sync()

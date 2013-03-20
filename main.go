@@ -34,12 +34,12 @@ func main() {
 	case "init":
 		pak.Init()
 	case "get":
-		err := pak.Get(PakOption{UsePakfileLock: true, Fetch: getLatestFlag, Force: forceFlag})
+		err := pak.Get(PakOption{UsePakfileLock: true, Pull: getLatestFlag, Force: forceFlag})
 		if err != nil {
 		    fmt.Printf("%s\n", err)
 		}
 	case "update":
-		option := PakOption{UsePakfileLock: false, Fetch: true, Force: true}
+		option := PakOption{UsePakfileLock: false, Pull: true, Force: true}
 		option.PakMeter = flag.Args()[1:]
 		err := pak.Get(option)
 		if err != nil {
