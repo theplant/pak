@@ -21,6 +21,7 @@ func mustRun(cmd *exec.Cmd) {
 func (s *GetSuite) SetUpTest(c *C) {
 	mustRun(exec.Command("git", "clone", "fixtures/package1", "../../package1"))
 	mustRun(exec.Command("git", "clone", "fixtures/package2", "../../package2"))
+	mustRun(exec.Command("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_"))
 	mustRun(exec.Command("git", "clone", "fixtures/package3", "../../package3"))
 	mustRun(exec.Command("cp", "fixtures/Pakfile3", "Pakfile"))
 }
@@ -44,7 +45,12 @@ func (s *GetSuite) TestGet(c *C) {
 		pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(val[0], val[1], val[2])})
 	}
 
-	err := Get(PakOption{[]string{}, true, true, true})
+	err := Get(PakOption{
+		PakMeter:       []string{},
+		UsePakfileLock: true,
+		Fetch:          true,
+		Force:          false,
+	})
 	c.Check(err, Equals, nil)
 
 	pakPkgs[0].Sync()
@@ -66,7 +72,12 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 		pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(val[0], val[1], val[2])})
 	}
 
-	err := Get(PakOption{[]string{"github.com/theplant/package2"}, true, true, true})
+	err := Get(PakOption{
+		PakMeter:       []string{"github.com/theplant/package2"},
+		UsePakfileLock: true,
+		Fetch:          true,
+		Force:          false,
+	})
 	c.Check(err, Equals, nil)
 
 	pakPkgs[0].Sync()
