@@ -196,3 +196,32 @@ func (s *GitPkgSuite) TestWeakUnpak(c *C) {
 	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
 	c.Check(testGitPkg.State.IsClean, Equals, true)
 }
+
+func (s *GitPkgSuite) TestPakBranchOwnership(c *C) {
+	testGitPkg.Unpak(true)
+
+	testGitPkg.Sync()
+	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, false)
+	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
+	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
+
+	exec.Command("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master").Run()
+	testGitPkg.Sync()
+	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
+	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
+
+	// Although package has both pak branch and _pak_latest_ tag, but their commit hash are different, so
+	// Pak wouldn't consider that pak branch is owned by it.
+	exec.Command("sh", "-c", "cd ../../package1 && git tag _pak_latest_ HEAD^").Run()
+	testGitPkg.Sync()
+	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
+	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
+
+	exec.Command("sh", "-c", "cd ../../package1 && git tag -d _pak_latest_ && git tag _pak_latest_").Run()
+	testGitPkg.Sync()
+	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
+	c.Check(testGitPkg.State.OwnPakbranch, Equals, true)
+}

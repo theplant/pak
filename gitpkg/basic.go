@@ -21,6 +21,7 @@ type GitPkgState struct {
 	ContainsPaktag         bool
 	// UnderPak               bool
 	OnPakbranch         bool
+	OwnPakbranch        bool
 	IsRemoteBranchExist bool
 	IsClean             bool
 }
@@ -103,13 +104,13 @@ func (this *GitPkg) Sync() (err error) {
 
 	info, err = this.GetHeadChecksum()
 	this.HeadChecksum = info
-
 	// Retrieve State
 	// Branch Named Pak
 	state, err = this.ContainsPakbranch()
 	if err != nil {
 		return
 	}
+
 	this.State.ContainsBranchNamedPak = state
 	if this.State.ContainsBranchNamedPak {
 		var checksum string
@@ -136,6 +137,8 @@ func (this *GitPkg) Sync() (err error) {
 
 		this.PaktagChecksum = checksum
 	}
+
+	this.State.OwnPakbranch = this.State.ContainsBranchNamedPak && this.State.ContainsPaktag && this.PaktagChecksum == this.PakbranchChecksum
 
 	// Pakbranch
 	// to remove UnderPak
