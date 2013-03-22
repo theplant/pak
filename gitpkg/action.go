@@ -69,7 +69,7 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 }
 
 func (this *GitPkg) Unpak(force bool) (err error) {
-	if !this.State.OwnPakbranch && !force {
+	if this.State.ContainsBranchNamedPak && !this.State.OwnPakbranch && !force {
 		return fmt.Errorf("Package %s Contains Branch Named pak. Please use pak with -f flag or manually remove/rename the branch in the package.", this.Name)
 	}
 
