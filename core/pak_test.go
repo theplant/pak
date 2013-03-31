@@ -1,4 +1,4 @@
-package pak
+package core
 
 import (
 	"fmt"

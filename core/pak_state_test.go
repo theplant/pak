@@ -1,4 +1,4 @@
-package pak
+package core
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func (s *PakStateSuite) TearDownSuite(c *C) {
 }
 
 func (s *PakStateSuite) TestParsePakfile(c *C) {
-	pakPkgs, err := parsePakfile()
+	pakPkgs, err := ParsePakfile()
 	expectedGitPkgs := []PakPkg{
 		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package1", "origin", "master")},
 		{GitPkg: gitpkg.NewGitPkg("github.com/theplant/package2", "origin", "dev")},

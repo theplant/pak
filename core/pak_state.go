@@ -1,4 +1,4 @@
-package pak
+package core
 
 import (
 	"github.com/theplant/pak/gitpkg"
@@ -36,7 +36,7 @@ func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []
 // "github.com/theplant/package2"
 // "github.com/theplant/package2@dev"
 // "github.com/theplant/package2@origin/dev"
-func parsePakfile() ([]PakPkg, error) {
+func ParsePakfile() ([]PakPkg, error) {
 	pakInfo, err := GetPakInfo()
 	if err != nil {
 		return nil, err

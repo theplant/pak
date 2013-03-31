@@ -1,4 +1,4 @@
-package pak
+package core
 
 import (
 	"errors"
@@ -23,7 +23,7 @@ func Init() error {
 
 func Get(option PakOption) error {
 	// Parse
-	allPakPkgs, err := parsePakfile()
+	allPakPkgs, err := ParsePakfile()
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func Get(option PakOption) error {
 	if len(option.PakMeter) != 0 {
 		for _, pakPkgName := range option.PakMeter {
 			described := false
-			// full-name match
+			// full-name matching
 			for _, pakPkg := range allPakPkgs {
 				if pakPkg.Name == pakPkgName {
 					pakPkgs = append(pakPkgs, pakPkg)
