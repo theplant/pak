@@ -50,8 +50,22 @@ func Get(option PakOption) error {
 
 		err = allPakPkgs[i].Sync()
 		if err != nil {
-			return err
+			// go get package when the package is not downloaded before
+			if !allPakPkgs[i].State.IsPkgExist {
+				err = allPakPkgs[i].GoGet()
+				if err != nil {
+				    return err
+				}
+
+				err = allPakPkgs[i].Sync()
+				if err != nil {
+				    return err
+				}
+			} else {
+				return err
+			}
 		}
+
 		err = allPakPkgs[i].Report()
 		if err != nil {
 			return err

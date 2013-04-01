@@ -19,7 +19,6 @@ type GitPkgState struct {
 	UnderGitControl        bool
 	ContainsBranchNamedPak bool
 	ContainsPaktag         bool
-	// UnderPak               bool
 	OnPakbranch         bool
 	OwnPakbranch        bool
 	IsRemoteBranchExist bool
@@ -70,6 +69,7 @@ func getGitWorkTreeOpt(pkgPath string) string {
 	return fmt.Sprintf("--work-tree=%s", pkgPath)
 }
 
+// TODO: refactor, make use of stderr instead of using hard-coded err info
 func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
 	cmd.Stdout = &out
 	err = cmd.Run()
@@ -140,16 +140,6 @@ func (this *GitPkg) Sync() (err error) {
 
 	this.State.OwnPakbranch = this.State.ContainsBranchNamedPak && this.State.ContainsPaktag && this.PaktagChecksum == this.PakbranchChecksum
 
-	// Pakbranch
-	// to remove UnderPak
-	// state = false
-	// if this.State.ContainsBranchNamedPak {
-	//     if this.State.ContainsPaktag {
-	//         state = this.PaktagChecksum == this.PakbranchChecksum
-	//     }
-	// }
-	// this.State.UnderPak = state
-
 	// on Pakbranch
 	// TODO: add OnPakbranch Test(same checksum but different refs)
 	state = false
@@ -181,11 +171,8 @@ func (this *GitPkg) IsPkgExist() (bool, error) {
 	_, err := os.Stat(this.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
-		} else {
 			return false, err
 		}
-
 	}
 
 	return true, nil
@@ -259,12 +246,25 @@ func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 }
 
 func (this *GitPkg) GetHeadRefName() (string, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "symbolic-ref", "HEAD"))
+	cmd := exec.Command("git", this.GitDir, this.WorkTree, "symbolic-ref", "HEAD")
+	out, errOut := bytes.Buffer{}, bytes.Buffer{}
+	cmd.Stdout = &out
+	cmd.Stderr = &errOut
+	err := cmd.Run()
+
+	refs := ""
+	// TODO: add tests
 	if err != nil {
-		return "", fmt.Errorf("git %s %s symbolic-ref HEAD", this.GitDir, this.WorkTree)
+		if errOut.String() == "fatal: ref HEAD is not a symbolic ref\n" {
+			refs = "no branch"
+			err = nil
+		} else {
+			return "", fmt.Errorf("git %s %s symbolic-ref HEAD", this.GitDir, this.WorkTree)
+		}
+	} else {
+		refs = out.String()
 	}
 
-	refs := out.String()
 	return refs[:len(refs)-1], err
 }
 
@@ -276,7 +276,7 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 
 	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", "--hash", headBranch))
 	if err != nil {
-		return "", fmt.Errorf("git %s %s symbolic-ref HEAD", this.GitDir, this.WorkTree)
+		return "", fmt.Errorf("git %s %s show-ref --hash %s", this.GitDir, this.WorkTree, headBranch)
 	}
 
 	refs := out.String()

@@ -25,6 +25,7 @@ func Check() {
 	}
 
 	errors := [][2]string{}
+	warnings := [][2]string{}
 	for _, pakPkg := range allPakPkgs {
 		err := pakPkg.Sync()
 		if err != nil {
@@ -39,13 +40,30 @@ func Check() {
 		}
 
 		if !pakPkg.State.OnPakbranch {
-			errors = append(errors, [2]string{pakPkg.Name, "Not on Pak Branch."})
+			// errors = append(errors, [2]string{pakPkg.Name, "Not on Pak Branch."})
+			warnings = append(warnings, [2]string{pakPkg.Name, "Not on Pak Branch."})
 			continue
 		}
 
 		if pakPkg.PakbranchChecksum != checksum {
 			errors = append(errors, [2]string{pakPkg.Name, "Inconsistent with Pakfile.lock."})
 			continue
+		}
+	}
+
+	if len(warnings) > 0 {
+		paddingLen := 0
+		for _, info := range errors {
+			if len(info[0]) > paddingLen {
+				paddingLen = len(info[0])
+			}
+		}
+
+		color.Println("Warning: There are packages that are out of the control of Pak:")
+		paddingStr := fmt.Sprintf(`@g%%-%d`, paddingLen)
+		for _, warning := range warnings {
+			color.Printf(paddingStr+`s @w-> @r%s`, warning[0], warning[1])
+			fmt.Println()
 		}
 	}
 
