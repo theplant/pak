@@ -51,6 +51,24 @@ Usage:
 
 ```
 
+### Auto-Check
+
+This feature is used to force your app dependencies to be up-to-date with Pakfile and Pakfile.lock.
+
+In your package, use it as bellow:
+
+```go
+import "github.com/theplant/pak/check"
+
+func init() {
+    check.Check()
+}
+```
+
+And each time you start your app, pak will auto check the dependencies of your app. if your app is not consistent with Pakfile and Pakfile.lock, it will force your app to exit. Like this:
+
+
+
 ## Others
 
 Curretnly, Pak just support git. New commands and other version control system might be supported in the future.
