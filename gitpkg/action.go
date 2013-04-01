@@ -26,7 +26,8 @@ func (this *GitPkg) Report() error {
 }
 
 func (this *GitPkg) Pak(option GetOption) (string, error) {
-	if this.State.OnPakbranch && !option.Force {
+	// TODO: add tests
+	if this.State.OnPakbranch && this.PakbranchChecksum == option.Checksum && !option.Force {
 		// Go Get Package
 		err := this.GoGet()
 		if err != nil {

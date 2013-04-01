@@ -19,10 +19,10 @@ type GitPkgState struct {
 	UnderGitControl        bool
 	ContainsBranchNamedPak bool
 	ContainsPaktag         bool
-	OnPakbranch         bool
-	OwnPakbranch        bool
-	IsRemoteBranchExist bool
-	IsClean             bool
+	OnPakbranch            bool
+	OwnPakbranch           bool
+	IsRemoteBranchExist    bool
+	IsClean                bool
 }
 
 type GitPkg struct {
@@ -138,7 +138,9 @@ func (this *GitPkg) Sync() (err error) {
 		this.PaktagChecksum = checksum
 	}
 
-	this.State.OwnPakbranch = this.State.ContainsBranchNamedPak && this.State.ContainsPaktag && this.PaktagChecksum == this.PakbranchChecksum
+	this.State.OwnPakbranch = this.State.ContainsBranchNamedPak &&
+		this.State.ContainsPaktag &&
+		this.PaktagChecksum == this.PakbranchChecksum
 
 	// on Pakbranch
 	// TODO: add OnPakbranch Test(same checksum but different refs)

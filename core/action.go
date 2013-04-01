@@ -54,12 +54,12 @@ func Get(option PakOption) error {
 			if !allPakPkgs[i].State.IsPkgExist {
 				err = allPakPkgs[i].GoGet()
 				if err != nil {
-				    return err
+					return err
 				}
 
 				err = allPakPkgs[i].Sync()
 				if err != nil {
-				    return err
+					return err
 				}
 			} else {
 				return err
