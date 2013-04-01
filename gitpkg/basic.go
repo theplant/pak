@@ -283,11 +283,11 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 	return refs[:len(refs)-1], err
 }
 
-// func (this *GitPkg) Install() error {
-// 	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", "--hash", headBranch))
-// 	if err != nil {
-// 		// err = fmt.Errorf("go", "install", "")
-// 	}
-//
-// 	return err
-// }
+func (this *GitPkg) GoGet() error {
+	_, err := RunCmd(exec.Command("go", "get", this.Name))
+	if err != nil {
+		err = fmt.Errorf("go get %s: %s", this.Name, "Can't Succeed.")
+	}
+
+	return err
+}

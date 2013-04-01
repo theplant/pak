@@ -27,6 +27,12 @@ func (this *GitPkg) Report() error {
 
 func (this *GitPkg) Pak(option GetOption) (string, error) {
 	if this.State.OnPakbranch && !option.Force {
+		// Go Get Package
+		err := this.GoGet()
+		if err != nil {
+			return "", err
+		}
+
 		return this.PakbranchChecksum, nil
 	}
 
@@ -63,6 +69,12 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", Paktag, checksum))
 	if err != nil {
 		err = fmt.Errorf("git %s %s tag %s %s\n%s\n", this.GitDir, this.WorkTree, Paktag, checksum, err.Error())
+	}
+
+	// Go Get Package
+	err = this.GoGet()
+	if err != nil {
+		return "", err
 	}
 
 	return checksum, err
