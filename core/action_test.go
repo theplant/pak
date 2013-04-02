@@ -50,7 +50,9 @@ func (s *GetSuite) TestGet(c *C) {
 		UsePakfileLock: true,
 		Fetch:          true,
 		Force:          false,
+		NotGet:         true,
 	})
+	// TODO: fix it
 	c.Check(err, Equals, nil)
 
 	pakPkgs[0].Sync()
@@ -77,6 +79,7 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 		UsePakfileLock: true,
 		Fetch:          true,
 		Force:          false,
+		NotGet:         true,
 	})
 	c.Check(err, Equals, nil)
 

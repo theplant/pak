@@ -45,8 +45,15 @@ func Get(option PakOption) error {
 
 	// Assign GetOption && Sync && Report Erorrs
 	for i := 0; i < len(allPakPkgs); i++ {
+		// TODO: remove Fetch option
 		allPakPkgs[i].GetOption.Fetch = option.Fetch
 		allPakPkgs[i].GetOption.Force = option.Force
+		allPakPkgs[i].GetOption.NotGet = option.NotGet
+
+		err = allPakPkgs[i].GitPkg.Fetch()
+		if err != nil {
+			return err
+		}
 
 		err = allPakPkgs[i].Sync()
 		if err != nil {

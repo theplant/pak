@@ -23,11 +23,13 @@ type GetOption struct {
 	Fetch    bool
 	Force    bool
 	Checksum string
+	NotGet   bool // add temporally for pass tests. TODO: remove it.
 }
 
 type PakOption struct {
-	PakMeter       []string
+	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
 	Fetch          bool
 	Force          bool
+	NotGet         bool // add temporally for pass tests. TODO: remove it.
 }

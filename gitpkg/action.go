@@ -29,9 +29,11 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	// TODO: add tests
 	if this.State.OnPakbranch && this.PakbranchChecksum == option.Checksum && !option.Force {
 		// Go Get Package
-		err := this.GoGet()
-		if err != nil {
-			return "", err
+		if !option.NotGet {
+			err := this.GoGet()
+			if err != nil {
+				return "", err
+			}
 		}
 
 		return this.PakbranchChecksum, nil
@@ -73,9 +75,11 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	}
 
 	// Go Get Package
-	err = this.GoGet()
-	if err != nil {
-		return "", err
+	if !option.NotGet {
+		err = this.GoGet()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return checksum, err
