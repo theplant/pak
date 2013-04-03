@@ -48,12 +48,7 @@ func Get(option PakOption) error {
 		// TODO: remove Fetch option
 		allPakPkgs[i].GetOption.Fetch = option.Fetch
 		allPakPkgs[i].GetOption.Force = option.Force
-		allPakPkgs[i].GetOption.NotGet = option.NotGet
-
-		err = allPakPkgs[i].GitPkg.Fetch()
-		if err != nil {
-			return err
-		}
+		allPakPkgs[i].GetOption.NotGet = option.NotGet // added temporally. TODO: refactor
 
 		err = allPakPkgs[i].Sync()
 		if err != nil {
@@ -72,6 +67,22 @@ func Get(option PakOption) error {
 				return err
 			}
 		}
+
+		// TODO: add tests
+		// this enable pak to check pak even the local package repo doesn't contain
+		// the remote branch.
+		// for:
+		// 新bug：执行 pak get 时，Pak 没有先执行 fetch 就直接 checkout pak HASH，导致出现无法checkout的错误。重现方法：
+		// * 把package的远程分支删除 git -r -d origin/master
+		// * 回到项目执行 pak get
+		// * 出现错误：`github.com/xxx` does not contain reference `refs/remotes/origin/master`
+		//
+		err = allPakPkgs[i].GitPkg.Fetch()
+		if err != nil {
+			return err
+		}
+
+		allPakPkgs[i].GitPkg.Sync()
 
 		err = allPakPkgs[i].Report()
 		if err != nil {

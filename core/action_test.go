@@ -52,7 +52,6 @@ func (s *GetSuite) TestGet(c *C) {
 		Force:          false,
 		NotGet:         true,
 	})
-	// TODO: fix it
 	c.Check(err, Equals, nil)
 
 	pakPkgs[0].Sync()
@@ -62,6 +61,35 @@ func (s *GetSuite) TestGet(c *C) {
 	c.Check(pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
 	c.Check(pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
 }
+
+// func (s *GetSuite) TestGet(c *C) {
+// 	pakPkgs := []PakPkg{}
+// 	pkgsFixtures := [][]string{
+// 		{"github.com/theplant/package1", "origin", "master"},
+// 		{"github.com/theplant/package2", "origin", "dev"},
+// 		{"github.com/theplant/package3", "origin", "master"},
+// 	}
+// 	for _, val := range pkgsFixtures {
+// 		pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(val[0], val[1], val[2])})
+// 	}
+//
+// 	err := Get(PakOption{
+// 		PakMeter:       []string{},
+// 		UsePakfileLock: true,
+// 		Fetch:          true,
+// 		Force:          false,
+// 		NotGet:         true,
+// 	})
+// 	// TODO: fix it
+// 	c.Check(err, Equals, nil)
+//
+// 	pakPkgs[0].Sync()
+// 	pakPkgs[1].Sync()
+// 	pakPkgs[2].Sync()
+// 	c.Check(pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
+// 	c.Check(pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
+// 	c.Check(pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+// }
 
 func (s *GetSuite) TestGetWithPakMeter(c *C) {
 	pakPkgs := []PakPkg{}
