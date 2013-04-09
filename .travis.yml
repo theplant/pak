@@ -4,3 +4,7 @@ install:
   - go get github.com/wsxiaoys/terminal/color
   - go get launchpad.net/gocheck
   - go get launchpad.net/goyaml
+notifications:
+  email:
+    - bom.d.van@gmail.com
+    - shaoshing@me.com
