@@ -288,7 +288,7 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 func (this *GitPkg) GoGet() error {
 	_, err := RunCmd(exec.Command("go", "get", this.Name))
 	if err != nil {
-		err = fmt.Errorf("go get %s: %s", this.Name, "Can't Succeed.")
+		err = fmt.Errorf("go get %s: %s", this.Name, "Can't succeed: %s", err.Error())
 	}
 
 	return err
