@@ -8,3 +8,6 @@ notifications:
   email:
     - bom.d.van@gmail.com
     - shaoshing@me.com
+script:
+	- go test github.com/theplant/pak/gitpkg
+	- go test github.com/theplant/pak/core
