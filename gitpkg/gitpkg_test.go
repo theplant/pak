@@ -52,6 +52,10 @@ func (s *GitPkgSuite) TestClean(c *C) {
 	c.Check(clean, Equals, false)
 }
 
+func (s *GitPkgSuite) TestGetHeadRefName(c *C) {
+
+}
+
 func (s *GitPkgSuite) TestGetChecksum(c *C) {
 	checksum, _ := testGitPkg.GetChecksum("refs/heads/master")
 	c.Check(checksum, Equals, testGpMasterChecksum)
