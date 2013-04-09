@@ -69,14 +69,6 @@ func getGitWorkTreeOpt(pkgPath string) string {
 	return fmt.Sprintf("--work-tree=%s", pkgPath)
 }
 
-// TODO: refactor, make use of stderr instead of using hard-coded err info
-func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
-	cmd.Stdout = &out
-	err = cmd.Run()
-
-	return
-}
-
 func (this *GitPkg) Sync() (err error) {
 	// Should be Under the Control of Git
 	var state bool
@@ -292,4 +284,30 @@ func (this *GitPkg) GoGet() error {
 	}
 
 	return err
+}
+
+// func (this *GitPkg) Run(params ...string) (exec.Command, error) {
+// 	fullParams := append([]string{"git", this.GitDir, this.WorkTree}, params...)
+// 	cmd := exec.Command(fullParams...)
+//
+// 	stdout := bytes.Buffer{}
+// 	stderr := bytes.Buffer{}
+// 	cmd.Stdout = &stdout
+// 	cmd.Stderr = &stderr
+//
+// 	err := cmd.Run()
+// 	if err != nil {
+// 	    err = fmt.Errorf("Error of git %s: %s", params, err.Error())
+// 		return cmd, err
+// 	}
+//
+// 	return cmd, nil
+// }
+
+// TODO: refactor, make use of stderr instead of using hard-coded err info
+func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
+	cmd.Stdout = &out
+	err = cmd.Run()
+
+	return
 }

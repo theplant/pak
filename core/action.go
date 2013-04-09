@@ -90,6 +90,7 @@ func Get(option PakOption) error {
 		}
 	}
 
+	// For: pak update package
 	// Pick up PakPkg to be updated this time
 	pakPkgs := []PakPkg{}
 	if len(option.PakMeter) != 0 {
@@ -133,7 +134,7 @@ func Get(option PakOption) error {
 		pakPkgs = allPakPkgs
 	}
 
-	// categorize pakpkgs
+	// Categorize Pakpkgs
 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
 
 	// Pak dependencies
