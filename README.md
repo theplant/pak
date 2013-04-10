@@ -1,5 +1,7 @@
 # Pak
 
+[![Build Status](https://travis-ci.org/theplant/pak.png?branch=master)](https://travis-ci.org/theplant/pak)
+
 Whether Pak is useful or not depends on the development strategy that you and your teammates take. When you are developing a project, and you divides it into a few smaller projects, like bellow:
 
 	github.com/team/project
