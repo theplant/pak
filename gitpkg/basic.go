@@ -44,29 +44,17 @@ type GitPkg struct {
 }
 
 func NewGitPkg(name, remote, branch string) (gitPkg GitPkg) {
-	gitPkg.Name = name
-	gitPkg.Remote = remote
-	gitPkg.Branch = branch
+	gitPkg.Name 		= name
+	gitPkg.Remote 		= remote
+	gitPkg.Branch 		= branch
 	gitPkg.RemoteBranch = fmt.Sprintf("refs/remotes/%s/%s", remote, branch)
-	gitPkg.Pakbranch = "refs/heads/" + Pakbranch
-	gitPkg.Paktag = "refs/tags/" + Paktag
-	gitPkg.Path = getGitPkgPath(name)
-	gitPkg.WorkTree = getGitWorkTreeOpt(gitPkg.Path)
-	gitPkg.GitDir = getGitDirOpt(gitPkg.Path)
+	gitPkg.Pakbranch 	= "refs/heads/" + Pakbranch
+	gitPkg.Paktag 		= "refs/tags/" + Paktag
+	gitPkg.Path 		= fmt.Sprintf("%s/src/%s", Gopath, name)
+	gitPkg.WorkTree 	= fmt.Sprintf("--work-tree=%s", gitPkg.Path)
+	gitPkg.GitDir 		= fmt.Sprintf("--git-dir=%s/.git", gitPkg.Path)
 
 	return
-}
-
-func getGitPkgPath(pkg string) string {
-	return fmt.Sprintf("%s/src/%s", Gopath, pkg)
-}
-
-func getGitDirOpt(pkgPath string) string {
-	return fmt.Sprintf("--git-dir=%s/.git", pkgPath)
-}
-
-func getGitWorkTreeOpt(pkgPath string) string {
-	return fmt.Sprintf("--work-tree=%s", pkgPath)
 }
 
 func (this *GitPkg) Sync() (err error) {
@@ -173,9 +161,9 @@ func (this *GitPkg) IsPkgExist() (bool, error) {
 }
 
 func (this *GitPkg) IsUnderGitControl() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "rev-parse", "--is-inside-work-tree"))
+	_, err := this.Run("rev-parse", "--is-inside-work-tree")
 	if err != nil {
-		return false, fmt.Errorf("Package %s Is Not Git Tracked\n%s", this.Name, out.String())
+		return false, fmt.Errorf("Package %s Is Not Git Tracked\n", this.Name)
 	}
 
 	return true, nil
@@ -183,83 +171,76 @@ func (this *GitPkg) IsUnderGitControl() (bool, error) {
 
 // Not to check out the pakbranch, but just a branch named refs/heads/pak
 func (this *GitPkg) ContainsPakbranch() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
+	cmd, err := this.Run("show-ref")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
+	    return false, err
 	}
 
-	return strings.Contains(out.String(), " "+this.Pakbranch+"\n"), nil
+	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.Pakbranch+"\n"), nil
 }
 
 func (this *GitPkg) ContainsPaktag() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
+	cmd, err := this.Run("show-ref")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
+	    return false, err
 	}
 
-	return strings.Contains(out.String(), " "+this.Paktag+"\n"), nil
+	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.Paktag+"\n"), nil
 }
 
 func (this *GitPkg) IsClean() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "status", "--porcelain", "--untracked-files=no"))
+	cmd, err := this.Run("status", "--porcelain", "--untracked-files=no")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s status --porcelain --untracked-files=no\n%s", this.GitDir, this.WorkTree, err.Error())
+	    return false, err
 	}
 
-	return out.String() == "", nil
+	return cmd.Stdout.(*bytes.Buffer).String() == "", nil
 }
 
 func (this *GitPkg) GetChecksum(ref string) (string, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", ref, "--hash"))
+	cmd, err := this.Run("show-ref", ref, "--hash")
 	if err != nil {
-		return "", fmt.Errorf("git %s %s show-ref %s --hash\n%s", this.GitDir, this.WorkTree, ref, err.Error())
+	    return "", err
 	}
 
-	checksum := out.String()[:40]
+	checksum := cmd.Stdout.(*bytes.Buffer).String()[:40]
 
 	return checksum, nil
 }
 
 func (this *GitPkg) Fetch() error {
-	// _, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch", this.Remote, this.Branch))
-	_, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch"))
-	if err != nil {
-		err = fmt.Errorf("git %s %s fetch\n%s", this.GitDir, this.WorkTree, err.Error())
-	}
+	_, err := this.Run("fetch")
 
 	return err
 }
 
 func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
+	cmd, err := this.Run("show-ref")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
+	    return false, err
 	}
 
-	return strings.Contains(out.String(), " "+this.RemoteBranch+"\n"), nil
+	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.RemoteBranch+"\n"), nil
 }
 
 func (this *GitPkg) GetHeadRefName() (string, error) {
-	cmd := exec.Command("git", this.GitDir, this.WorkTree, "symbolic-ref", "HEAD")
-	out, errOut := bytes.Buffer{}, bytes.Buffer{}
-	cmd.Stdout = &out
-	cmd.Stderr = &errOut
-	err := cmd.Run()
+	cmd, err := this.Run("symbolic-ref", "HEAD")
 
 	refs := ""
 	// TODO: add tests
 	if err != nil {
-		if errOut.String() == "fatal: ref HEAD is not a symbolic ref\n" {
+		// TODO: find other way to tell out no branch
+		if cmd.Stderr.(*bytes.Buffer).String() == "fatal: ref HEAD is not a symbolic ref\n" {
 			refs = "no branch"
 			err = nil
 		} else {
-			return "", fmt.Errorf("git %s %s symbolic-ref HEAD", this.GitDir, this.WorkTree)
+			return "", err
 		}
 	} else {
-		refs = out.String()
+		refs = cmd.Stdout.(*bytes.Buffer).String()
 	}
 
-	return refs[:len(refs)-1], err
+	return refs[:len(refs)-1], nil
 }
 
 func (this *GitPkg) GetHeadChecksum() (string, error) {
@@ -268,46 +249,41 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 		return "", err
 	}
 
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", "--hash", headBranch))
+	cmd, err := this.Run("show-ref", "--hash", headBranch)
 	if err != nil {
-		return "", fmt.Errorf("git %s %s show-ref --hash %s", this.GitDir, this.WorkTree, headBranch)
+		return "", err
 	}
 
-	refs := out.String()
+	refs := cmd.Stdout.(*bytes.Buffer).String()
+
 	return refs[:len(refs)-1], err
 }
 
 func (this *GitPkg) GoGet() error {
-	_, err := RunCmd(exec.Command("go", "get", this.Name))
+	cmd := exec.Command("go", "get", this.Name)
+	cmd.Stderr = &bytes.Buffer{}
+	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("go get %s: %s", this.Name, "Can't succeed: %s", err.Error())
+		err = fmt.Errorf("go get %s: %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
 	}
 
 	return err
 }
 
-// func (this *GitPkg) Run(params ...string) (exec.Command, error) {
-// 	fullParams := append([]string{"git", this.GitDir, this.WorkTree}, params...)
-// 	cmd := exec.Command(fullParams...)
-//
-// 	stdout := bytes.Buffer{}
-// 	stderr := bytes.Buffer{}
-// 	cmd.Stdout = &stdout
-// 	cmd.Stderr = &stderr
-//
-// 	err := cmd.Run()
-// 	if err != nil {
-// 	    err = fmt.Errorf("Error of git %s: %s", params, err.Error())
-// 		return cmd, err
-// 	}
-//
-// 	return cmd, nil
-// }
+func (this *GitPkg) Run(params ...string) (*exec.Cmd, error) {
+	fullParams := append([]string{this.GitDir, this.WorkTree}, params...)
+	cmd := exec.Command("git", fullParams...)
 
-// TODO: refactor, make use of stderr instead of using hard-coded err info
-func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
-	cmd.Stdout = &out
-	err = cmd.Run()
+	stdout := bytes.Buffer{}
+	stderr := bytes.Buffer{}
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
-	return
+	err := cmd.Run()
+	if err != nil {
+	    err = fmt.Errorf("Error\n%s: %s => %s", this.Name, params, err.Error())
+		return cmd, err
+	}
+
+	return cmd, nil
 }

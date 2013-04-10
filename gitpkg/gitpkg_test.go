@@ -15,9 +15,9 @@ var testGitPkg GitPkg
 var testGpMasterChecksum = "11b174bd5acbf990687e6b068c97378d3219de04"
 
 func (s *GitPkgSuite) SetUpTest(c *C) {
-	testGitPkg = NewGitPkg("github.com/theplant/package1", "origin", "master")
+	testGitPkg = NewGitPkg("github.com/theplant/gitpkg-test-package", "origin", "master")
 	var err error
-	err = exec.Command("git", "clone", "fixtures/package1", "../../package1").Run()
+	err = exec.Command("git", "clone", "fixtures/package1", "../../gitpkg-test-package").Run()
 	if err != nil {
 		panic(fmt.Errorf("GitPkgSuite.SetUpSuite: %s", err.Error()))
 	}
@@ -30,20 +30,20 @@ func (s *GitPkgSuite) SetUpTest(c *C) {
 
 func (s *GitPkgSuite) TearDownTest(c *C) {
 	var err error
-	err = (exec.Command("rm", "-rf", "../../package1").Run())
+	err = (exec.Command("rm", "-rf", "../../gitpkg-test-package").Run())
 	if err != nil {
 		panic(err)
 	}
 }
 
 func (s *GitPkgSuite) TestClean(c *C) {
-	// clean
+	// Clean
 	clean, _ := testGitPkg.IsClean()
 	c.Check(clean, Equals, true)
 
-	// not clean
+	// Not Clean
 	var err error
-	err = exec.Command("mv", "../../package1/file3", "../../package1/file3m").Run()
+	err = exec.Command("mv", "../../gitpkg-test-package/file3", "../../gitpkg-test-package/file3m").Run()
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +53,9 @@ func (s *GitPkgSuite) TestClean(c *C) {
 }
 
 func (s *GitPkgSuite) TestGetHeadRefName(c *C) {
-
+	name, err := testGitPkg.GetHeadRefName()
+	c.Check(err, Equals, nil)
+	c.Check(name, Equals, "refs/heads/master")
 }
 
 func (s *GitPkgSuite) TestGetChecksum(c *C) {
@@ -66,7 +68,31 @@ func (s *GitPkgSuite) TestGetChecksum(c *C) {
 }
 
 func (s *GitPkgSuite) TestFetch(c *C) {
+	headChecksum, _ := testGitPkg.GetHeadChecksum()
+	c.Check(headChecksum, Equals, testGpMasterChecksum)
+
+	err := exec.Command("cp", "-r", "fixtures/package1", "fixtures/package1-backup").Run()
+	if err != nil {
+	    c.Error(err)
+	}
+	err = exec.Command("git", "--git-dir=fixtures/updated-package1/.git", "--work-tree=fixtures/updated-package1", "push", "origin", "master").Run()
+	if err != nil {
+	    c.Error(err)
+	}
+
 	c.Check(testGitPkg.Fetch(), Equals, nil)
+
+	headChecksum, _ = testGitPkg.GetChecksum("refs/remotes/origin/master")
+	c.Check(headChecksum, Equals, "149b1e18aa3e118a804ccddeefbb6e64b4a5807e")
+
+	err = exec.Command("rm", "-rf", "fixtures/package1").Run()
+	if err != nil {
+	    c.Error(err)
+	}
+	err = exec.Command("mv", "fixtures/package1-backup", "fixtures/package1").Run()
+	if err != nil {
+	    c.Error(err)
+	}
 }
 
 func (s *GitPkgSuite) TestSimplePak(c *C) {
@@ -209,7 +235,7 @@ func (s *GitPkgSuite) TestPakBranchOwnership(c *C) {
 	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
 	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
 
-	exec.Command("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master").Run()
+	exec.Command("sh", "-c", "cd ../../gitpkg-test-package && git checkout -b pak && git checkout master").Run()
 	testGitPkg.Sync()
 	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
 	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
@@ -217,13 +243,13 @@ func (s *GitPkgSuite) TestPakBranchOwnership(c *C) {
 
 	// Although package has both pak branch and _pak_latest_ tag, but their commit hash are different, so
 	// Pak wouldn't consider that pak branch is owned by it.
-	exec.Command("sh", "-c", "cd ../../package1 && git tag _pak_latest_ HEAD^").Run()
+	exec.Command("sh", "-c", "cd ../../gitpkg-test-package && git tag _pak_latest_ HEAD^").Run()
 	testGitPkg.Sync()
 	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
 	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
 	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
 
-	exec.Command("sh", "-c", "cd ../../package1 && git tag -d _pak_latest_ && git tag _pak_latest_").Run()
+	exec.Command("sh", "-c", "cd ../../gitpkg-test-package && git tag -d _pak_latest_ && git tag _pak_latest_").Run()
 	testGitPkg.Sync()
 	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
 	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)

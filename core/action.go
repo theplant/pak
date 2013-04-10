@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 )
 

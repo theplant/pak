@@ -3,7 +3,7 @@ package gitpkg
 import (
 	"fmt"
 	. "github.com/theplant/pak/share"
-	"os/exec"
+	// "os/exec"
 )
 
 // Usage of Gitpkg
@@ -58,9 +58,8 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	}
 
 	// Create Pakbranch
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "-b", Pakbranch, ref))
+	_, err = this.Run("checkout", "-b", Pakbranch, ref)
 	if err != nil {
-		err = fmt.Errorf("git %s %s checkout -b %s %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, ref, err.Error())
 		return "", err
 	}
 
@@ -69,9 +68,9 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", Paktag, checksum))
+	_, err = this.Run("tag", Paktag, checksum)
 	if err != nil {
-		err = fmt.Errorf("git %s %s tag %s %s\n%s\n", this.GitDir, this.WorkTree, Paktag, checksum, err.Error())
+		return "", err
 	}
 
 	// Go Get Package
@@ -91,25 +90,22 @@ func (this *GitPkg) Unpak(force bool) (err error) {
 	}
 
 	// Move to Master Branch
-	_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "checkout", "master"))
+	_, err = this.Run("checkout", "master")
 	if err != nil {
-		return fmt.Errorf("git %s %s checkout master\n%s", this.GitDir, this.WorkTree, err.Error())
+		return err
 	}
 
 	// Delete Pakbranch
 	if this.State.ContainsBranchNamedPak {
-		_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "branch", "-D", Pakbranch))
+		_, err = this.Run("branch", "-D", Pakbranch)
 		if err != nil {
-			return fmt.Errorf("git %s %s branch -D %s\n%s\n", this.GitDir, this.WorkTree, Pakbranch, err.Error())
+			return err
 		}
 	}
 
 	// Delete Paktag
 	if this.State.ContainsPaktag {
-		_, err = RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "tag", "-d", Paktag))
-		if err != nil {
-			err = fmt.Errorf("git %s %s tag -d %s\n%s\n", this.GitDir, this.WorkTree, Paktag, err.Error())
-		}
+		_, err = this.Run("tag", "-d", Paktag)
 	}
 
 	return
