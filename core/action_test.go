@@ -62,7 +62,7 @@ func (s *GetSuite) TearDownTest(c *C) {
 	mustRun("rm", "-rf", "../../package2")
 	mustRun("rm", "-rf", "../../package3")
 	mustRun("rm", "-rf", "Pakfile")
-	// mustRun("rm", "-rf", "Pakfile.lock")
+	mustRun("rm", "-rf", "Pakfile.lock")
 }
 
 func (s *GetSuite) TestGet(c *C) {
@@ -184,4 +184,19 @@ func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
 	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+}
+
+func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
+	mustRun("rm", "-rf", "../../package1")
+
+	err := Get(PakOption{
+		PakMeter:       []string{"github.com/theplant/package2"},
+		UsePakfileLock: false,
+		Fetch:          true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	s.pakPkgs[1].Sync()
+	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
 }

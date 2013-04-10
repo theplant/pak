@@ -30,10 +30,22 @@ func (s *GitPkgSuite) SetUpTest(c *C) {
 
 func (s *GitPkgSuite) TearDownTest(c *C) {
 	var err error
-	err = (exec.Command("rm", "-rf", "../../gitpkg-test-package").Run())
+	err = exec.Command("rm", "-rf", "../../gitpkg-test-package").Run()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (s *GitPkgSuite) TestIsPkgExist(c *C) {
+	exist, err := testGitPkg.IsPkgExist()
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, true)
+
+	exec.Command("rm", "-rf", "../../gitpkg-test-package").Run()
+
+	exist, err = testGitPkg.IsPkgExist()
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, false)
 }
 
 func (s *GitPkgSuite) TestClean(c *C) {

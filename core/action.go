@@ -44,12 +44,6 @@ func Get(option PakOption) error {
 		paklockInfo = nil
 	}
 
-	// Assign GetOption && Sync && Report Erorrs
-	err = loadPkgs(&allPakPkgs, option)
-	if err != nil {
-	    return err
-	}
-
 	// For: pak update package
 	// Pick up PakPkg to be updated this time
 	pakPkgs := []PakPkg{}
@@ -72,12 +66,17 @@ func Get(option PakOption) error {
 		pakPkgs = allPakPkgs
 	}
 
-	err = setDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
+	// Assign GetOption && Sync && Report Erorrs
+	err = loadPkgs(&pakPkgs, option)
 	if err != nil {
 	    return err
 	}
 
-	// TODO: Add Tests for Writing Pakfile.Lock
+	err = pakDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
+	if err != nil {
+	    return err
+	}
+
 	return writePaklockInfo(newPaklockInfo)
 }
 
@@ -87,25 +86,19 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 		(*allPakPkgs)[i].GetOption.Fetch = option.Fetch
 		(*allPakPkgs)[i].GetOption.Force = option.Force
 
-		err = (*allPakPkgs)[i].Sync()
+		// Go Get Package when the Package is not Downloaded Before
+		isPkgExist, err := (*allPakPkgs)[i].IsPkgExist()
 		if err != nil {
-			// go get package when the package is not downloaded before
-			if !(*allPakPkgs)[i].State.IsPkgExist {
-				err = (*allPakPkgs)[i].GoGet()
-				if err != nil {
-					return err
-				}
-
-				err = (*allPakPkgs)[i].Sync()
-				if err != nil {
-					return err
-				}
-			} else {
+		    return err
+		}
+		if !isPkgExist {
+			err = (*allPakPkgs)[i].GoGet()
+			if err != nil {
 				return err
 			}
 		}
 
-		// fetch before hand can make sure that the package contains up-to-date remote branch
+		// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
 		err = (*allPakPkgs)[i].GitPkg.Fetch()
 		if err != nil {
 			return err
@@ -163,7 +156,7 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 	return matched, matchedPakPkg, nil
 }
 
-func setDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *PaklockInfo) error {
+func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *PaklockInfo) error {
 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
 
 	var (

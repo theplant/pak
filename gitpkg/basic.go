@@ -154,6 +154,8 @@ func (this *GitPkg) IsPkgExist() (bool, error) {
 	_, err := os.Stat(this.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			return false, nil
+		} else {
 			return false, err
 		}
 	}
@@ -287,7 +289,7 @@ func (this *GitPkg) Run(params ...string) (*exec.Cmd, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("Error\n%s: %s => %s", this.Name, params, err.Error())
+		err = fmt.Errorf("Error\n%s: git %s => %s", this.Name, params, stderr.String())
 		return cmd, err
 	}
 
