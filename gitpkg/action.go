@@ -3,19 +3,19 @@ package gitpkg
 import (
 	"fmt"
 	. "github.com/theplant/pak/share"
-	// "os/exec"
 )
 
 // Usage of Gitpkg
-// gitPkg.New
-// gitPkg.Sync
-// gitPkg.Report
-// gitPkg.Get
-// gitPkg.Sync
+// NewGitPkg()
+// gitPkg.Sync()
+// gitPkg.Report()
+// gitPkg.Get()
+// gitPkg.Sync()
+// gitPkg.Report()
 
 func (this *GitPkg) Report() error {
 	if !this.State.IsClean {
-		return fmt.Errorf("Package %s is not clean. Please clean it and re-start pak.", this.Name)
+		return fmt.Errorf("Package %s is not clean. Please clean it up before running pak.", this.Name)
 	}
 
 	if !this.State.IsRemoteBranchExist {

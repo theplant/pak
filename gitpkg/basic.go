@@ -83,8 +83,13 @@ func (this *GitPkg) Sync() (err error) {
 	this.HeadRefsName = info
 
 	info, err = this.GetHeadChecksum()
+	if err != nil {
+		return err
+	}
 	this.HeadChecksum = info
+
 	// Retrieve State
+
 	// Branch Named Pak
 	state, err = this.ContainsPakbranch()
 	if err != nil {
@@ -124,15 +129,11 @@ func (this *GitPkg) Sync() (err error) {
 
 	// on Pakbranch
 	// TODO: add OnPakbranch Test(same checksum but different refs)
-	state = false
-	if this.State.ContainsBranchNamedPak &&
+	this.State.OnPakbranch = this.State.ContainsBranchNamedPak &&
 		this.State.ContainsPaktag &&
 		this.PaktagChecksum == this.PakbranchChecksum &&
 		this.PakbranchChecksum == this.HeadChecksum &&
-		this.Pakbranch == this.HeadRefsName {
-		state = true
-	}
-	this.State.OnPakbranch = state
+		this.Pakbranch == this.HeadRefsName
 
 	state, err = this.IsClean()
 	if err != nil {
