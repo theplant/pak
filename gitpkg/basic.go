@@ -44,15 +44,15 @@ type GitPkg struct {
 }
 
 func NewGitPkg(name, remote, branch string) (gitPkg GitPkg) {
-	gitPkg.Name 		= name
-	gitPkg.Remote 		= remote
-	gitPkg.Branch 		= branch
+	gitPkg.Name = name
+	gitPkg.Remote = remote
+	gitPkg.Branch = branch
 	gitPkg.RemoteBranch = fmt.Sprintf("refs/remotes/%s/%s", remote, branch)
-	gitPkg.Pakbranch 	= "refs/heads/" + Pakbranch
-	gitPkg.Paktag 		= "refs/tags/" + Paktag
-	gitPkg.Path 		= fmt.Sprintf("%s/src/%s", Gopath, name)
-	gitPkg.WorkTree 	= fmt.Sprintf("--work-tree=%s", gitPkg.Path)
-	gitPkg.GitDir 		= fmt.Sprintf("--git-dir=%s/.git", gitPkg.Path)
+	gitPkg.Pakbranch = "refs/heads/" + Pakbranch
+	gitPkg.Paktag = "refs/tags/" + Paktag
+	gitPkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
+	gitPkg.WorkTree = fmt.Sprintf("--work-tree=%s", gitPkg.Path)
+	gitPkg.GitDir = fmt.Sprintf("--git-dir=%s/.git", gitPkg.Path)
 
 	return
 }
@@ -173,7 +173,7 @@ func (this *GitPkg) IsUnderGitControl() (bool, error) {
 func (this *GitPkg) ContainsPakbranch() (bool, error) {
 	cmd, err := this.Run("show-ref")
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.Pakbranch+"\n"), nil
@@ -182,7 +182,7 @@ func (this *GitPkg) ContainsPakbranch() (bool, error) {
 func (this *GitPkg) ContainsPaktag() (bool, error) {
 	cmd, err := this.Run("show-ref")
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.Paktag+"\n"), nil
@@ -191,7 +191,7 @@ func (this *GitPkg) ContainsPaktag() (bool, error) {
 func (this *GitPkg) IsClean() (bool, error) {
 	cmd, err := this.Run("status", "--porcelain", "--untracked-files=no")
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
 	return cmd.Stdout.(*bytes.Buffer).String() == "", nil
@@ -200,7 +200,7 @@ func (this *GitPkg) IsClean() (bool, error) {
 func (this *GitPkg) GetChecksum(ref string) (string, error) {
 	cmd, err := this.Run("show-ref", ref, "--hash")
 	if err != nil {
-	    return "", err
+		return "", err
 	}
 
 	checksum := cmd.Stdout.(*bytes.Buffer).String()[:40]
@@ -217,7 +217,7 @@ func (this *GitPkg) Fetch() error {
 func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 	cmd, err := this.Run("show-ref")
 	if err != nil {
-	    return false, err
+		return false, err
 	}
 
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.RemoteBranch+"\n"), nil
@@ -281,7 +281,7 @@ func (this *GitPkg) Run(params ...string) (*exec.Cmd, error) {
 
 	err := cmd.Run()
 	if err != nil {
-	    err = fmt.Errorf("Error\n%s: %s => %s", this.Name, params, err.Error())
+		err = fmt.Errorf("Error\n%s: %s => %s", this.Name, params, err.Error())
 		return cmd, err
 	}
 

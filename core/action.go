@@ -3,10 +3,10 @@ package core
 import (
 	"errors"
 	"fmt"
+	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	"os"
 	"regexp"
-	. "github.com/theplant/pak/share"
 )
 
 func Init() error {

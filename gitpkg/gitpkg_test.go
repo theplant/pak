@@ -73,11 +73,11 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 
 	err := exec.Command("cp", "-r", "fixtures/package1", "fixtures/package1-backup").Run()
 	if err != nil {
-	    c.Error(err)
+		c.Error(err)
 	}
 	err = exec.Command("git", "--git-dir=fixtures/updated-package1/.git", "--work-tree=fixtures/updated-package1", "push", "origin", "master").Run()
 	if err != nil {
-	    c.Error(err)
+		c.Error(err)
 	}
 
 	c.Check(testGitPkg.Fetch(), Equals, nil)
@@ -87,11 +87,11 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 
 	err = exec.Command("rm", "-rf", "fixtures/package1").Run()
 	if err != nil {
-	    c.Error(err)
+		c.Error(err)
 	}
 	err = exec.Command("mv", "fixtures/package1-backup", "fixtures/package1").Run()
 	if err != nil {
-	    c.Error(err)
+		c.Error(err)
 	}
 }
 

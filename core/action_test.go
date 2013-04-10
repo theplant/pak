@@ -1,14 +1,14 @@
 package core
 
 import (
+	"bytes"
 	"github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	. "launchpad.net/gocheck"
 	"os/exec"
-	"bytes"
 )
 
-type GetSuite struct{
+type GetSuite struct {
 	pakPkgs []PakPkg
 }
 
