@@ -261,11 +261,16 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 }
 
 func (this *GitPkg) GoGet() error {
-	cmd := exec.Command("go", "get", this.Name)
+	return GoGetImpl(this.Name)
+}
+
+var GoGetImpl = func(name string) error {
+	cmd := exec.Command("go", "get", name)
 	cmd.Stderr = &bytes.Buffer{}
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("go get %s: %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+		getErr := cmd.Stderr.(*bytes.Buffer).String() // for removing the end-of-line
+		err = fmt.Errorf("go get %s:\n%s", name, getErr[:len(getErr)-1])
 	}
 
 	return err

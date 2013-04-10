@@ -23,7 +23,6 @@ type GetOption struct {
 	Fetch    bool
 	Force    bool
 	Checksum string
-	NotGet   bool // add temporally for pass tests. TODO: remove it.
 }
 
 type PakOption struct {
@@ -31,5 +30,4 @@ type PakOption struct {
 	UsePakfileLock bool
 	Fetch          bool
 	Force          bool
-	NotGet         bool // add temporally for pass tests. TODO: remove it.
 }

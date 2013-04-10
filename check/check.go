@@ -59,7 +59,7 @@ func Check() {
 			}
 		}
 
-		color.Println("Warning: There are packages that are out of the control of Pak:")
+		color.Println("Warning: Packages bellow are out of the control of Pak:")
 		paddingStr := fmt.Sprintf(`@g%%-%d`, paddingLen)
 		for _, warning := range warnings {
 			color.Printf(paddingStr+`s @w-> @r%s`, warning[0], warning[1])
