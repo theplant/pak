@@ -20,7 +20,6 @@ type PakInfo struct {
 type PaklockInfo map[string]string
 
 type GetOption struct {
-	Fetch    bool
 	Force    bool
 	Checksum string
 }
@@ -28,6 +27,5 @@ type GetOption struct {
 type PakOption struct {
 	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
-	Fetch          bool
 	Force          bool
 }

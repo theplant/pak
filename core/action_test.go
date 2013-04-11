@@ -9,13 +9,13 @@ import (
 )
 
 type GetSuite struct {
-	pakPkgs []PakPkg
+	pakPkgs           []PakPkg
 	originalGoGetImpl func(name string) error
 }
 
 var _ = Suite(&GetSuite{})
 
-func mustRun(params... string) (cmd *exec.Cmd) {
+func mustRun(params ...string) (cmd *exec.Cmd) {
 	cmd = exec.Command(params[0], params[1:]...)
 
 	stderr := &bytes.Buffer{}
@@ -69,7 +69,6 @@ func (s *GetSuite) TestGet(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -89,7 +88,6 @@ func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -106,7 +104,6 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
 		UsePakfileLock: true,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -120,7 +117,7 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 }
 
 func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
- 	expectedPaklockInfo	:= PaklockInfo{
+	expectedPaklockInfo := PaklockInfo{
 		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
 		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
 		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
@@ -129,7 +126,6 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: false,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -141,7 +137,6 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	err = Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
 		UsePakfileLock: false,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -171,7 +166,6 @@ func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -192,7 +186,6 @@ func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
 		UsePakfileLock: false,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -205,7 +198,6 @@ func (s *GetSuite) TestComplainUncompilablePartialMatching(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{"...***"},
 		UsePakfileLock: false,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Not(Equals), nil)
@@ -215,7 +207,6 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -239,7 +230,6 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	err = Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
 		UsePakfileLock: false,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)
@@ -250,7 +240,6 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	err = Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
-		Fetch:          true,
 		Force:          false,
 	})
 	c.Check(err, Equals, nil)

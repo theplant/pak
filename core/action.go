@@ -53,7 +53,7 @@ func Get(option PakOption) error {
 		for _, pakPkgName := range option.PakMeter {
 			matched, pakPkg, err = isPkgMatched(allPakPkgs, pakPkgName)
 			if err != nil {
-			    return err
+				return err
 			}
 
 			if matched {
@@ -69,7 +69,7 @@ func Get(option PakOption) error {
 	// Assign GetOption && Sync && Report Erorrs
 	err = loadPkgs(&pakPkgs, option)
 	if err != nil {
-	    return err
+		return err
 	}
 
 	// Ask Pak to Ignore Pakfile.lock
@@ -78,7 +78,7 @@ func Get(option PakOption) error {
 	}
 	err = pakDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
 	if err != nil {
-	    return err
+		return err
 	}
 
 	return writePaklockInfo(newPaklockInfo)
@@ -86,14 +86,12 @@ func Get(option PakOption) error {
 
 func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 	for i := 0; i < len((*allPakPkgs)); i++ {
-		// TODO: remove Fetch option
-		(*allPakPkgs)[i].GetOption.Fetch = option.Fetch
 		(*allPakPkgs)[i].GetOption.Force = option.Force
 
 		// Go Get Package when the Package is not Downloaded Before
 		isPkgExist, err := (*allPakPkgs)[i].IsPkgExist()
 		if err != nil {
-		    return err
+			return err
 		}
 		if !isPkgExist {
 			err = (*allPakPkgs)[i].GoGet()
@@ -138,7 +136,7 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 		for _, pakPkg := range allPakPkgs {
 			pakPkgNameReg, err := regexp.Compile(pakPkgName)
 			if err != nil {
-			    return false, PakPkg{}, err
+				return false, PakPkg{}, err
 			}
 
 			if pakPkgNameReg.MatchString(pakPkg.Name) {
@@ -168,8 +166,8 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
 
 	var (
-		 checksum string
-		 err error
+		checksum string
+		err      error
 	)
 
 	for i := 0; i < len(newPakPkgs); i++ {

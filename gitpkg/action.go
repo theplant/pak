@@ -37,14 +37,6 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 		return this.PakbranchChecksum, nil
 	}
 
-	// Fetch pkg Before Check Out
-	if option.Fetch {
-		err := this.Fetch()
-		if err != nil {
-			return "", err
-		}
-	}
-
 	err := this.Unpak(option.Force)
 	if err != nil {
 		return "", err

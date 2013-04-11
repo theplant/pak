@@ -121,7 +121,7 @@ func (s *GitPkgSuite) TestSimplePak(c *C) {
 	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
 	c.Check(testGitPkg.State.IsClean, Equals, true)
 
-	testGitPkg.Pak(GetOption{true, true, ""})
+	testGitPkg.Pak(GetOption{true, ""})
 	testGitPkg.Sync()
 
 	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/pak")
@@ -150,7 +150,7 @@ func (s *GitPkgSuite) TestWeakPak(c *C) {
 	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
 	c.Check(testGitPkg.State.IsClean, Equals, true)
 
-	testGitPkg.Pak(GetOption{true, false, ""})
+	testGitPkg.Pak(GetOption{false, ""})
 	testGitPkg.Sync()
 
 	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/master")
@@ -169,7 +169,7 @@ func (s *GitPkgSuite) TestForcefulPak(c *C) {
 	exec.Command("git", testGitPkg.WorkTree, testGitPkg.GitDir, "branch", "pak").Run()
 	testGitPkg.Sync()
 
-	testGitPkg.Pak(GetOption{true, true, ""})
+	testGitPkg.Pak(GetOption{true, ""})
 	testGitPkg.Sync()
 
 	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/pak")
@@ -187,7 +187,7 @@ func (s *GitPkgSuite) TestForcefulPak(c *C) {
 func (s *GitPkgSuite) TestGetWithChecksum(c *C) {
 	devChecksum := "711c1e206bca5ad99edf6da12074bbbe4a349932"
 	testGitPkg.Sync()
-	testGitPkg.Pak(GetOption{true, true, devChecksum})
+	testGitPkg.Pak(GetOption{true, devChecksum})
 	testGitPkg.Sync()
 
 	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/pak")
@@ -204,7 +204,7 @@ func (s *GitPkgSuite) TestGetWithChecksum(c *C) {
 
 func (s *GitPkgSuite) TestForcefulUnpak(c *C) {
 	testGitPkg.Sync()
-	testGitPkg.Pak(GetOption{true, true, testGpMasterChecksum})
+	testGitPkg.Pak(GetOption{true, testGpMasterChecksum})
 	testGitPkg.Sync()
 	testGitPkg.Unpak(true)
 	testGitPkg.Sync()
