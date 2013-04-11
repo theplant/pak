@@ -28,7 +28,6 @@ func Get(option PakOption) error {
 	}
 
 	var paklockInfo PaklockInfo
-	newPaklockInfo := PaklockInfo{}
 	paklockInfo, err = GetPaklockInfo()
 	if err != nil {
 		if err == PakfileLockNotExist {
@@ -36,12 +35,13 @@ func Get(option PakOption) error {
 		} else {
 			return err
 		}
-	} else {
-		newPaklockInfo = paklockInfo
 	}
 
-	if !option.UsePakfileLock {
-		paklockInfo = nil
+	newPaklockInfo := PaklockInfo{}
+	if paklockInfo != nil {
+		newPaklockInfo = paklockInfo
+	} else {
+		newPaklockInfo = PaklockInfo{}
 	}
 
 	// For: pak update package
@@ -72,6 +72,10 @@ func Get(option PakOption) error {
 	    return err
 	}
 
+	// Ask Pak to Ignore Pakfile.lock
+	if !option.UsePakfileLock {
+		paklockInfo = nil
+	}
 	err = pakDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
 	if err != nil {
 	    return err
@@ -132,7 +136,11 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 	if !matched {
 		matchedResult := []string{}
 		for _, pakPkg := range allPakPkgs {
-			pakPkgNameReg := regexp.MustCompile(pakPkgName) // TODO: should not use MustCompile here.
+			pakPkgNameReg, err := regexp.Compile(pakPkgName)
+			if err != nil {
+			    return false, PakPkg{}, err
+			}
+
 			if pakPkgNameReg.MatchString(pakPkg.Name) {
 				// pakPkgs = append(pakPkgs, pakPkg)
 				matchedPakPkg = pakPkg

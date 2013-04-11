@@ -38,6 +38,7 @@ func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []
 // "github.com/theplant/package2@origin/dev"
 func ParsePakfile() ([]PakPkg, error) {
 	pakInfo, err := GetPakInfo()
+
 	if err != nil {
 		return nil, err
 	}

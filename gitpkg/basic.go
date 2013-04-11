@@ -230,7 +230,6 @@ func (this *GitPkg) GetHeadRefName() (string, error) {
 	cmd, err := this.Run("symbolic-ref", "HEAD")
 
 	refs := ""
-	// TODO: add tests
 	if err != nil {
 		// TODO: find other way to tell out no branch
 		if cmd.Stderr.(*bytes.Buffer).String() == "fatal: ref HEAD is not a symbolic ref\n" {

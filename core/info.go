@@ -22,7 +22,6 @@ func GetPakInfo() (pakInfo PakInfo, err error) {
 		return
 	}
 
-	// TODO: panic if there are duplicate package dependencies
 	err = goyaml.Unmarshal(pakInfoBytes, &pakInfo)
 
 	return

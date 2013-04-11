@@ -200,3 +200,68 @@ func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
 }
+
+func (s *GetSuite) TestComplainUncompilablePartialMatching(c *C) {
+	err := Get(PakOption{
+		PakMeter:       []string{"...***"},
+		UsePakfileLock: false,
+		Fetch:          true,
+		Force:          false,
+	})
+	c.Check(err, Not(Equals), nil)
+}
+
+func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
+	err := Get(PakOption{
+		PakMeter:       []string{},
+		UsePakfileLock: true,
+		Fetch:          true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	s.pakPkgs[0].Sync()
+	s.pakPkgs[1].Sync()
+	s.pakPkgs[2].Sync()
+	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+
+	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "941af3b182a1d0a5859fd451a8b5a633f479d7bc")
+
+	paklockInfo, _ := GetPaklockInfo()
+	c.Check(len(paklockInfo), Equals, 3)
+
+	mustRun("rm", "-rf", "Pakfile")
+	mustRun("cp", "fixtures/Pakfile3-updated", "Pakfile")
+	// mustRun("rm", "-rf", "Pakfile.lock")
+
+	err = Get(PakOption{
+		PakMeter:       []string{"github.com/theplant/package2"},
+		UsePakfileLock: false,
+		Fetch:          true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	s.pakPkgs[1].Sync()
+	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "e373579a64e367338ff09b5143e312c81204c074")
+
+	err = Get(PakOption{
+		PakMeter:       []string{},
+		UsePakfileLock: true,
+		Fetch:          true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	s.pakPkgs[0].Sync()
+	s.pakPkgs[1].Sync()
+	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
+
+	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "e373579a64e367338ff09b5143e312c81204c074")
+
+	paklockInfo, _ = GetPaklockInfo()
+	c.Check(len(paklockInfo), Equals, 2)
+}
