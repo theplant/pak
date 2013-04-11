@@ -198,3 +198,12 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 
 	return err
 }
+
+func FindPackage(name string) (bool, PakPkg, error) {
+	allPakPkgs, err := ParsePakfile()
+	if err != nil {
+		return false, PakPkg{}, err
+	}
+
+	return isPkgMatched(allPakPkgs, name)
+}
