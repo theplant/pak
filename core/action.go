@@ -37,13 +37,6 @@ func Get(option PakOption) error {
 		}
 	}
 
-	newPaklockInfo := PaklockInfo{}
-	if paklockInfo != nil {
-		newPaklockInfo = paklockInfo
-	} else {
-		newPaklockInfo = PaklockInfo{}
-	}
-
 	// For: pak update package
 	// Pick up PakPkg to be updated this time
 	pakPkgs := []PakPkg{}
@@ -70,6 +63,13 @@ func Get(option PakOption) error {
 	err = loadPkgs(&pakPkgs, option)
 	if err != nil {
 		return err
+	}
+
+	newPaklockInfo := PaklockInfo{}
+	if paklockInfo != nil {
+		newPaklockInfo = paklockInfo
+	} else {
+		newPaklockInfo = PaklockInfo{}
 	}
 
 	// Ask Pak to Ignore Pakfile.lock
