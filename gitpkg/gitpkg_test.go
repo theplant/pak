@@ -68,6 +68,11 @@ func (s *GitPkgSuite) TestGetHeadRefName(c *C) {
 	name, err := testGitPkg.GetHeadRefName()
 	c.Check(err, Equals, nil)
 	c.Check(name, Equals, "refs/heads/master")
+
+	testGitPkg.Git("checkout", "refs/remotes/origin/master")
+	name, err = testGitPkg.GetHeadRefName()
+	c.Check(err, Equals, nil)
+	c.Check(name, Equals, "no branch")
 }
 
 func (s *GitPkgSuite) TestGetChecksum(c *C) {

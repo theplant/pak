@@ -48,7 +48,7 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	}
 
 	// Create Pakbranch
-	_, err = this.Run("checkout", "-b", Pakbranch, ref)
+	_, err = this.Git("checkout", "-b", Pakbranch, ref)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +58,7 @@ func (this *GitPkg) Pak(option GetOption) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = this.Run("tag", Paktag, checksum)
+	_, err = this.Git("tag", Paktag, checksum)
 	if err != nil {
 		return "", err
 	}
@@ -78,14 +78,14 @@ func (this *GitPkg) Unpak(force bool) (err error) {
 	}
 
 	// Move to Master Branch
-	_, err = this.Run("checkout", "master")
+	_, err = this.Git("checkout", "master")
 	if err != nil {
 		return err
 	}
 
 	// Delete Pakbranch
 	if this.State.ContainsBranchNamedPak {
-		_, err = this.Run("branch", "-D", Pakbranch)
+		_, err = this.Git("branch", "-D", Pakbranch)
 		if err != nil {
 			return err
 		}
@@ -93,7 +93,7 @@ func (this *GitPkg) Unpak(force bool) (err error) {
 
 	// Delete Paktag
 	if this.State.ContainsPaktag {
-		_, err = this.Run("tag", "-d", Paktag)
+		_, err = this.Git("tag", "-d", Paktag)
 	}
 
 	return

@@ -6,6 +6,7 @@ import (
 	. "github.com/theplant/pak/share"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -164,7 +165,7 @@ func (this *GitPkg) IsPkgExist() (bool, error) {
 }
 
 func (this *GitPkg) IsUnderGitControl() (bool, error) {
-	_, err := this.Run("rev-parse", "--is-inside-work-tree")
+	_, err := this.Git("rev-parse", "--is-inside-work-tree")
 	if err != nil {
 		return false, fmt.Errorf("Package %s Is Not Git Tracked\n", this.Name)
 	}
@@ -174,7 +175,7 @@ func (this *GitPkg) IsUnderGitControl() (bool, error) {
 
 // Not to check out the pakbranch, but just a branch named refs/heads/pak
 func (this *GitPkg) ContainsPakbranch() (bool, error) {
-	cmd, err := this.Run("show-ref")
+	cmd, err := this.Git("show-ref")
 	if err != nil {
 		return false, err
 	}
@@ -183,7 +184,7 @@ func (this *GitPkg) ContainsPakbranch() (bool, error) {
 }
 
 func (this *GitPkg) ContainsPaktag() (bool, error) {
-	cmd, err := this.Run("show-ref")
+	cmd, err := this.Git("show-ref")
 	if err != nil {
 		return false, err
 	}
@@ -192,7 +193,7 @@ func (this *GitPkg) ContainsPaktag() (bool, error) {
 }
 
 func (this *GitPkg) IsClean() (bool, error) {
-	cmd, err := this.Run("status", "--porcelain", "--untracked-files=no")
+	cmd, err := this.Git("status", "--porcelain", "--untracked-files=no")
 	if err != nil {
 		return false, err
 	}
@@ -201,7 +202,7 @@ func (this *GitPkg) IsClean() (bool, error) {
 }
 
 func (this *GitPkg) GetChecksum(ref string) (string, error) {
-	cmd, err := this.Run("show-ref", ref, "--hash")
+	cmd, err := this.Git("show-ref", ref, "--hash")
 	if err != nil {
 		return "", err
 	}
@@ -212,13 +213,14 @@ func (this *GitPkg) GetChecksum(ref string) (string, error) {
 }
 
 func (this *GitPkg) Fetch() error {
-	_, err := this.Run("fetch")
+	// TODO: add tests for => 1. remote is changed; 2. remote is no exist
+	_, err := this.Git("fetch", this.Remote, this.Branch + ":" + this.RemoteBranch)
 
 	return err
 }
 
 func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
-	cmd, err := this.Run("show-ref")
+	cmd, err := this.Git("show-ref")
 	if err != nil {
 		return false, err
 	}
@@ -226,23 +228,25 @@ func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.RemoteBranch+"\n"), nil
 }
 
+var RefsRegexp = regexp.MustCompile("^ref: (.+)\n")
 func (this *GitPkg) GetHeadRefName() (string, error) {
-	cmd, err := this.Run("symbolic-ref", "HEAD")
-
-	refs := ""
+	cmd := exec.Command("cat", this.Path + "/.git/HEAD")
+	cmd.Stdout = &bytes.Buffer{}
+	cmd.Stderr = &bytes.Buffer{}
+	err := cmd.Run()
 	if err != nil {
-		// TODO: find other way to tell out no branch
-		if cmd.Stderr.(*bytes.Buffer).String() == "fatal: ref HEAD is not a symbolic ref\n" {
-			refs = "no branch"
-			err = nil
-		} else {
-			return "", err
-		}
-	} else {
-		refs = cmd.Stdout.(*bytes.Buffer).String()
+		return "", fmt.Errorf("%s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
 	}
 
-	return refs[:len(refs)-1], nil
+	refline := cmd.Stdout.(*bytes.Buffer).String()
+	ref := ""
+	if RefsRegexp.MatchString(refline) {
+		ref = RefsRegexp.FindStringSubmatch(refline)[1]
+	} else {
+		ref = "no branch"
+	}
+
+	return ref, nil
 }
 
 func (this *GitPkg) GetHeadChecksum() (string, error) {
@@ -251,7 +255,7 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 		return "", err
 	}
 
-	cmd, err := this.Run("show-ref", "--hash", headBranch)
+	cmd, err := this.Git("show-ref", "--hash", headBranch)
 	if err != nil {
 		return "", err
 	}
@@ -277,7 +281,7 @@ var GoGetImpl = func(name string) error {
 	return err
 }
 
-func (this *GitPkg) Run(params ...string) (*exec.Cmd, error) {
+func (this *GitPkg) Git(params ...string) (*exec.Cmd, error) {
 	fullParams := append([]string{this.GitDir, this.WorkTree}, params...)
 	cmd := exec.Command("git", fullParams...)
 
@@ -288,7 +292,7 @@ func (this *GitPkg) Run(params ...string) (*exec.Cmd, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("Error\n%s: git %s => %s", this.Name, params, stderr.String())
+		err = fmt.Errorf("Error\n%s: git %s => %s", this.Name, strings.Join(params, " "), stderr.String())
 		return cmd, err
 	}
 
