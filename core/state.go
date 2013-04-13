@@ -1,10 +1,17 @@
 package core
 
 import (
-	"github.com/theplant/pak/gitpkg"
+	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	"strings"
 )
+
+type PakPkg struct {
+	// gitpkg.GitPkg
+	VCSPkg
+	GetOption
+	Name string
+}
 
 func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []PakPkg, toUpdatePkgs []PakPkg, toRemovePkgs []PakPkg) {
 	if paklockInfo != nil {
@@ -19,8 +26,9 @@ func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []
 		}
 		if len(paklockInfo) != 0 {
 			for key, val := range paklockInfo {
-				pakPkg := PakPkg{GitPkg: gitpkg.NewGitPkg(key, "", "")}
-				_ = val
+				// pakPkg := PakPkg{GitPkg: gitpkg.NewGitPkg(key, "", "")}
+				pakPkg := PakPkg{Name: key}
+				// _ = val
 				pakPkg.Checksum = val
 				toRemovePkgs = append(toRemovePkgs, pakPkg)
 			}
@@ -32,10 +40,12 @@ func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []
 	return
 }
 
-// Supported Pkg description format
-// "github.com/theplant/package2"
-// "github.com/theplant/package2@dev"
-// "github.com/theplant/package2@origin/dev"
+/**
+ * Supported Pkg Description Formats:
+ * 		"github.com/theplant/package2"
+ * 		"github.com/theplant/package2@dev"
+ * 		"github.com/theplant/package2@origin/dev"
+ */
 func ParsePakfile() ([]PakPkg, error) {
 	pakInfo, err := GetPakInfo()
 
@@ -43,7 +53,6 @@ func ParsePakfile() ([]PakPkg, error) {
 		return nil, err
 	}
 
-	// gitPkgs := []PakPkg{}
 	pakPkgs := []PakPkg{}
 	for _, pkg := range pakInfo.Packages {
 		atIndex := strings.LastIndex(pkg, "@")
@@ -65,7 +74,13 @@ func ParsePakfile() ([]PakPkg, error) {
 			branch = "master"
 		}
 
-		pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(name, remote, branch)})
+		// pakPkgs = append(pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(name, remote, branch)})
+		svmPkg, err := NewVCSPkg(name, remote, branch)
+		if err != nil {
+		    return nil, err
+		}
+		pakPkg := PakPkg{Name: name, VCSPkg: svmPkg}
+		pakPkgs = append(pakPkgs, pakPkg)
 	}
 
 	return pakPkgs, nil

@@ -2,18 +2,13 @@ package core
 
 import (
 	"fmt"
-	"github.com/theplant/pak/gitpkg"
+	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	"os"
 	"path/filepath"
 )
-
-type PakPkg struct {
-	gitpkg.GitPkg
-	GetOption
-}
 
 func GetPakInfo() (pakInfo PakInfo, err error) {
 	var pakInfoBytes []byte

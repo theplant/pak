@@ -101,12 +101,12 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 		}
 
 		// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
-		err = (*allPakPkgs)[i].GitPkg.Fetch()
+		err = (*allPakPkgs)[i].VCSPkg.Fetch()
 		if err != nil {
 			return err
 		}
 
-		err = (*allPakPkgs)[i].GitPkg.Sync()
+		err = (*allPakPkgs)[i].VCSPkg.Sync()
 		if err != nil {
 		    return err
 		}

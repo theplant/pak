@@ -44,7 +44,8 @@ type GitPkg struct {
 	State GitPkgState
 }
 
-func NewGitPkg(name, remote, branch string) (gitPkg GitPkg) {
+func NewGitPkg(name, remote, branch string) VCSPkg {
+	gitPkg := GitPkg{}
 	gitPkg.Name = name
 	gitPkg.Remote = remote
 	gitPkg.Branch = branch
@@ -55,7 +56,7 @@ func NewGitPkg(name, remote, branch string) (gitPkg GitPkg) {
 	gitPkg.WorkTree = fmt.Sprintf("--work-tree=%s", gitPkg.Path)
 	gitPkg.GitDir = fmt.Sprintf("--git-dir=%s/.git", gitPkg.Path)
 
-	return
+	return &gitPkg
 }
 
 func (this *GitPkg) Sync() (err error) {
@@ -151,6 +152,7 @@ func (this *GitPkg) Sync() (err error) {
 	return
 }
 
+// TODO: should make it a core package function
 func (this *GitPkg) IsPkgExist() (bool, error) {
 	_, err := os.Stat(this.Path)
 	if err != nil {
@@ -164,6 +166,7 @@ func (this *GitPkg) IsPkgExist() (bool, error) {
 	return true, nil
 }
 
+// TODO: should make it a core package function
 func (this *GitPkg) IsUnderGitControl() (bool, error) {
 	_, err := this.Git("rev-parse", "--is-inside-work-tree")
 	if err != nil {
@@ -278,6 +281,7 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 	return refs[:len(refs)-1], err
 }
 
+// TODO: should make it a core package function
 func (this *GitPkg) GoGet() error {
 	return GoGetImpl(this.Name)
 }

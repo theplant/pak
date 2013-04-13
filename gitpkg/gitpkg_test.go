@@ -11,7 +11,7 @@ type GitPkgSuite struct{}
 
 var _ = Suite(&GitPkgSuite{})
 
-var testGitPkg GitPkg
+var testGitPkg VCSPkg
 var testGpMasterChecksum = "11b174bd5acbf990687e6b068c97378d3219de04"
 
 func (s *GitPkgSuite) SetUpTest(c *C) {
@@ -22,7 +22,7 @@ func (s *GitPkgSuite) SetUpTest(c *C) {
 		panic(fmt.Errorf("GitPkgSuite.SetUpSuite: %s", err.Error()))
 	}
 
-	err = testGitPkg.Sync()
+	err = testGitPkg.(*GitPkg).Sync()
 	if err != nil {
 		panic(err)
 	}
@@ -37,20 +37,20 @@ func (s *GitPkgSuite) TearDownTest(c *C) {
 }
 
 func (s *GitPkgSuite) TestIsPkgExist(c *C) {
-	exist, err := testGitPkg.IsPkgExist()
+	exist, err := testGitPkg.(*GitPkg).IsPkgExist()
 	c.Check(err, Equals, nil)
 	c.Check(exist, Equals, true)
 
 	exec.Command("rm", "-rf", "../../gitpkg-test-package").Run()
 
-	exist, err = testGitPkg.IsPkgExist()
+	exist, err = testGitPkg.(*GitPkg).IsPkgExist()
 	c.Check(err, Equals, nil)
 	c.Check(exist, Equals, false)
 }
 
 func (s *GitPkgSuite) TestClean(c *C) {
 	// Clean
-	clean, _ := testGitPkg.IsClean()
+	clean, _ := testGitPkg.(*GitPkg).IsClean()
 	c.Check(clean, Equals, true)
 
 	// Not Clean
@@ -60,7 +60,7 @@ func (s *GitPkgSuite) TestClean(c *C) {
 		panic(err)
 	}
 
-	clean, _ = testGitPkg.IsClean()
+	clean, _ = testGitPkg.(*GitPkg).IsClean()
 	c.Check(clean, Equals, false)
 }
 
@@ -81,7 +81,7 @@ func (s *GitPkgSuite) TestCleanOnNoBranch(c *C) {
 }
 
 func (s *GitPkgSuite) TestGetHeadRefName(c *C) {
-	name, err := testGitPkg.GetHeadRefName()
+	name, err := testGitPkg.(*GitPkg).GetHeadRefName()
 	c.Check(err, Equals, nil)
 	c.Check(name, Equals, "refs/heads/master")
 
@@ -92,16 +92,16 @@ func (s *GitPkgSuite) TestGetHeadRefName(c *C) {
 }
 
 func (s *GitPkgSuite) TestGetChecksum(c *C) {
-	checksum, _ := testGitPkg.GetChecksum("refs/heads/master")
+	checksum, _ := testGitPkg.(*GitPkg).GetChecksum("refs/heads/master")
 	c.Check(checksum, Equals, testGpMasterChecksum)
 
-	checksum, err := testGitPkg.GetChecksum("refs/heads/master_not_exist")
+	checksum, err := testGitPkg.(*GitPkg).GetChecksum("refs/heads/master_not_exist")
 	c.Check(checksum, Equals, "")
 	c.Check(err, Not(Equals), nil)
 }
 
 func (s *GitPkgSuite) TestFetch(c *C) {
-	headChecksum, _ := testGitPkg.GetHeadChecksum()
+	headChecksum, _ := testGitPkg.(*GitPkg).GetHeadChecksum()
 	c.Check(headChecksum, Equals, testGpMasterChecksum)
 
 	err := exec.Command("cp", "-r", "fixtures/package1", "fixtures/package1-backup").Run()
@@ -113,9 +113,9 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 		c.Error(err)
 	}
 
-	c.Check(testGitPkg.Fetch(), Equals, nil)
+	c.Check(testGitPkg.(*GitPkg).Fetch(), Equals, nil)
 
-	headChecksum, _ = testGitPkg.GetChecksum("refs/remotes/origin/master")
+	headChecksum, _ = testGitPkg.(*GitPkg).GetChecksum("refs/remotes/origin/master")
 	c.Check(headChecksum, Equals, "149b1e18aa3e118a804ccddeefbb6e64b4a5807e")
 
 	err = exec.Command("rm", "-rf", "fixtures/package1").Run()
@@ -129,162 +129,162 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 }
 
 func (s *GitPkgSuite) TestSimplePak(c *C) {
-	testGitPkg.Sync()
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/master")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, "")
-	c.Check(testGitPkg.PaktagChecksum, Equals, "")
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, false)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	// c.Check(testGitPkg.State.UnderPak, Equals, false)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, false)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/master")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, "")
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, "")
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 
-	testGitPkg.Pak(GetOption{true, ""})
-	testGitPkg.Sync()
+	testGitPkg.(*GitPkg).Pak(GetOption{true, ""})
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
-	// c.Check(testGitPkg.State.UnderPak, Equals, true)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, true)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, true)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 }
 
 func (s *GitPkgSuite) TestWeakPak(c *C) {
-	exec.Command("git", testGitPkg.WorkTree, testGitPkg.GitDir, "branch", "pak").Run()
-	testGitPkg.Sync()
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/master")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, "")
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	// c.Check(testGitPkg.State.UnderPak, Equals, false)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, false)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	exec.Command("git", testGitPkg.(*GitPkg).WorkTree, testGitPkg.(*GitPkg).GitDir, "branch", "pak").Run()
+	testGitPkg.(*GitPkg).Sync()
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/master")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, "")
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 
-	testGitPkg.Pak(GetOption{false, ""})
-	testGitPkg.Sync()
+	testGitPkg.(*GitPkg).Pak(GetOption{false, ""})
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/master")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, "")
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	// c.Check(testGitPkg.State.UnderPak, Equals, false)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, false)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/master")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, "")
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 }
 
 func (s *GitPkgSuite) TestForcefulPak(c *C) {
-	exec.Command("git", testGitPkg.WorkTree, testGitPkg.GitDir, "branch", "pak").Run()
-	testGitPkg.Sync()
+	exec.Command("git", testGitPkg.(*GitPkg).WorkTree, testGitPkg.(*GitPkg).GitDir, "branch", "pak").Run()
+	testGitPkg.(*GitPkg).Sync()
 
-	testGitPkg.Pak(GetOption{true, ""})
-	testGitPkg.Sync()
+	testGitPkg.(*GitPkg).Pak(GetOption{true, ""})
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
-	// c.Check(testGitPkg.State.UnderPak, Equals, true)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, true)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, true)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 }
 
 func (s *GitPkgSuite) TestGetWithChecksum(c *C) {
 	devChecksum := "711c1e206bca5ad99edf6da12074bbbe4a349932"
-	testGitPkg.Sync()
-	testGitPkg.Pak(GetOption{true, devChecksum})
-	testGitPkg.Sync()
+	testGitPkg.(*GitPkg).Sync()
+	testGitPkg.(*GitPkg).Pak(GetOption{true, devChecksum})
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(testGitPkg.HeadChecksum, Equals, devChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, devChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, devChecksum)
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
-	// c.Check(testGitPkg.State.UnderPak, Equals, true)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, true)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, devChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, devChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, devChecksum)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, true)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 }
 
 func (s *GitPkgSuite) TestForcefulUnpak(c *C) {
-	testGitPkg.Sync()
-	testGitPkg.Pak(GetOption{true, testGpMasterChecksum})
-	testGitPkg.Sync()
-	testGitPkg.Unpak(true)
-	testGitPkg.Sync()
+	testGitPkg.(*GitPkg).Sync()
+	testGitPkg.(*GitPkg).Pak(GetOption{true, testGpMasterChecksum})
+	testGitPkg.(*GitPkg).Sync()
+	testGitPkg.(*GitPkg).Unpak(true)
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/master")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, false)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	// c.Check(testGitPkg.State.UnderPak, Equals, false)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, false)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/master")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 }
 
 func (s *GitPkgSuite) TestWeakUnpak(c *C) {
-	exec.Command("git", testGitPkg.WorkTree, testGitPkg.GitDir, "branch", "pak").Run()
-	testGitPkg.Sync()
-	testGitPkg.Unpak(false)
-	testGitPkg.Sync()
+	exec.Command("git", testGitPkg.(*GitPkg).WorkTree, testGitPkg.(*GitPkg).GitDir, "branch", "pak").Run()
+	testGitPkg.(*GitPkg).Sync()
+	testGitPkg.(*GitPkg).Unpak(false)
+	testGitPkg.(*GitPkg).Sync()
 
-	c.Check(testGitPkg.HeadRefsName, Equals, "refs/heads/master")
-	c.Check(testGitPkg.HeadChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PakbranchChecksum, Equals, testGpMasterChecksum)
-	c.Check(testGitPkg.PaktagChecksum, Equals, "")
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	// c.Check(testGitPkg.State.UnderPak, Equals, false)
-	c.Check(testGitPkg.State.OnPakbranch, Equals, false)
-	c.Check(testGitPkg.State.IsRemoteBranchExist, Equals, true)
-	c.Check(testGitPkg.State.IsClean, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).HeadRefsName, Equals, "refs/heads/master")
+	c.Check(testGitPkg.(*GitPkg).HeadChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PakbranchChecksum, Equals, testGpMasterChecksum)
+	c.Check(testGitPkg.(*GitPkg).PaktagChecksum, Equals, "")
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	// c.Check(testGitPkg.(*GitPkg).State.UnderPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OnPakbranch, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.IsRemoteBranchExist, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.IsClean, Equals, true)
 }
 
 func (s *GitPkgSuite) TestPakBranchOwnership(c *C) {
-	testGitPkg.Unpak(true)
+	testGitPkg.(*GitPkg).Unpak(true)
 
-	testGitPkg.Sync()
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, false)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
+	testGitPkg.(*GitPkg).Sync()
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OwnPakbranch, Equals, false)
 
 	exec.Command("sh", "-c", "cd ../../gitpkg-test-package && git checkout -b pak && git checkout master").Run()
-	testGitPkg.Sync()
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, false)
-	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
+	testGitPkg.(*GitPkg).Sync()
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, false)
+	c.Check(testGitPkg.(*GitPkg).State.OwnPakbranch, Equals, false)
 
 	// Although package has both pak branch and _pak_latest_ tag, but their commit hash are different, so
 	// Pak wouldn't consider that pak branch is owned by it.
 	exec.Command("sh", "-c", "cd ../../gitpkg-test-package && git tag _pak_latest_ HEAD^").Run()
-	testGitPkg.Sync()
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
-	c.Check(testGitPkg.State.OwnPakbranch, Equals, false)
+	testGitPkg.(*GitPkg).Sync()
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.OwnPakbranch, Equals, false)
 
 	exec.Command("sh", "-c", "cd ../../gitpkg-test-package && git tag -d _pak_latest_ && git tag _pak_latest_").Run()
-	testGitPkg.Sync()
-	c.Check(testGitPkg.State.ContainsBranchNamedPak, Equals, true)
-	c.Check(testGitPkg.State.ContainsPaktag, Equals, true)
-	c.Check(testGitPkg.State.OwnPakbranch, Equals, true)
+	testGitPkg.(*GitPkg).Sync()
+	c.Check(testGitPkg.(*GitPkg).State.ContainsBranchNamedPak, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.ContainsPaktag, Equals, true)
+	c.Check(testGitPkg.(*GitPkg).State.OwnPakbranch, Equals, true)
 }
