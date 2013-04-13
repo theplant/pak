@@ -254,3 +254,27 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	paklockInfo, _ = GetPaklockInfo()
 	c.Check(len(paklockInfo), Equals, 2)
 }
+
+func (s *GetSuite) TestCanGetPackageOnNoBranch(c *C) {
+	mustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "checkout", "origin/master")
+
+	err := s.pakPkgs[0].Sync()
+	c.Check(err, Equals, nil)
+	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "no branch")
+	c.Check(s.pakPkgs[0].HeadChecksum, Equals, "11b174bd5acbf990687e6b068c97378d3219de04")
+
+	err = Get(PakOption{
+		PakMeter:       []string{},
+		UsePakfileLock: true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	s.pakPkgs[0].Sync()
+	// s.pakPkgs[1].Sync()
+	// s.pakPkgs[2].Sync()
+	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadChecksum, Equals, "11b174bd5acbf990687e6b068c97378d3219de04")
+	// c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
+	// c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+}

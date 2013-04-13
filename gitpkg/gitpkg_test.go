@@ -64,6 +64,22 @@ func (s *GitPkgSuite) TestClean(c *C) {
 	c.Check(clean, Equals, false)
 }
 
+func (s *GitPkgSuite) TestCleanOnNoBranch(c *C) {
+	// Clean
+	clean, _ := testGitPkg.IsClean()
+	c.Check(clean, Equals, true)
+
+	// Not Clean
+	_, err := testGitPkg.Git("checkout", "origin/master")
+	if err != nil {
+		panic(err)
+	}
+
+	clean, err = testGitPkg.IsClean()
+	c.Check(err, Equals, nil)
+	c.Check(clean, Equals, true)
+}
+
 func (s *GitPkgSuite) TestGetHeadRefName(c *C) {
 	name, err := testGitPkg.GetHeadRefName()
 	c.Check(err, Equals, nil)

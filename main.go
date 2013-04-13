@@ -79,7 +79,7 @@ func main() {
 			color.Printf("@g    %s\n", pkg.Name)
 		}
 	case "version":
-		color.Println("@g1.1.1")
+		color.Println("@g1.1.2")
 	default:
 		flag.Usage()
 	}

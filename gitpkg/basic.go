@@ -255,6 +255,19 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 		return "", err
 	}
 
+	if headBranch == "no branch" {
+		cmd := exec.Command("cat", this.Path + "/.git/HEAD")
+		cmd.Stdout = &bytes.Buffer{}
+		cmd.Stderr = &bytes.Buffer{}
+		err := cmd.Run()
+		if err != nil {
+		    return "", fmt.Errorf("%s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+		}
+
+		checksum := cmd.Stdout.(*bytes.Buffer).String()
+		return checksum[:len(checksum)-1], nil
+	}
+
 	cmd, err := this.Git("show-ref", "--hash", headBranch)
 	if err != nil {
 		return "", err

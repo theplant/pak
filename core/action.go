@@ -106,10 +106,16 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 			return err
 		}
 
-		(*allPakPkgs)[i].GitPkg.Sync()
+		err = (*allPakPkgs)[i].GitPkg.Sync()
+		if err != nil {
+		    return err
+		}
 
 		err = (*allPakPkgs)[i].Report()
 		if err != nil {
+			println("===")
+			println((*allPakPkgs)[i].Name)
+			fmt.Println(err)
 			return err
 		}
 	}
