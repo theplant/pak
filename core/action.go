@@ -113,9 +113,6 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 
 		err = (*allPakPkgs)[i].Report()
 		if err != nil {
-			println("===")
-			println((*allPakPkgs)[i].Name)
-			fmt.Println(err)
 			return err
 		}
 	}
