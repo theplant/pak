@@ -11,12 +11,16 @@ import (
 )
 
 // Check should be invoked in the init function.
-// It will check your package dependencies, if the dependencies is inconsistent with Pakfile.lock, it force the program to exit. However, Check allows packages to be dirty or not on pak branch as long as the package is marked managed, that is to say, you has run pak get before calling Check.
+// It will check your package dependencies, if the dependencies is inconsistent
+// with Pakfile.lock, it force the program to exit. However, Check allows
+// packages to be dirty or not on pak branch as long as the package is marked
+// managed, that is to say, you has run pak get before calling Check.
+// TODO: add tests
 func Check() {
 	// Parse
 	allPakPkgs, err := ParsePakfile()
 	if err != nil {
-		color.Printf("Force Exited by Pak: @r%s@w. Please run @bpak get@w.\n", err.Error())
+		color.Printf("Force Exited by Pak: @r%s@w.\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -29,7 +33,13 @@ func Check() {
 	errors := [][2]string{}
 	warnings := [][2]string{}
 	for _, pakPkg := range allPakPkgs {
-		err := pakPkg.Sync()
+		err := pakPkg.Dial()
+		if err != nil {
+			color.Printf("Force Exited by Pak: @r%s@w.\n", err.Error())
+			os.Exit(1)
+		}
+
+		err = pakPkg.Sync()
 		if err != nil {
 			color.Printf("Force Exited by Pak: @r%s@w. Please run @bpak get@w.\n", err.Error())
 			os.Exit(1)
@@ -37,11 +47,11 @@ func Check() {
 
 		checksum := paklockInfo[pakPkg.Name]
 		if checksum == "" {
-			errors = append(errors, [2]string{pakPkg.Name, "New Package, Not Managed by Pak."})
+			errors = append(errors, [2]string{pakPkg.Name, "New Package, Not Yet Managed by Pak."})
 			continue
 		}
 
-		if !pakPkg.State.OnPakbranch {
+		if !pakPkg.OnPakbranch {
 			warnings = append(warnings, [2]string{pakPkg.Name, "Not on Pak Branch."})
 			continue
 		}

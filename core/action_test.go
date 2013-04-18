@@ -9,7 +9,7 @@ import (
 )
 
 type GetSuite struct {
-	pakPkgs           []PakPkg
+	pakPkgs           []*PakPkg
 	originalGoGetImpl func(name string) error
 }
 
@@ -46,14 +46,19 @@ func (s *GetSuite) SetUpTest(c *C) {
 	mustRun("git", "clone", "fixtures/package3", "../../package3")
 	mustRun("cp", "fixtures/Pakfile3", "Pakfile")
 
-	s.pakPkgs = []PakPkg{}
+	s.pakPkgs = []*PakPkg{}
 	pkgsFixtures := [][]string{
 		{"github.com/theplant/package1", "origin", "master"},
 		{"github.com/theplant/package2", "origin", "dev"},
 		{"github.com/theplant/package3", "origin", "master"},
 	}
-	for _, val := range pkgsFixtures {
-		s.pakPkgs = append(s.pakPkgs, NewPakPkg(val[0], val[1], val[2]))
+	for _, vals := range pkgsFixtures {
+		pkg := NewPakPkg(vals[0], vals[1], vals[2])
+		err := pkg.Dial()
+		if err != nil {
+			c.Fatal(err, Equals, nil)
+		}
+		s.pakPkgs = append(s.pakPkgs, &pkg)
 	}
 }
 
@@ -65,11 +70,11 @@ func (s *GetSuite) TearDownTest(c *C) {
 	mustRun("rm", "-rf", "Pakfile.lock")
 }
 
-func (s *GetSuite) TestGet(c *C) {
+func (s *GetSuite) TestSimpleGet(c *C) {
 	err := Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -86,9 +91,9 @@ func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
 	mustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "branch", "-dr", "origin/master")
 
 	err := Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -102,9 +107,9 @@ func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
 
 func (s *GetSuite) TestGetWithPakMeter(c *C) {
 	err := Get(PakOption{
-		PakMeter:       []string{"github.com/theplant/package2"},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{"github.com/theplant/package2"},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -124,9 +129,9 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	}
 
 	err := Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: false,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: false,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -135,9 +140,9 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	c.Check(paklockInfo, DeepEquals, expectedPaklockInfo)
 
 	err = Get(PakOption{
-		PakMeter:       []string{"github.com/theplant/package2"},
-		UsePakfileLock: false,
-		Force:          false,
+		PakMeter:         []string{"github.com/theplant/package2"},
+		UsingPakfileLock: false,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -146,7 +151,7 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	c.Check(paklockInfo, DeepEquals, expectedPaklockInfo)
 }
 
-func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
+func (s *GetSuite) TestGoGetBeforePak(c *C) {
 	originalGoGetImpl := GoGetImpl
 	gogetPkg1Count := 0
 	GoGetImpl = func(name string) error {
@@ -164,9 +169,44 @@ func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
 	mustRun("rm", "-rf", "../../package1")
 
 	err := Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
+	})
+	c.Check(err, Equals, nil)
+
+	c.Check(gogetPkg1Count, Equals, 2)
+
+	s.pakPkgs[0].Sync()
+	s.pakPkgs[1].Sync()
+	s.pakPkgs[2].Sync()
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
+}
+
+func (s *GetSuite) TestGoGetWhenPkgIsOnPakBranch(c *C) {
+	originalGoGetImpl := GoGetImpl
+	gogetPkg1Count := 0
+	GoGetImpl = func(name string) error {
+		if name == "github.com/theplant/package1" {
+			gogetPkg1Count++
+		}
+
+		return nil
+	}
+	defer func() { GoGetImpl = originalGoGetImpl }()
+
+	err := Get(PakOption{
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
+	})
+	c.Check(err, Equals, nil)
+	err = Get(PakOption{
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -184,9 +224,9 @@ func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
 	mustRun("rm", "-rf", "../../package1")
 
 	err := Get(PakOption{
-		PakMeter:       []string{"github.com/theplant/package2"},
-		UsePakfileLock: false,
-		Force:          false,
+		PakMeter:         []string{"github.com/theplant/package2"},
+		UsingPakfileLock: false,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -196,18 +236,18 @@ func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
 
 func (s *GetSuite) TestComplainUncompilablePartialMatching(c *C) {
 	err := Get(PakOption{
-		PakMeter:       []string{"...***"},
-		UsePakfileLock: false,
-		Force:          false,
+		PakMeter:         []string{"...***"},
+		UsingPakfileLock: false,
+		Force:            false,
 	})
 	c.Check(err, Not(Equals), nil)
 }
 
 func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	err := Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -228,9 +268,9 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	// mustRun("rm", "-rf", "Pakfile.lock")
 
 	err = Get(PakOption{
-		PakMeter:       []string{"github.com/theplant/package2"},
-		UsePakfileLock: false,
-		Force:          false,
+		PakMeter:         []string{"github.com/theplant/package2"},
+		UsingPakfileLock: false,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -238,9 +278,9 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "e373579a64e367338ff09b5143e312c81204c074")
 
 	err = Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
@@ -264,17 +304,13 @@ func (s *GetSuite) TestCanGetPackageOnNoBranch(c *C) {
 	c.Check(s.pakPkgs[0].HeadChecksum, Equals, "11b174bd5acbf990687e6b068c97378d3219de04")
 
 	err = Get(PakOption{
-		PakMeter:       []string{},
-		UsePakfileLock: true,
-		Force:          false,
+		PakMeter:         []string{},
+		UsingPakfileLock: true,
+		Force:            false,
 	})
 	c.Check(err, Equals, nil)
 
 	s.pakPkgs[0].Sync()
-	// s.pakPkgs[1].Sync()
-	// s.pakPkgs[2].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[0].HeadChecksum, Equals, "11b174bd5acbf990687e6b068c97378d3219de04")
-	// c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
-	// c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 }

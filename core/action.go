@@ -72,7 +72,7 @@ func Get(option PakOption) error {
 		newPaklockInfo = PaklockInfo{}
 	}
 	// Ask Pak to Ignore Pakfile.lock when updating
-	if !option.UsePakfileLock {
+	if !option.UsingPakfileLock {
 		paklockInfo = nil
 	}
 	err = pakDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
@@ -99,6 +99,11 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 			}
 		}
 
+		err = (*allPakPkgs)[i].Dial()
+		if err != nil {
+			return err
+		}
+
 		// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
 		err = (*allPakPkgs)[i].Fetch()
 		if err != nil {
@@ -107,7 +112,7 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 
 		err = (*allPakPkgs)[i].Sync()
 		if err != nil {
-		    return err
+			return err
 		}
 
 		err = (*allPakPkgs)[i].Report()
@@ -189,9 +194,24 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 		(*newPaklockInfo)[toUpdatePakPkgs[i].Name] = checksum
 	}
 	for i := 0; i < len(toRemovePakPkgs); i++ {
-		err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
+		exist, err := toRemovePakPkgs[i].IsPkgExist()
 		if err != nil {
 			return err
+		}
+		if exist {
+			err = toRemovePakPkgs[i].Dial()
+			if err != nil {
+				return err
+			}
+			err = toRemovePakPkgs[i].Sync()
+			if err != nil {
+				return err
+			}
+
+			err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
+			if err != nil {
+				return err
+			}
 		}
 
 		// TODO: Add tests for removing Pakfile.lock record

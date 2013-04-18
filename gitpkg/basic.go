@@ -11,15 +11,15 @@ import (
 )
 
 type GitPkg struct {
-	Name              string // github.com/theplant/pak
-	Remote            string // origin, etc
-	Branch            string // master, dev, etc
-	Path              string // $GOPATH/src/:Name
-	RemoteBranch      string // refs/remotes/:Remote/:Branch
-	PakbranchRef      string // refs/heads/pak
-	PaktagRef         string // refs/tags/_pak_latest_
-	WorkTree          string
-	GitDir            string
+	Name         string // github.com/theplant/pak
+	Remote       string // origin, etc
+	Branch       string // master, dev, etc
+	Path         string // $GOPATH/src/:Name
+	RemoteBranch string // refs/remotes/:Remote/:Branch
+	PakbranchRef string // refs/heads/pak
+	PaktagRef    string // refs/tags/_pak_latest_
+	WorkTree     string
+	GitDir       string
 }
 
 func NewGitPkg(name, remote, branch string) PkgProxy {
@@ -110,7 +110,7 @@ func (this *GitPkg) GetChecksum(ref string) (string, error) {
 
 func (this *GitPkg) Fetch() error {
 	// TODO: add tests for => 1. remote is changed; 2. remote is no exist
-	_, err := this.Git("fetch", this.Remote, this.Branch + ":" + this.RemoteBranch)
+	_, err := this.Git("fetch", this.Remote, this.Branch+":"+this.RemoteBranch)
 
 	return err
 }
@@ -125,8 +125,9 @@ func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 }
 
 var RefsRegexp = regexp.MustCompile("^ref: (.+)\n")
+
 func (this *GitPkg) GetHeadRefName() (string, error) {
-	cmd := exec.Command("cat", this.Path + "/.git/HEAD")
+	cmd := exec.Command("cat", this.Path+"/.git/HEAD")
 	cmd.Stdout = &bytes.Buffer{}
 	cmd.Stderr = &bytes.Buffer{}
 	err := cmd.Run()
@@ -152,12 +153,12 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 	}
 
 	if headBranch == "no branch" {
-		cmd := exec.Command("cat", this.Path + "/.git/HEAD")
+		cmd := exec.Command("cat", this.Path+"/.git/HEAD")
 		cmd.Stdout = &bytes.Buffer{}
 		cmd.Stderr = &bytes.Buffer{}
 		err := cmd.Run()
 		if err != nil {
-		    return "", fmt.Errorf("%s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+			return "", fmt.Errorf("%s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
 		}
 
 		checksum := cmd.Stdout.(*bytes.Buffer).String()
@@ -197,7 +198,7 @@ func (this *GitPkg) Pak(ref string) (string, error) {
 }
 
 // Unpak will remove a branch named pak and a tag named _pak_latest_ in a git repo.
-func (this *GitPkg) Unpak() (error) {
+func (this *GitPkg) Unpak() error {
 	// Move to Master Branch
 	if _, err := this.Git("checkout", "master"); err != nil {
 		return err
@@ -220,7 +221,7 @@ func (this *GitPkg) Unpak() (error) {
 		if contained {
 			_, err = this.Git("tag", "-d", Paktag)
 			if err != nil {
-			    return err
+				return err
 			}
 		}
 	} else {
@@ -230,22 +231,22 @@ func (this *GitPkg) Unpak() (error) {
 	return nil
 }
 
-func (this *GitPkg) NewBranch(name string) (error) {
+func (this *GitPkg) NewBranch(name string) error {
 	_, err := this.Git("branch", name)
 	return err
 }
 
-func (this *GitPkg) CheckOut(ref string) (error) {
+func (this *GitPkg) CheckOut(ref string) error {
 	_, err := this.Git("checkout", ref)
 	return err
 }
 
-func (this *GitPkg) NewTag(tag, object string) (error) {
+func (this *GitPkg) NewTag(tag, object string) error {
 	_, err := this.Git("tag", tag, object)
 	return err
 }
 
-func (this *GitPkg) RemoveTag(tag string) (error) {
+func (this *GitPkg) RemoveTag(tag string) error {
 	_, err := this.Git("tag", "-d", tag)
 	return err
 }

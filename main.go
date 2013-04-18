@@ -37,12 +37,12 @@ func main() {
 	case "init":
 		core.Init()
 	case "get":
-		err := core.Get(PakOption{UsePakfileLock: true, Force: forceFlag})
+		err := core.Get(PakOption{UsingPakfileLock: true, Force: forceFlag})
 		if err != nil {
 			color.Printf("@r%s\n", err)
 		}
 	case "update":
-		option := PakOption{UsePakfileLock: false, Force: true}
+		option := PakOption{UsingPakfileLock: false, Force: true}
 		option.PakMeter = flag.Args()[1:]
 		err := core.Get(option)
 		if err != nil {
@@ -79,7 +79,7 @@ func main() {
 			color.Printf("@g    %s\n", pkg.Name)
 		}
 	case "version":
-		color.Println("@g1.1.2")
+		color.Println("@g1.1.3")
 	default:
 		flag.Usage()
 	}

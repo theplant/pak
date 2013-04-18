@@ -2,8 +2,8 @@ package gitpkg
 
 import (
 	"fmt"
-	"os"
 	. "github.com/theplant/pak/share"
+	"os"
 )
 
 func RegisterProxy() {

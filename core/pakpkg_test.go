@@ -6,16 +6,16 @@ import (
 	"os/exec"
 )
 
-type PakPkgSuite struct{
-	pkg PakPkg
+type PakPkgStateSuite struct {
+	pkg            PakPkg
 	masterChecksum string
 }
 
-var _ = Suite(&PakPkgSuite{
+var _ = Suite(&PakPkgStateSuite{
 	pkg: NewPakPkg("github.com/theplant/pakpkg-package", "origin", "master"),
 })
 
-func (s *PakPkgSuite) SetUpSuite(c *C) {
+func (s *PakPkgStateSuite) SetUpSuite(c *C) {
 	mustRun("cp", "fixtures/Pakfile2", "./Pakfile")
 	mustRun("git", "clone", "fixtures/package1", "../../pakpkg-package")
 
@@ -24,12 +24,12 @@ func (s *PakPkgSuite) SetUpSuite(c *C) {
 	}
 }
 
-func (s *PakPkgSuite) TearDownSuite(c *C) {
+func (s *PakPkgStateSuite) TearDownSuite(c *C) {
 	mustRun("rm", "-f", "Pakfile")
 	mustRun("rm", "-rf", "../../pakpkg-package")
 }
 
-func (s *PakPkgSuite) TestIsPkgExist(c *C) {
+func (s *PakPkgStateSuite) TestIsPkgExist(c *C) {
 	exist, err := s.pkg.IsPkgExist()
 	c.Check(err, Equals, nil)
 	c.Check(exist, Equals, true)
@@ -41,15 +41,16 @@ func (s *PakPkgSuite) TestIsPkgExist(c *C) {
 	c.Check(exist, Equals, false)
 }
 
-func (s *PakPkgSuite) TestGoGet(c *C) {
+func (s *PakPkgStateSuite) TestGoGet(c *C) {
 	// TODO
 }
 
-func (s *PakPkgSuite) TestDial(c *C) {
+// TODO: add multiple svc tests
+func (s *PakPkgStateSuite) TestDial(c *C) {
 	c.Check(s.pkg.Dial(), Equals, nil)
 }
 
-func (s *PakPkgSuite) TestParsePakfile(c *C) {
+func (s *PakPkgStateSuite) TestParsePakfile(c *C) {
 	pakPkgs, err := ParsePakfile()
 	expectedGitPkgs := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
@@ -62,7 +63,7 @@ func (s *PakPkgSuite) TestParsePakfile(c *C) {
 	c.Check(pakPkgs, DeepEquals, expectedGitPkgs)
 }
 
-func (s *PakPkgSuite) TestEqualPakfileNPakfileLock(c *C) {
+func (s *PakPkgStateSuite) TestEqualPakfileNPakfileLock(c *C) {
 	// Pakfile <===> Pakfile.lock
 	sampleGitpkgs := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
@@ -93,7 +94,7 @@ func (s *PakPkgSuite) TestEqualPakfileNPakfileLock(c *C) {
 	c.Check(obtainedToRemoteGps, DeepEquals, []PakPkg(nil))
 }
 
-func (s *PakPkgSuite) TestAddNewPkgs(c *C) {
+func (s *PakPkgStateSuite) TestAddNewPkgs(c *C) {
 	sampleGitpkgs := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
 		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
@@ -122,7 +123,7 @@ func (s *PakPkgSuite) TestAddNewPkgs(c *C) {
 	c.Check(obtainedToRemoteGps, DeepEquals, []PakPkg(nil))
 }
 
-func (s *PakPkgSuite) TestRemovePkgs(c *C) {
+func (s *PakPkgStateSuite) TestRemovePkgs(c *C) {
 	sampleGitpkgs := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
 		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
@@ -152,7 +153,7 @@ func (s *PakPkgSuite) TestRemovePkgs(c *C) {
 	c.Check(obtainedToRemoteGps, DeepEquals, expectedToRemoveGps)
 }
 
-func (s *PakPkgSuite) TestNewUpdateRemovePkgs(c *C) {
+func (s *PakPkgStateSuite) TestNewUpdateRemovePkgs(c *C) {
 	sampleGitpkgs := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
 		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
@@ -182,27 +183,28 @@ func (s *PakPkgSuite) TestNewUpdateRemovePkgs(c *C) {
 }
 
 type pakpkgTs struct {
-	pkg PakPkg
-	pkgArgs []string
-	masterChecksum string
-	setUpFixtures []string
+	pkg              PakPkg
+	pkgArgs          []string
+	masterChecksum   string
+	setUpFixtures    []string
 	tearDownFixtures []string
 }
 
-type PakPkgActionSuite struct{
+type PakPkgActionSuite struct {
 	pkgs []*pakpkgTs
 }
 
 var _ = Suite(&PakPkgActionSuite{
 	pkgs: []*pakpkgTs{
 		{
-			pkgArgs: []string{"github.com/theplant/pakpkg-action-git-package", "origin", "master"},
-			masterChecksum: "11b174bd5acbf990687e6b068c97378d3219de04",
-			setUpFixtures: []string{"git", "clone", "fixtures/package1", "../../pakpkg-action-git-package"},
+			pkgArgs:          []string{"github.com/theplant/pakpkg-action-git-package", "origin", "master"},
+			masterChecksum:   "11b174bd5acbf990687e6b068c97378d3219de04",
+			setUpFixtures:    []string{"git", "clone", "fixtures/package1", "../../pakpkg-action-git-package"},
 			tearDownFixtures: []string{"rm", "-rf", "../../pakpkg-action-git-package"},
 		},
 	},
 })
+
 func (s *PakPkgActionSuite) SetUpTest(c *C) {
 	for _, p := range s.pkgs {
 		p.pkg = NewPakPkg(p.pkgArgs[0], p.pkgArgs[1], p.pkgArgs[2])
