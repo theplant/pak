@@ -2,7 +2,7 @@ package core
 
 import (
 	"bytes"
-	"github.com/theplant/pak/gitpkg"
+	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	. "launchpad.net/gocheck"
 	"os/exec"
@@ -31,12 +31,12 @@ func mustRun(params ...string) (cmd *exec.Cmd) {
 }
 
 func (s *GetSuite) SetUpSuite(c *C) {
-	s.originalGoGetImpl = gitpkg.GoGetImpl
-	gitpkg.GoGetImpl = func(name string) error { return nil }
+	s.originalGoGetImpl = GoGetImpl
+	GoGetImpl = func(name string) error { return nil }
 }
 
 func (s *GetSuite) TearDownSuite(c *C) {
-	gitpkg.GoGetImpl = s.originalGoGetImpl
+	GoGetImpl = s.originalGoGetImpl
 }
 
 func (s *GetSuite) SetUpTest(c *C) {
@@ -53,7 +53,7 @@ func (s *GetSuite) SetUpTest(c *C) {
 		{"github.com/theplant/package3", "origin", "master"},
 	}
 	for _, val := range pkgsFixtures {
-		s.pakPkgs = append(s.pakPkgs, PakPkg{GitPkg: gitpkg.NewGitPkg(val[0], val[1], val[2])})
+		s.pakPkgs = append(s.pakPkgs, NewPakPkg(val[0], val[1], val[2]))
 	}
 }
 
@@ -76,9 +76,9 @@ func (s *GetSuite) TestGet(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 }
 
 func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
@@ -95,9 +95,9 @@ func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 }
 
 func (s *GetSuite) TestGetWithPakMeter(c *C) {
@@ -111,9 +111,9 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/master")
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/master")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/master")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/master")
 }
 
 func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
@@ -147,9 +147,9 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 }
 
 func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
-	originalGoGetImpl := gitpkg.GoGetImpl
+	originalGoGetImpl := GoGetImpl
 	gogetPkg1Count := 0
-	gitpkg.GoGetImpl = func(name string) error {
+	GoGetImpl = func(name string) error {
 		if name == "github.com/theplant/package1" {
 			gogetPkg1Count++
 			if gogetPkg1Count == 1 {
@@ -159,7 +159,7 @@ func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
 
 		return nil
 	}
-	defer func() { gitpkg.GoGetImpl = originalGoGetImpl }()
+	defer func() { GoGetImpl = originalGoGetImpl }()
 
 	mustRun("rm", "-rf", "../../package1")
 
@@ -175,9 +175,9 @@ func (s *GetSuite) TestGoGetAndFetchBeforePak(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 }
 
 func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
@@ -191,7 +191,7 @@ func (s *GetSuite) TestDoNotCheckOtherPkgWhenGettingWithPakMeter(c *C) {
 	c.Check(err, Equals, nil)
 
 	s.pakPkgs[1].Sync()
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 }
 
 func (s *GetSuite) TestComplainUncompilablePartialMatching(c *C) {
@@ -214,9 +214,9 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 
 	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "941af3b182a1d0a5859fd451a8b5a633f479d7bc")
 
@@ -246,8 +246,8 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
-	c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 
 	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "e373579a64e367338ff09b5143e312c81204c074")
 
@@ -260,7 +260,7 @@ func (s *GetSuite) TestCanGetPackageOnNoBranch(c *C) {
 
 	err := s.pakPkgs[0].Sync()
 	c.Check(err, Equals, nil)
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "no branch")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "no branch")
 	c.Check(s.pakPkgs[0].HeadChecksum, Equals, "11b174bd5acbf990687e6b068c97378d3219de04")
 
 	err = Get(PakOption{
@@ -273,8 +273,8 @@ func (s *GetSuite) TestCanGetPackageOnNoBranch(c *C) {
 	s.pakPkgs[0].Sync()
 	// s.pakPkgs[1].Sync()
 	// s.pakPkgs[2].Sync()
-	c.Check(s.pakPkgs[0].HeadRefsName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[0].HeadChecksum, Equals, "11b174bd5acbf990687e6b068c97378d3219de04")
-	// c.Check(s.pakPkgs[1].HeadRefsName, Equals, "refs/heads/pak")
-	// c.Check(s.pakPkgs[2].HeadRefsName, Equals, "refs/heads/pak")
+	// c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	// c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 }

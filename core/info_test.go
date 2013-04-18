@@ -90,23 +90,3 @@ func (s *PakSuite) TestReadPakfileLock(c *C) {
 		os.Remove(paklockPath.path)
 	}
 }
-
-// func (s *PakSuite) TestUpdate(c *C) {
-// 	pakInfo, _ := goyaml.Marshal(&PakInfo{[]string{"github.com/theplant/pak"}})
-// 	ioutil.WriteFile(pakfile, pakInfo, os.FileMode(0644))
-//
-// 	Update()
-//
-// 	os.Remove(pakfile)
-// 	os.Remove(paklock)
-// }
-//
-// func (s *PakSuite) TestIsPackageClean(c *C) {
-// 	c.Check(isPackageClean("github.com/sunfmin/batchbuy"), Equals, true)
-// 	c.Check(isPackageClean("github.com/theplant/pak"), Equals, false)
-// }
-//
-// func (s *PakSuite) TestCheckoutPakbranch(c *C) {
-// 	c.Check(checkoutPakbranch("github.com/sunfmin/batchbuy", "3b61e71b65325275d1d043d4c558e674b2d2862f"), Equals, true)
-// 	c.Check(checkoutPakbranch("github.com/theplant/batchbuy", "3b61e71b65325275d1d043d4c558e674b2d2862f"), Equals, false)
-// }

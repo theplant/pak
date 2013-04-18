@@ -1,7 +1,6 @@
 package share
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -20,47 +19,50 @@ type PakInfo struct {
 
 type PaklockInfo map[string]string
 
-type GetOption struct {
-	Force    bool
-	Checksum string
-}
-
 type PakOption struct {
 	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
 	Force          bool
 }
 
-type VCSPkg interface {
-	Sync() error
+type GetOption struct {
+	Force    bool
+	Checksum string
+}
+
+// Notes:
+// Containing branch named pak does not mean that pkg is managed by pak.
+// Containing tag named _pak_latest_ means this pkg is managed by pak, but
+// still can't make sure the pkg is on the pak branch or it's status is wanted
+// by Pakfile or Pakfile.lock.
+
+type PkgProxy interface {
 	Fetch() error
-	Pak(GetOption) (string, error)
-	Unpak(bool) error
-	GoGet() error
-	IsPkgExist() (bool, error)
-	Report() error
+	NewBranch(string) error
+	NewTag(string, string) error
+	RemoveTag(string) error
+	Pak(string) (string, error)
+	Unpak() error
+	// Report() error
+
+	IsClean() (bool, error)
+	ContainsRemoteBranch() (bool, error)
+	ContainsPakbranch() (bool, error)
+	ContainsPaktag() (bool, error)
+	GetChecksum(string) (string, error)
+	GetHeadChecksum() (string, error)
+	GetHeadRefName() (string, error)
+	GetPaktagRef() string
+	GetPakbranchRef() string
+	GetRemoteBranch() string
 }
 
-type VCSPkgBuilder struct {
+type PkgProxyBuilder struct {
 	IsTracking func(name string) (bool, error)
-	NewVCS func(name, remote, branch string) VCSPkg
+	NewVCS func(name, remote, branch string) PkgProxy
 }
 
-var VCSPkgList = []VCSPkgBuilder{}
-func RegisterVCSPkg(newBuilder VCSPkgBuilder) {
-	VCSPkgList = append(VCSPkgList, newBuilder)
-}
-
-func NewVCSPkg(pkg, remote, branch string) (VCSPkg, error) {
-	for _, engine := range VCSPkgList {
-		tracking, err := engine.IsTracking(pkg)
-		if err != nil {
-		    return nil, err
-		}
-		if tracking {
-			return engine.NewVCS(pkg, remote, branch), nil
-		}
-	}
-
-	return nil, fmt.Errorf("%s: Can't Detect What Kind of VCS it's Using.", pkg)
+var PkgProxyList = []PkgProxyBuilder{}
+func RegisterPkgProxy(newBuilder PkgProxyBuilder) {
+	PkgProxyList = append(PkgProxyList, newBuilder)
 }

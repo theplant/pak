@@ -71,8 +71,7 @@ func Get(option PakOption) error {
 	} else {
 		newPaklockInfo = PaklockInfo{}
 	}
-
-	// Ask Pak to Ignore Pakfile.lock
+	// Ask Pak to Ignore Pakfile.lock when updating
 	if !option.UsePakfileLock {
 		paklockInfo = nil
 	}
@@ -101,12 +100,12 @@ func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 		}
 
 		// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
-		err = (*allPakPkgs)[i].VCSPkg.Fetch()
+		err = (*allPakPkgs)[i].Fetch()
 		if err != nil {
 			return err
 		}
 
-		err = (*allPakPkgs)[i].VCSPkg.Sync()
+		err = (*allPakPkgs)[i].Sync()
 		if err != nil {
 		    return err
 		}
