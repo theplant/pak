@@ -78,7 +78,7 @@ func (s *PakPkgStateSuite) TestEqualPakfileNPakfileLock(c *C) {
 		"github.com/theplant/package4": "whoop-fake-checksum-hash",
 	}
 
-	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
+	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := CategorizePakPkgs(sampleGitpkgs, samplePakLockInfo)
 	expectedToUpdateGps := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
 		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
@@ -107,7 +107,7 @@ func (s *PakPkgStateSuite) TestAddNewPkgs(c *C) {
 		"github.com/theplant/package3": "whoop-fake-checksum-hash",
 	}
 
-	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
+	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := CategorizePakPkgs(sampleGitpkgs, samplePakLockInfo)
 	expectedToUpdateGps := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
 		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
@@ -136,7 +136,7 @@ func (s *PakPkgStateSuite) TestRemovePkgs(c *C) {
 		"github.com/theplant/package4": "whoop-fake-checksum-hash",
 	}
 
-	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
+	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := CategorizePakPkgs(sampleGitpkgs, samplePakLockInfo)
 	expectedToUpdateGps := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
 		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
@@ -165,7 +165,7 @@ func (s *PakPkgStateSuite) TestNewUpdateRemovePkgs(c *C) {
 		"github.com/theplant/package4": "whoop-fake-checksum-hash",
 	}
 
-	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := ParsePakState(sampleGitpkgs, samplePakLockInfo)
+	obtainedNewGps, obtainedToUpdateGps, obtainedToRemoteGps := CategorizePakPkgs(sampleGitpkgs, samplePakLockInfo)
 	expectedNewGps := []PakPkg{NewPakPkg("github.com/theplant/package3", "origin", "dev")}
 	expectedToUpdateGps := []PakPkg{
 		NewPakPkg("github.com/theplant/package1", "origin", "master"),
@@ -238,7 +238,7 @@ func (s *PakPkgActionSuite) TestSimplePak(c *C) {
 		c.Check(p.pkg.IsRemoteBranchExist, Equals, true)
 		c.Check(p.pkg.IsClean, Equals, true)
 
-		p.pkg.Pak(GetOption{true, ""})
+		p.pkg.Pak(GetOption{Force: true, Checksum: ""})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/pak")
@@ -269,7 +269,7 @@ func (s *PakPkgActionSuite) TestWeakPak(c *C) {
 		c.Check(p.pkg.IsRemoteBranchExist, Equals, true)
 		c.Check(p.pkg.IsClean, Equals, true)
 
-		p.pkg.Pak(GetOption{false, ""})
+		p.pkg.Pak(GetOption{Force: false, Checksum: ""})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/master")
@@ -290,7 +290,7 @@ func (s *PakPkgActionSuite) TestForcefulPak(c *C) {
 		p.pkg.PkgProxy.NewBranch("pak")
 		p.pkg.Sync()
 
-		p.pkg.Pak(GetOption{true, ""})
+		p.pkg.Pak(GetOption{Force: true, Checksum: ""})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/pak")
@@ -310,7 +310,7 @@ func (s *PakPkgActionSuite) TestGetWithChecksum(c *C) {
 	for _, p := range s.pkgs {
 		devChecksum := "711c1e206bca5ad99edf6da12074bbbe4a349932"
 		p.pkg.Sync()
-		p.pkg.Pak(GetOption{true, devChecksum})
+		p.pkg.Pak(GetOption{Force: true, Checksum: devChecksum})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/pak")
@@ -329,7 +329,7 @@ func (s *PakPkgActionSuite) TestGetWithChecksum(c *C) {
 func (s *PakPkgActionSuite) TestForcefulUnpak(c *C) {
 	for _, p := range s.pkgs {
 		p.pkg.Sync()
-		p.pkg.Pak(GetOption{true, p.masterChecksum})
+		p.pkg.Pak(GetOption{Force: true, Checksum: p.masterChecksum})
 		p.pkg.Sync()
 		p.pkg.Unpak(true)
 		p.pkg.Sync()

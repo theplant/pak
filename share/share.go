@@ -21,13 +21,23 @@ type PaklockInfo map[string]string
 
 type PakOption struct {
 	PakMeter         []string // used for containing spcified packages
-	UsingPakfileLock bool
+	UsePakfileLock bool
 	Force            bool
+
+	// When the option set, pak will stop complaining about unclean
+	// packages, either installing or updating packages. That make it less
+	// painful for someone who is developing both the main project using pak
+	// and its dependent packages tracked by pak, because he no longer has to
+	// be clean up dependent packages that he is developing when all he want
+	// to is get other dependent packages of the main project updated.
+	// But for package that hasn't been locked down by pak, it should be clean.
+	SkipUncleanPkgs  bool
 }
 
 type GetOption struct {
-	Force    bool
-	Checksum string
+	Force			bool
+	Checksum		string
+	SkipUncleanPkgs bool
 }
 
 type PkgProxy interface {

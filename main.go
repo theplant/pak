@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	getLatestFlag bool
-	forceFlag     bool
+	getLatest       bool
+	force           bool
+	skipUncleanPkgs bool
 )
 
 func init() {
@@ -19,16 +20,17 @@ func init() {
 		spaces := "    "
 		color.Printf("@gPackages Management Tool Pak.\n@wUsage:\n")
 		color.Printf("%spak init\n", spaces)
-		color.Printf("%spak [-uf] get\n", spaces)
-		color.Printf("%spak update [package]\n", spaces)
+		color.Printf("%spak [-usf] get\n", spaces)
+		color.Printf("%spak [-s] update [package]\n", spaces)
 		color.Printf("%spak open [package]\n", spaces)
 		color.Printf("%spak list\n", spaces)
 		color.Printf("%spak version\n", spaces)
 		// fmt.Printf("%spak scan\n", spaces)
 		// flag.PrintDefaults()
 	}
-	flag.BoolVar(&getLatestFlag, "u", false, "Download the lastest revisions from remote repo before checkout.")
-	flag.BoolVar(&forceFlag, "f", false, "Force pak to remove pak branch.")
+	flag.BoolVar(&getLatest, "u", false, "Download the lastest revisions from remote repo before checkout.")
+	flag.BoolVar(&force, "f", false, "Force pak to remove pak branch.")
+	flag.BoolVar(&skipUncleanPkgs, "s", false, "Left out unclean packages.")
 }
 
 func main() {
@@ -37,19 +39,29 @@ func main() {
 	case "init":
 		core.Init()
 	case "get":
-		err := core.Get(PakOption{UsingPakfileLock: true, Force: forceFlag})
+		err := core.Get(PakOption{
+			UsePakfileLock:  true,
+			Force:           force,
+			SkipUncleanPkgs: skipUncleanPkgs,
+		})
+
 		if err != nil {
 			color.Printf("@r%s\n", err)
 		}
 	case "update":
-		option := PakOption{UsingPakfileLock: false, Force: true}
-		option.PakMeter = flag.Args()[1:]
-		err := core.Get(option)
+		err := core.Get(PakOption{
+			UsePakfileLock:  false,
+			Force:           true,
+			SkipUncleanPkgs: skipUncleanPkgs,
+			PakMeter:        flag.Args()[1:],
+		})
+
 		if err != nil {
 			color.Printf("@r%s\n", err)
 			return
 		}
 	case "open":
+		// TODO: use shell variable to choose editor
 		name := flag.Args()[1]
 		matched, pkg, err := core.FindPackage(name)
 		if err != nil {
@@ -79,7 +91,7 @@ func main() {
 			color.Printf("@g    %s\n", pkg.Name)
 		}
 	case "version":
-		color.Println("@g1.1.3")
+		color.Println("@g1.1.5")
 	default:
 		flag.Usage()
 	}

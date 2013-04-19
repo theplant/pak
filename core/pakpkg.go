@@ -26,10 +26,10 @@ type PakPkg struct {
 	PaktagRef         string
 
 	// Note:
-	// Containing branch named pak does not mean that pkg is managed by pak.
-	// Containing tag named _pak_latest_ means this pkg is managed by pak, but
-	// still can't make sure the pkg is on the pak branch or it's status is wanted
-	// by Pakfile or Pakfile.lock.
+	// Containing abranch named pak does not mean that pkg is managed by pak.
+	// However, containing a tag named _pak_latest_ means this pkg is managed by
+	// pak, but still can't make sure the pkg is on the pak branch or it's status
+	// is consistent with Pakfile.lock.
 	PkgExist               bool
 	IsRemoteBranchExist    bool
 	ContainsBranchNamedPak bool
@@ -164,7 +164,7 @@ func (this *PakPkg) Sync() (err error) {
 }
 
 func (this *PakPkg) Report() error {
-	if !this.IsClean {
+	if !this.IsClean && !this.SkipUncleanPkgs {
 		return fmt.Errorf("Package %s is not clean. Please clean it up before running pak.", this.Name)
 	}
 
@@ -217,28 +217,29 @@ func (this *PakPkg) Unpak(force bool) (err error) {
 	return this.PkgProxy.Unpak()
 }
 
-func ParsePakState(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []PakPkg, toUpdatePkgs []PakPkg, toRemovePkgs []PakPkg) {
-	if paklockInfo != nil {
-		for _, pakPkg := range pakfilePakPkgs {
-			if paklockInfo[pakPkg.Name] != "" {
-				pakPkg.Checksum = paklockInfo[pakPkg.Name]
-				toUpdatePkgs = append(toUpdatePkgs, pakPkg)
-				delete(paklockInfo, pakPkg.Name)
-			} else {
-				newPkgs = append(newPkgs, pakPkg)
-			}
-		}
-		if len(paklockInfo) != 0 {
-			for key, val := range paklockInfo {
-				pakPkg := NewPakPkg(key, "", "")
-				pakPkg.Checksum = val
-				toRemovePkgs = append(toRemovePkgs, pakPkg)
-			}
-		}
-	} else {
+func CategorizePakPkgs(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []PakPkg, toUpdatePkgs []PakPkg, toRemovePkgs []PakPkg) {
+	if paklockInfo == nil {
 		newPkgs = pakfilePakPkgs
+		return
 	}
 
+	for _, pakPkg := range pakfilePakPkgs {
+		if paklockInfo[pakPkg.Name] == "" {
+			newPkgs = append(newPkgs, pakPkg)
+		} else {
+			pakPkg.Checksum = paklockInfo[pakPkg.Name]
+			toUpdatePkgs = append(toUpdatePkgs, pakPkg)
+
+			delete(paklockInfo, pakPkg.Name)
+		}
+	}
+	if len(paklockInfo) != 0 {
+		for key, val := range paklockInfo {
+			pakPkg := NewPakPkg(key, "", "")
+			pakPkg.Checksum = val
+			toRemovePkgs = append(toRemovePkgs, pakPkg)
+		}
+	}
 	return
 }
 

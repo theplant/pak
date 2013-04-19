@@ -38,7 +38,7 @@ func Get(option PakOption) error {
 	}
 
 	// For: pak update package
-	// Pick up PakPkg to be updated this time
+	// Pick up PakPkgs to be updated this time
 	pakPkgs := []PakPkg{}
 	if len(option.PakMeter) != 0 {
 		var matched bool
@@ -71,8 +71,8 @@ func Get(option PakOption) error {
 	} else {
 		newPaklockInfo = PaklockInfo{}
 	}
-	// Ask Pak to Ignore Pakfile.lock when updating
-	if !option.UsingPakfileLock {
+	// Ask Pak to Ignore Pakfile.lock when Updating
+	if !option.UsePakfileLock {
 		paklockInfo = nil
 	}
 	err = pakDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
@@ -86,6 +86,7 @@ func Get(option PakOption) error {
 func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 	for i := 0; i < len((*allPakPkgs)); i++ {
 		(*allPakPkgs)[i].GetOption.Force = option.Force
+		(*allPakPkgs)[i].GetOption.SkipUncleanPkgs = option.SkipUncleanPkgs
 
 		// Go Get Package when the Package is not Downloaded Before
 		isPkgExist, err := (*allPakPkgs)[i].IsPkgExist()
@@ -170,7 +171,7 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 }
 
 func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *PaklockInfo) error {
-	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := ParsePakState(pakPkgs, paklockInfo)
+	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := CategorizePakPkgs(pakPkgs, paklockInfo)
 
 	var (
 		checksum string
@@ -178,6 +179,10 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 	)
 
 	for i := 0; i < len(newPakPkgs); i++ {
+		if !newPakPkgs[i].IsClean {
+			return fmt.Errorf("%s Is a New Package and is Not Clean.", newPakPkgs[i].Name)
+		}
+
 		checksum, err = newPakPkgs[i].Pak(newPakPkgs[i].GetOption)
 		if err != nil {
 			return err
@@ -186,6 +191,10 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 		(*newPaklockInfo)[newPakPkgs[i].Name] = checksum
 	}
 	for i := 0; i < len(toUpdatePakPkgs); i++ {
+		if !toUpdatePakPkgs[i].IsClean {
+			continue
+		}
+
 		checksum, err = toUpdatePakPkgs[i].Pak(toUpdatePakPkgs[i].GetOption)
 		if err != nil {
 			return err
@@ -198,6 +207,7 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 		if err != nil {
 			return err
 		}
+
 		if exist {
 			err = toRemovePakPkgs[i].Dial()
 			if err != nil {
@@ -208,9 +218,11 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 				return err
 			}
 
-			err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
-			if err != nil {
-				return err
+			if toRemovePakPkgs[i].IsClean {
+				err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
