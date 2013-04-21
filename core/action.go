@@ -6,6 +6,7 @@ import (
 	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	"os"
+	"strings"
 	"regexp"
 )
 
@@ -32,15 +33,23 @@ func Get(option PakOption) error {
 	if err != nil {
 		if err == PakfileLockNotExist {
 			paklockInfo = nil
+
+			if option.SkipUncleanPkgs {
+				return fmt.Errorf("Can't skip unclean packages because this project has not yet been locked.\nPlease run pak get.")
+			}
 		} else {
 			return err
 		}
 	}
 
-	// For: pak update package
+	// For: pak update <package, ...>
 	// Pick up PakPkgs to be updated this time
 	pakPkgs := []PakPkg{}
 	if len(option.PakMeter) != 0 {
+		if paklockInfo == nil {
+			return fmt.Errorf("Can't pak specific packages because this project has not yet been locked.\nPlease run pak get before getting or updating specific packages.")
+		}
+
 		var matched bool
 		var pakPkg PakPkg
 		for _, pakPkgName := range option.PakMeter {
@@ -67,15 +76,15 @@ func Get(option PakOption) error {
 
 	newPaklockInfo := PaklockInfo{}
 	if paklockInfo != nil {
-		newPaklockInfo = paklockInfo
-	} else {
-		newPaklockInfo = PaklockInfo{}
+		for k, v := range paklockInfo {
+			newPaklockInfo[k] = v
+		}
 	}
 	// Ask Pak to Ignore Pakfile.lock when Updating
 	if !option.UsePakfileLock {
 		paklockInfo = nil
 	}
-	err = pakDependencies(pakPkgs, paklockInfo, &newPaklockInfo)
+	err = pakDependencies(pakPkgs, paklockInfo, newPaklockInfo)
 	if err != nil {
 		return err
 	}
@@ -170,7 +179,7 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 	return matched, matchedPakPkg, nil
 }
 
-func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *PaklockInfo) error {
+func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo PaklockInfo) error {
 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := CategorizePakPkgs(pakPkgs, paklockInfo)
 
 	var (
@@ -180,7 +189,7 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 
 	for i := 0; i < len(newPakPkgs); i++ {
 		if !newPakPkgs[i].IsClean {
-			return fmt.Errorf("%s Is a New Package and is Not Clean.", newPakPkgs[i].Name)
+			return fmt.Errorf("Package %s is a New Package and is Not Clean.", newPakPkgs[i].Name)
 		}
 
 		checksum, err = newPakPkgs[i].Pak(newPakPkgs[i].GetOption)
@@ -188,10 +197,22 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 			return err
 		}
 
-		(*newPaklockInfo)[newPakPkgs[i].Name] = checksum
+		newPaklockInfo[newPakPkgs[i].Name] = checksum
 	}
+
+	// TODO: refactor. shouldn't read Pakfile twice.
+	pakInfo, err := GetPakInfo()
+	if err != nil {
+		return err
+	}
+
+	usingPakMeter := len(pakInfo.Packages) != len(pakPkgs)
 	for i := 0; i < len(toUpdatePakPkgs); i++ {
 		if !toUpdatePakPkgs[i].IsClean {
+			if usingPakMeter {
+				return fmt.Errorf("Package %s is Not Clean.", toUpdatePakPkgs[i].Name)
+			}
+
 			continue
 		}
 
@@ -200,12 +221,24 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 			return err
 		}
 
-		(*newPaklockInfo)[toUpdatePakPkgs[i].Name] = checksum
+		newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
 	}
+
 	for i := 0; i < len(toRemovePakPkgs); i++ {
 		exist, err := toRemovePakPkgs[i].IsPkgExist()
 		if err != nil {
 			return err
+		}
+
+		dependentPkg := false
+		for _, pkg := range pakInfo.Packages {
+			if strings.Contains(pkg, toRemovePakPkgs[i].Name) {
+				dependentPkg = true
+				break
+			}
+		}
+		if dependentPkg {
+			continue
 		}
 
 		if exist {
@@ -227,7 +260,7 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo *
 		}
 
 		// TODO: Add tests for removing Pakfile.lock record
-		delete((*newPaklockInfo), toRemovePakPkgs[i].Name)
+		delete(newPaklockInfo, toRemovePakPkgs[i].Name)
 	}
 
 	return err

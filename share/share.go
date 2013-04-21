@@ -22,6 +22,14 @@ type PaklockInfo map[string]string
 type PakOption struct {
 	PakMeter         []string // used for containing spcified packages
 	UsePakfileLock bool
+
+	// Force option is designed for asking pak to update package state as long
+	// as the package is exist and clean. This option is always true when pak is
+	// updating packages because [update] command is designed for checking out
+	// the up-to-date commit of a package instead of resetting the package state
+	// in accord with Pakfile.lock. In another case, [get] command, Force option
+	// will allow pak to forcefully remove branch named [pak] in packages which
+	// don't contain a tag named [_pak_latest_].
 	Force            bool
 
 	// When the option set, pak will stop complaining about unclean

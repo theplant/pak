@@ -30,7 +30,6 @@ type PakPkg struct {
 	// However, containing a tag named _pak_latest_ means this pkg is managed by
 	// pak, but still can't make sure the pkg is on the pak branch or it's status
 	// is consistent with Pakfile.lock.
-	PkgExist               bool
 	IsRemoteBranchExist    bool
 	ContainsBranchNamedPak bool
 	ContainsPaktag         bool
@@ -211,7 +210,7 @@ func (this *PakPkg) Pak(option GetOption) (string, error) {
 
 func (this *PakPkg) Unpak(force bool) (err error) {
 	if this.ContainsBranchNamedPak && !this.OwnPakbranch && !force {
-		return fmt.Errorf("Package %s Contains Branch Named pak. Please use pak with -f flag or manually remove/rename the branch in the package.", this.Name)
+		return fmt.Errorf("Package %s Contains Branch Named pak that can't be recognized by pak.\nPlease use pak with -f flag to allow pak to remove the branch or you can manually remove/rename the branch in the package.", this.Name)
 	}
 
 	return this.PkgProxy.Unpak()
@@ -240,6 +239,7 @@ func CategorizePakPkgs(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkg
 			toRemovePkgs = append(toRemovePkgs, pakPkg)
 		}
 	}
+
 	return
 }
 
