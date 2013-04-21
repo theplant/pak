@@ -6,8 +6,8 @@ import (
 	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	"os"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 func Init() error {

@@ -20,7 +20,7 @@ type PakInfo struct {
 type PaklockInfo map[string]string
 
 type PakOption struct {
-	PakMeter         []string // used for containing spcified packages
+	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
 
 	// Force option is designed for asking pak to update package state as long
@@ -30,7 +30,7 @@ type PakOption struct {
 	// in accord with Pakfile.lock. In another case, [get] command, Force option
 	// will allow pak to forcefully remove branch named [pak] in packages which
 	// don't contain a tag named [_pak_latest_].
-	Force            bool
+	Force bool
 
 	// When the option set, pak will stop complaining about unclean
 	// packages, either installing or updating packages. That make it less
@@ -39,12 +39,12 @@ type PakOption struct {
 	// be clean up dependent packages that he is developing when all he want
 	// to is get other dependent packages of the main project updated.
 	// But for package that hasn't been locked down by pak, it should be clean.
-	SkipUncleanPkgs  bool
+	SkipUncleanPkgs bool
 }
 
 type GetOption struct {
-	Force			bool
-	Checksum		string
+	Force           bool
+	Checksum        string
 	SkipUncleanPkgs bool
 }
 
