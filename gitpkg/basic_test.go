@@ -2,7 +2,7 @@ package gitpkg
 
 import (
 	"fmt"
-	// . "github.com/theplant/pak/share"
+	. "github.com/theplant/pak/share"
 	. "launchpad.net/gocheck"
 	"os/exec"
 )
@@ -15,12 +15,12 @@ var testGitPkg *GitPkg
 var testGpMasterChecksum = "11b174bd5acbf990687e6b068c97378d3219de04"
 
 func (s *GitPkgSuite) SetUpTest(c *C) {
-	testGitPkg = NewGitPkg("github.com/theplant/gitpkg-test-package", "origin", "master").(*GitPkg)
-	var err error
-	err = exec.Command("git", "clone", "fixtures/package1", "../../gitpkg-test-package").Run()
+	err := exec.Command("git", "clone", "fixtures/package1", "../../gitpkg-test-package").Run()
 	if err != nil {
 		panic(fmt.Errorf("GitPkgSuite.SetUpSuite: %s", err.Error()))
 	}
+
+	testGitPkg = NewGitPkg("github.com/theplant/gitpkg-test-package", "origin", "master").(*GitPkg)
 }
 
 func (s *GitPkgSuite) TearDownTest(c *C) {
@@ -121,6 +121,47 @@ func (s *GitPkgSuite) TestIsTracking(c *C) {
 	tracking, err := IsTracking("github.com/theplant/gitpkg-test-package")
 	c.Check(err, Equals, nil)
 	c.Check(tracking, Equals, true)
+
+	MustRun("mkdir", "-p", "../../git-istracking-test/sub-package/.git")
+	MustRun("mkdir", "-p", "../../git-istracking-test2/package")
+	defer func() {
+		MustRun("rm", "-r", "../../git-istracking-test")
+		MustRun("rm", "-r", "../../git-istracking-test2")
+	}()
+
+	tracking, err = IsTracking("github.com/theplant/git-istracking-test/sub-package")
+	c.Check(err, Equals, nil)
+	c.Check(tracking, Equals, true)
+
+	tracking, err = IsTracking("github.com/theplant/git-istracking-test2/package")
+	c.Check(err, Equals, nil)
+	c.Check(tracking, Equals, false)
+}
+
+func (s *GitPkgSuite) TestGetPkgRoot(c *C) {
+	tracking, err2 := IsTracking("github.com/theplant/gitpkg-test-package")
+	c.Check(err2, Equals, nil)
+	c.Check(tracking, Equals, true)
+
+	pkgName, err := GetPkgRoot("github.com/theplant/gitpkg-test-package")
+	c.Check(err, Equals, nil)
+	c.Check(pkgName, Equals, "github.com/theplant/gitpkg-test-package")
+
+	MustRun("mkdir", "-p", "../../git-istracking-test/.git/ll")
+	MustRun("mkdir", "-p", "../../git-istracking-test/sub-package/ll")
+	MustRun("mkdir", "-p", "../../git-istracking-test2/package")
+	defer func() {
+		MustRun("rm", "-r", "../../git-istracking-test")
+		MustRun("rm", "-r", "../../git-istracking-test2")
+	}()
+
+	pkgName, err = GetPkgRoot("github.com/theplant/git-istracking-test/sub-package")
+	c.Check(err, Equals, nil)
+	c.Check(pkgName, Equals, "github.com/theplant/git-istracking-test")
+
+	pkgName, err = GetPkgRoot("github.com/theplant/git-istracking-test2/package")
+	c.Check(err, Not(Equals), nil)
+	c.Check(pkgName, Equals, "")
 }
 
 func (s *GitPkgSuite) TestPak(c *C) {

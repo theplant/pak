@@ -16,8 +16,8 @@ var _ = Suite(&PakPkgStateSuite{
 })
 
 func (s *PakPkgStateSuite) SetUpSuite(c *C) {
-	mustRun("cp", "fixtures/Pakfile2", "./Pakfile")
-	mustRun("git", "clone", "fixtures/package1", "../../pakpkg-package")
+	MustRun("cp", "fixtures/Pakfile2", "./Pakfile")
+	MustRun("git", "clone", "fixtures/package1", "../../pakpkg-package")
 
 	if err := s.pkg.Dial(); err != nil {
 		c.Fatal(err)
@@ -25,8 +25,8 @@ func (s *PakPkgStateSuite) SetUpSuite(c *C) {
 }
 
 func (s *PakPkgStateSuite) TearDownSuite(c *C) {
-	mustRun("rm", "-f", "Pakfile")
-	mustRun("rm", "-rf", "../../pakpkg-package")
+	MustRun("rm", "-f", "Pakfile")
+	MustRun("rm", "-rf", "../../pakpkg-package")
 }
 
 func (s *PakPkgStateSuite) TestIsPkgExist(c *C) {
@@ -209,7 +209,7 @@ func (s *PakPkgActionSuite) SetUpTest(c *C) {
 	for _, p := range s.pkgs {
 		p.pkg = NewPakPkg(p.pkgArgs[0], p.pkgArgs[1], p.pkgArgs[2])
 
-		mustRun(p.setUpFixtures...)
+		MustRun(p.setUpFixtures...)
 
 		err := p.pkg.Dial()
 		if err != nil {
@@ -219,7 +219,7 @@ func (s *PakPkgActionSuite) SetUpTest(c *C) {
 }
 func (s *PakPkgActionSuite) TearDownTest(c *C) {
 	for _, p := range s.pkgs {
-		mustRun(p.tearDownFixtures...)
+		MustRun(p.tearDownFixtures...)
 	}
 }
 

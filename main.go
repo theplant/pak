@@ -56,7 +56,7 @@ func main() {
 
 func getPakPkgs() {
 	err := core.Get(PakOption{
-		PakMeter: flag.Args()[1:],
+		PakMeter:        flag.Args()[1:],
 		UsePakfileLock:  true,
 		Force:           force,
 		SkipUncleanPkgs: skipUncleanPkgs,

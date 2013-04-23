@@ -76,7 +76,7 @@ func (this *PakPkg) Dial() error {
 		}
 	}
 
-	return fmt.Errorf("%s: Can't Detect What Kind of VCS it's Using.", this.Name)
+	return fmt.Errorf("Package %s: Can't Find Out Type of Versino Control System.", this.Name)
 }
 
 // GoGet invokes command `go get {package}`.

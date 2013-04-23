@@ -1,7 +1,10 @@
 package share
 
 import (
+	"bytes"
+	"fmt"
 	"os"
+	"os/exec"
 )
 
 const (
@@ -77,4 +80,19 @@ var PkgProxyList = []PkgProxyBuilder{}
 
 func RegisterPkgProxy(newBuilder PkgProxyBuilder) {
 	PkgProxyList = append(PkgProxyList, newBuilder)
+}
+
+func MustRun(params ...string) (cmd *exec.Cmd) {
+	cmd = exec.Command(params[0], params[1:]...)
+
+	stderr := &bytes.Buffer{}
+	cmd.Stderr = stderr
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println(stderr.String())
+
+		panic(err)
+	}
+
+	return
 }

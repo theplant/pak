@@ -18,10 +18,13 @@ type GitPkg struct {
 	RemoteBranch string // refs/remotes/:Remote/:Branch
 	PakbranchRef string // refs/heads/pak
 	PaktagRef    string // refs/tags/_pak_latest_
-	WorkTree     string
-	GitDir       string
+
+	PkgRoot  string
+	WorkTree string
+	GitDir   string
 }
 
+// NewGitPkg now will panic, make sure to be invoked after IsTracking
 func NewGitPkg(name, remote, branch string) PkgProxy {
 	gitPkg := GitPkg{}
 	gitPkg.Name = name
@@ -31,10 +34,39 @@ func NewGitPkg(name, remote, branch string) PkgProxy {
 	gitPkg.PakbranchRef = "refs/heads/" + Pakbranch
 	gitPkg.PaktagRef = "refs/tags/" + Paktag
 	gitPkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
-	gitPkg.WorkTree = fmt.Sprintf("--work-tree=%s", gitPkg.Path)
-	gitPkg.GitDir = fmt.Sprintf("--git-dir=%s/.git", gitPkg.Path)
+
+	root, err := GetPkgRoot(gitPkg.Name)
+	if err != nil {
+		panic(err) // TODO: would be nice if don't panic
+	}
+
+	gitPkg.PkgRoot = fmt.Sprintf("%s/src/%s", Gopath, root)
+	gitPkg.WorkTree = fmt.Sprintf("--work-tree=%s", gitPkg.PkgRoot)
+	gitPkg.GitDir = fmt.Sprintf("--git-dir=%s/.git", gitPkg.PkgRoot)
 
 	return &gitPkg
+}
+
+func GetPkgRoot(pkg string) (string, error) {
+	originalPkg := pkg
+	for true {
+		tracking, err := isDirTracked(pkg)
+		if err != nil {
+			return "", err
+		}
+
+		if tracking {
+			return pkg, nil
+		} else {
+			slashIndex := strings.LastIndex(pkg, "/")
+			if slashIndex == -1 {
+				return "", fmt.Errorf("Pakcage %s: Can't Resolve Package Root.", originalPkg)
+			}
+			pkg = pkg[0:slashIndex]
+		}
+	}
+
+	return "", nil
 }
 
 // Git is simple git command wrapper.
@@ -126,13 +158,14 @@ func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
 
 var RefsRegexp = regexp.MustCompile("^ref: (.+)\n")
 
+// TODO: add tests
 func (this *GitPkg) GetHeadRefName() (string, error) {
-	cmd := exec.Command("cat", this.Path+"/.git/HEAD")
+	cmd := exec.Command("cat", this.PkgRoot+"/.git/HEAD")
 	cmd.Stdout = &bytes.Buffer{}
 	cmd.Stderr = &bytes.Buffer{}
 	err := cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("%s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+		return "", fmt.Errorf("Package %s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
 	}
 
 	refline := cmd.Stdout.(*bytes.Buffer).String()
@@ -146,6 +179,7 @@ func (this *GitPkg) GetHeadRefName() (string, error) {
 	return ref, nil
 }
 
+// TODO: add tests
 func (this *GitPkg) GetHeadChecksum() (string, error) {
 	headBranch, err := this.GetHeadRefName()
 	if err != nil {
@@ -153,12 +187,12 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 	}
 
 	if headBranch == "no branch" {
-		cmd := exec.Command("cat", this.Path+"/.git/HEAD")
+		cmd := exec.Command("cat", this.PkgRoot+"/.git/HEAD")
 		cmd.Stdout = &bytes.Buffer{}
 		cmd.Stderr = &bytes.Buffer{}
 		err := cmd.Run()
 		if err != nil {
-			return "", fmt.Errorf("%s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+			return "", fmt.Errorf("Package %s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
 		}
 
 		checksum := cmd.Stdout.(*bytes.Buffer).String()

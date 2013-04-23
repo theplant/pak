@@ -1,11 +1,11 @@
 package core
 
 import (
-	"bytes"
+	// "bytes"
 	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	. "launchpad.net/gocheck"
-	"os/exec"
+	// "os/exec"
 )
 
 type GetSuite struct {
@@ -14,21 +14,6 @@ type GetSuite struct {
 }
 
 var _ = Suite(&GetSuite{})
-
-func mustRun(params ...string) (cmd *exec.Cmd) {
-	cmd = exec.Command(params[0], params[1:]...)
-
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
-	err := cmd.Run()
-	if err != nil {
-		fl(stderr.String())
-
-		panic(err)
-	}
-
-	return
-}
 
 func (s *GetSuite) SetUpSuite(c *C) {
 	s.originalGoGetImpl = GoGetImpl
@@ -40,11 +25,11 @@ func (s *GetSuite) TearDownSuite(c *C) {
 }
 
 func (s *GetSuite) SetUpTest(c *C) {
-	mustRun("git", "clone", "fixtures/package1", "../../package1")
-	mustRun("git", "clone", "fixtures/package2", "../../package2")
-	mustRun("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_")
-	mustRun("git", "clone", "fixtures/package3", "../../package3")
-	mustRun("cp", "fixtures/Pakfile3", "Pakfile")
+	MustRun("git", "clone", "fixtures/package1", "../../package1")
+	MustRun("git", "clone", "fixtures/package2", "../../package2")
+	MustRun("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_")
+	MustRun("git", "clone", "fixtures/package3", "../../package3")
+	MustRun("cp", "fixtures/Pakfile3", "Pakfile")
 
 	s.pakPkgs = []*PakPkg{}
 	pkgsFixtures := [][]string{
@@ -63,11 +48,11 @@ func (s *GetSuite) SetUpTest(c *C) {
 }
 
 func (s *GetSuite) TearDownTest(c *C) {
-	mustRun("rm", "-rf", "../../package1")
-	mustRun("rm", "-rf", "../../package2")
-	mustRun("rm", "-rf", "../../package3")
-	mustRun("rm", "-rf", "Pakfile")
-	mustRun("rm", "-rf", "Pakfile.lock")
+	MustRun("rm", "-rf", "../../package1")
+	MustRun("rm", "-rf", "../../package2")
+	MustRun("rm", "-rf", "../../package3")
+	MustRun("rm", "-rf", "Pakfile")
+	MustRun("rm", "-rf", "Pakfile.lock")
 }
 
 func (s *GetSuite) TestSimpleGet(c *C) {
@@ -87,8 +72,8 @@ func (s *GetSuite) TestSimpleGet(c *C) {
 }
 
 func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
-	mustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "branch", "-dr", "origin/dev")
-	mustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "branch", "-dr", "origin/master")
+	MustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "branch", "-dr", "origin/dev")
+	MustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "branch", "-dr", "origin/master")
 
 	err := Get(PakOption{
 		PakMeter:       []string{},
@@ -113,8 +98,8 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
-	mustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "checkout", "master")
-	mustRun("git", "--git-dir=../../package3/.git", "--work-tree=../../package3", "checkout", "master")
+	MustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "checkout", "master")
+	MustRun("git", "--git-dir=../../package3/.git", "--work-tree=../../package3", "checkout", "master")
 
 	err = Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
@@ -168,7 +153,7 @@ func (s *GetSuite) TestGoGetBeforePak(c *C) {
 		if name == "github.com/theplant/package1" {
 			gogetPkg1Count++
 			if gogetPkg1Count == 1 {
-				mustRun("git", "clone", "fixtures/package1", "../../package1")
+				MustRun("git", "clone", "fixtures/package1", "../../package1")
 			}
 		}
 
@@ -176,7 +161,7 @@ func (s *GetSuite) TestGoGetBeforePak(c *C) {
 	}
 	defer func() { GoGetImpl = originalGoGetImpl }()
 
-	mustRun("rm", "-rf", "../../package1")
+	MustRun("rm", "-rf", "../../package1")
 
 	err := Get(PakOption{
 		PakMeter:       []string{},
@@ -238,7 +223,7 @@ func (s *GetSuite) TestDoNotCheckOtherPkgsWhenGettingWithPakMeter(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
-	mustRun("rm", "-rf", "../../package1")
+	MustRun("rm", "-rf", "../../package1")
 
 	err = Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
@@ -256,7 +241,7 @@ func (s *GetSuite) TestDoNotCheckOtherPkgsWhenGettingWithPakMeter(c *C) {
 	originalGoGetImpl := GoGetImpl
 	GoGetImpl = func(name string) error {
 		if name == "github.com/theplant/package1" {
-			mustRun("git", "clone", "fixtures/package1", "../../package1")
+			MustRun("git", "clone", "fixtures/package1", "../../package1")
 			GoGetImpl = originalGoGetImpl
 		}
 		return nil
@@ -302,8 +287,8 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	paklockInfo, _ := GetPaklockInfo()
 	c.Check(len(paklockInfo), Equals, 3)
 
-	mustRun("rm", "-rf", "Pakfile")
-	mustRun("cp", "fixtures/Pakfile3-updated", "Pakfile")
+	MustRun("rm", "-rf", "Pakfile")
+	MustRun("cp", "fixtures/Pakfile3-updated", "Pakfile")
 
 	err = Get(PakOption{
 		PakMeter:       []string{"github.com/theplant/package2"},
@@ -333,7 +318,7 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 }
 
 func (s *GetSuite) TestCanGetPackageOnNoBranch(c *C) {
-	mustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "checkout", "origin/master")
+	MustRun("git", "--git-dir=../../package1/.git", "--work-tree=../../package1", "checkout", "origin/master")
 
 	err := s.pakPkgs[0].Sync()
 	c.Check(err, Equals, nil)
@@ -353,7 +338,7 @@ func (s *GetSuite) TestCanGetPackageOnNoBranch(c *C) {
 }
 
 func (s *GetSuite) TestNonLockedGetWithSkipUncleanPkgsOption(c *C) {
-	mustRun("sh", "-c", "rm -rf ../../package1/file1")
+	MustRun("sh", "-c", "rm -rf ../../package1/file1")
 
 	err := Get(PakOption{
 		PakMeter:       []string{},
@@ -391,11 +376,11 @@ func (s *GetSuite) TestLockedGetWithSkipUncleanPkgsOption(c *C) {
 	s.pakPkgs[0].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
 
-	mustRun("sh", "-c", "cd ../../package1; git checkout master")
-	mustRun("sh", "-c", "cd ../../package2; git checkout master")
+	MustRun("sh", "-c", "cd ../../package1; git checkout master")
+	MustRun("sh", "-c", "cd ../../package2; git checkout master")
 	s.pakPkgs[0].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/master")
-	mustRun("sh", "-c", "rm -rf ../../package1/file1")
+	MustRun("sh", "-c", "rm -rf ../../package1/file1")
 
 	err = Get(PakOption{
 		PakMeter:       []string{},
@@ -435,9 +420,9 @@ func (s *GetSuite) TestGetWithSkipUncleanPkgsOptionAfterUntrackUncleanPkgs(c *C)
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[1].IsClean, Equals, true)
 
-	mustRun("sh", "-c", "cp fixtures/Pakfile3-for-skip-unclean-pkgs Pakfile")
-	mustRun("sh", "-c", "git --git-dir=../../package2/.git --work-tree=../../package2 checkout master")
-	mustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
+	MustRun("sh", "-c", "cp fixtures/Pakfile3-for-skip-unclean-pkgs Pakfile")
+	MustRun("sh", "-c", "git --git-dir=../../package2/.git --work-tree=../../package2 checkout master")
+	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
 
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
@@ -472,7 +457,7 @@ func (s *GetSuite) TestShouldNotRemoveUncleanPkgChecksumInPakfileLockWithSkipOpt
 	paklockInfo, _ := GetPaklockInfo()
 	c.Check(len(paklockInfo), Equals, 3)
 
-	mustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
+	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
 
 	err = Get(PakOption{
 		PakMeter:        []string{},
@@ -503,7 +488,7 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 	paklockInfo, _ := GetPaklockInfo()
 	c.Check(len(paklockInfo), Equals, 3)
 
-	mustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
+	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
 
 	err = Get(PakOption{
 		PakMeter:        []string{"package2"},
@@ -524,7 +509,7 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 }
 
 func (s *GetSuite) TestGetArguments(c *C) {
-	mustRun("sh", "-c", "cp fixtures/Pakfile3-for-get-args Pakfile")
+	MustRun("sh", "-c", "cp fixtures/Pakfile3-for-get-args Pakfile")
 
 	err := Get(PakOption{
 		PakMeter:       []string{},
@@ -536,8 +521,8 @@ func (s *GetSuite) TestGetArguments(c *C) {
 	paklockInfo, _ := GetPaklockInfo()
 	c.Check(len(paklockInfo), Equals, 1)
 
-	mustRun("sh", "-c", "cp fixtures/Pakfile3 Pakfile")
-	mustRun("sh", "-c", "rm ../../package1/file1")
+	MustRun("sh", "-c", "cp fixtures/Pakfile3 Pakfile")
+	MustRun("sh", "-c", "rm ../../package1/file1")
 
 	err = Get(PakOption{
 		PakMeter:        []string{"package2"},
