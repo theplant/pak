@@ -48,25 +48,7 @@ func NewGitPkg(name, remote, branch string) PkgProxy {
 }
 
 func GetPkgRoot(pkg string) (string, error) {
-	originalPkg := pkg
-	for true {
-		tracking, err := isDirTracked(pkg)
-		if err != nil {
-			return "", err
-		}
-
-		if tracking {
-			return pkg, nil
-		} else {
-			slashIndex := strings.LastIndex(pkg, "/")
-			if slashIndex == -1 {
-				return "", fmt.Errorf("Pakcage %s: Can't Resolve Package Root.", originalPkg)
-			}
-			pkg = pkg[0:slashIndex]
-		}
-	}
-
-	return "", nil
+	return GetPkgRootImp(pkg, "git")
 }
 
 // Git is simple git command wrapper.

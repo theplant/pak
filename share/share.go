@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const (
@@ -95,4 +96,65 @@ func MustRun(params ...string) (cmd *exec.Cmd) {
 	}
 
 	return
+}
+
+/**
+ * Package Root Detector
+ */
+
+func IsTrackingImp(pkg, detector string) (bool, error) {
+	for true {
+		tracking, err := isDirTracked(pkg, detector)
+		if err != nil {
+			return false, err
+		}
+
+		if tracking {
+			return true, nil
+		} else {
+			slashIndex := strings.LastIndex(pkg, "/")
+			if slashIndex == -1 {
+				return false, nil
+			}
+			pkg = pkg[0:slashIndex]
+		}
+	}
+
+	return false, nil
+}
+
+// isDirTracked will return true if the the pkg is Git Tracked
+func isDirTracked(pkg, detector string) (bool, error) {
+	_, err := os.Stat(fmt.Sprintf("%s/src/%s/.%s", Gopath, pkg, detector))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func GetPkgRootImp(pkg, detector string) (string, error) {
+	originalPkg := pkg
+	for true {
+		tracking, err := isDirTracked(pkg, detector)
+		if err != nil {
+			return "", err
+		}
+
+		if tracking {
+			return pkg, nil
+		} else {
+			slashIndex := strings.LastIndex(pkg, "/")
+			if slashIndex == -1 {
+				return "", fmt.Errorf("Pakcage %s: Can't Resolve Package Root.", originalPkg)
+			}
+			pkg = pkg[0:slashIndex]
+		}
+	}
+
+	return "", nil
 }

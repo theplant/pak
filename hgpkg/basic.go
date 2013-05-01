@@ -24,18 +24,21 @@ type HgPkg struct {
 func NewHgPkg(name, remote, branch string) PkgProxy {
 	hgPkg := HgPkg{}
 	hgPkg.Name = name
-	// hgPkg.Remote = remote
 	hgPkg.Branch = branch
-	// hgPkg.Bookmark = bookmark
 	hgPkg.RemoteBranch = remote
 	hgPkg.PakbranchRef = Pakbranch
 	hgPkg.PaktagRef = Paktag
+
 	hgPkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
 
 	return &hgPkg
 }
 
-// Hg is simple hg command wrapper.
+func GetPkgRoot(pkg string) (string, error) {
+	return GetPkgRootImp(pkg, "hg")
+}
+
+// Hg is a simple command wrapper for hg.
 func (this *HgPkg) Hg(params ...string) (*exec.Cmd, error) {
 	cmd := exec.Command("hg", params...)
 	cmd.Dir = this.Path
