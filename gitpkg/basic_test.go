@@ -5,7 +5,14 @@ import (
 	. "github.com/theplant/pak/share"
 	. "launchpad.net/gocheck"
 	"os/exec"
+	"testing"
 )
+
+// Hook up gocheck into the gotest runner.
+func Test(t *testing.T) { TestingT(t) }
+
+var fp = fmt.Printf
+var fl = fmt.Println
 
 type GitPkgSuite struct{}
 
