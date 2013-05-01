@@ -9,5 +9,5 @@ func RegisterProxy() {
 }
 
 func IsTracking(pkg string) (bool, error) {
-	return IsTrackingImp(pkg, "hg")
+	return IsTrackingImpl(pkg, "hg")
 }

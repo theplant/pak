@@ -48,7 +48,7 @@ func NewGitPkg(name, remote, branch string) PkgProxy {
 }
 
 func GetPkgRoot(pkg string) (string, error) {
-	return GetPkgRootImp(pkg, "git")
+	return GetPkgRootImpl(pkg, "git")
 }
 
 // Git is simple git command wrapper.

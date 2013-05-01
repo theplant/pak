@@ -35,7 +35,7 @@ func NewHgPkg(name, remote, branch string) PkgProxy {
 }
 
 func GetPkgRoot(pkg string) (string, error) {
-	return GetPkgRootImp(pkg, "hg")
+	return GetPkgRootImpl(pkg, "hg")
 }
 
 // Hg is a simple command wrapper for hg.

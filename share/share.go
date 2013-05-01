@@ -101,8 +101,7 @@ func MustRun(params ...string) (cmd *exec.Cmd) {
 /**
  * Package Root Detector
  */
-
-func IsTrackingImp(pkg, detector string) (bool, error) {
+func IsTrackingImpl(pkg, detector string) (bool, error) {
 	for true {
 		tracking, err := isDirTracked(pkg, detector)
 		if err != nil {
@@ -137,7 +136,7 @@ func isDirTracked(pkg, detector string) (bool, error) {
 	return true, nil
 }
 
-func GetPkgRootImp(pkg, detector string) (string, error) {
+func GetPkgRootImpl(pkg, detector string) (string, error) {
 	originalPkg := pkg
 	for true {
 		tracking, err := isDirTracked(pkg, detector)
