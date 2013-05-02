@@ -56,6 +56,11 @@ func Check() {
 			continue
 		}
 
+		if !pakPkg.IsClean {
+			warnings = append(warnings, [2]string{pakPkg.Name, "Is Not Clean."})
+			continue
+		}
+
 		if pakPkg.PakbranchChecksum != checksum {
 			errors = append(errors, [2]string{pakPkg.Name, "Inconsistent with Pakfile.lock."})
 			continue
