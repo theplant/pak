@@ -91,31 +91,22 @@ func (s *GitPkgSuite) TestGetChecksum(c *C) {
 }
 
 func (s *GitPkgSuite) TestFetch(c *C) {
-	headChecksum, _ := testGitPkg.GetHeadChecksum()
+	headChecksum, err := testGitPkg.GetHeadChecksum()
+	c.Check(err, Equals, nil)
 	c.Check(headChecksum, Equals, testGpMasterChecksum)
 
-	err := exec.Command("cp", "-r", "fixtures/package1", "fixtures/package1-backup").Run()
-	if err != nil {
-		c.Error(err)
-	}
-	err = exec.Command("git", "--git-dir=fixtures/updated-package1/.git", "--work-tree=fixtures/updated-package1", "push", "origin", "master").Run()
-	if err != nil {
-		c.Error(err)
-	}
+	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
+	MustRun("git", "--git-dir=fixtures/updated-package1/.git", "--work-tree=fixtures/updated-package1", "push", "origin", "master")
+	defer func() {
+		MustRun("rm", "-rf", "fixtures/package1")
+		MustRun("mv", "fixtures/package1-backup", "fixtures/package1")
+	}()
 
 	c.Check(testGitPkg.Fetch(), Equals, nil)
 
-	headChecksum, _ = testGitPkg.GetChecksum("refs/remotes/origin/master")
+	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
+	c.Check(err, Equals, nil)
 	c.Check(headChecksum, Equals, "149b1e18aa3e118a804ccddeefbb6e64b4a5807e")
-
-	err = exec.Command("rm", "-rf", "fixtures/package1").Run()
-	if err != nil {
-		c.Error(err)
-	}
-	err = exec.Command("mv", "fixtures/package1-backup", "fixtures/package1").Run()
-	if err != nil {
-		c.Error(err)
-	}
 }
 
 func (s *GitPkgSuite) TestContainsRemotebranch(c *C) {
