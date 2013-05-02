@@ -1,32 +1,37 @@
 package main
 
 import (
+	// "bytes"
 	"flag"
-	"fmt"
 	"github.com/theplant/pak/core"
 	. "github.com/theplant/pak/share"
+	"github.com/wsxiaoys/terminal/color"
+	"os"
+	"os/exec"
 )
 
 var (
-	getLatestFlag bool
-	forceFlag     bool
+	// getLatest       bool
+	force           bool
+	skipUncleanPkgs bool
 )
 
 func init() {
 	flag.Usage = func() {
 		spaces := "    "
-		fmt.Printf("Usage:\n")
-		fmt.Printf("%spak init\n", spaces)
-		fmt.Printf("%spak [-uf] get\n", spaces)
-		fmt.Printf("%spak update [package]\n", spaces)
-		fmt.Printf("%spak version\n", spaces)
-		// fmt.Printf("%spak open\n", spaces)
-		// fmt.Printf("%spak list\n", spaces)
+		color.Printf("@gPackages Management Tool Pak.\n@wUsage:\n")
+		color.Printf("%spak init\n", spaces)
+		color.Printf("%spak [-sf] get [package]\n", spaces)
+		color.Printf("%spak [-s] update [package]\n", spaces)
+		color.Printf("%spak open [package]\n", spaces)
+		color.Printf("%spak list\n", spaces)
+		color.Printf("%spak version\n", spaces)
 		// fmt.Printf("%spak scan\n", spaces)
-		// flag.PrintDefaults()
+		flag.PrintDefaults()
 	}
-	flag.BoolVar(&getLatestFlag, "u", false, "Download the lastest revisions from remote repo before checkout.")
-	flag.BoolVar(&forceFlag, "f", false, "Force pak to remove pak branch.")
+	// flag.BoolVar(&getLatest, "u", false, "Download the lastest revisions from remote repo before checkout.")
+	flag.BoolVar(&force, "f", false, "Force pak to remove pak branch.")
+	flag.BoolVar(&skipUncleanPkgs, "s", false, "Left out unclean packages.")
 }
 
 func main() {
@@ -35,20 +40,83 @@ func main() {
 	case "init":
 		core.Init()
 	case "get":
-		err := core.Get(PakOption{UsePakfileLock: true, Fetch: getLatestFlag, Force: forceFlag})
-		if err != nil {
-			fmt.Printf("%s\n", err)
-		}
+		getPakPkgs()
 	case "update":
-		option := PakOption{UsePakfileLock: false, Fetch: true, Force: true}
-		option.PakMeter = flag.Args()[1:]
-		err := core.Get(option)
-		if err != nil {
-			fmt.Printf("%s\n", err)
-		}
+		updatePakPkgs()
+	case "open":
+		openPkgWithPakEditor()
+	case "list":
+		listPakfilePkgs()
 	case "version":
-		fmt.Println("1.0.0")
+		color.Println("@g1.2.0")
 	default:
 		flag.Usage()
+	}
+}
+
+func getPakPkgs() {
+	err := core.Get(PakOption{
+		PakMeter:        flag.Args()[1:],
+		UsePakfileLock:  true,
+		Force:           force,
+		SkipUncleanPkgs: skipUncleanPkgs,
+	})
+
+	if err != nil {
+		color.Printf("@r%s\n", err)
+	}
+}
+
+func updatePakPkgs() {
+	err := core.Get(PakOption{
+		UsePakfileLock:  false,
+		Force:           true,
+		SkipUncleanPkgs: skipUncleanPkgs,
+		PakMeter:        flag.Args()[1:],
+	})
+
+	if err != nil {
+		color.Printf("@r%s\n", err)
+		return
+	}
+}
+
+func openPkgWithPakEditor() {
+	pakEditor := os.Getenv("PAK_OPEN_EDITOR")
+	if pakEditor == "" {
+		color.Printf("@rPAK_OPEN_EDITOR is Not Configured.@w")
+		color.Println(" Please configure it like bellow in your ~/.bash_profile or anywhere that is accessible to pak.")
+		color.Println("    @gexport PAK_OPEN_EDITOR={mate or whatever editor that you like}@w")
+		return
+	}
+
+	name := flag.Args()[1]
+	matched, pkg, err := core.FindPackage(name)
+	if err != nil {
+		color.Printf("@r%s\n", err)
+		return
+	}
+	if !matched {
+		color.Printf("@rPackage %s Not Exist.\n", name)
+		return
+	}
+
+	cmd := exec.Command(pakEditor, Gopath+"/src/"+pkg.Name)
+	err = cmd.Run()
+	if err != nil {
+		color.Printf("@r%s@w\n", err)
+	}
+}
+
+func listPakfilePkgs() {
+	allPakPkgs, err := core.ParsePakfile()
+	if err != nil {
+		color.Printf("@r%s\n", err)
+		return
+	}
+
+	color.Println("All Packages Depended In this Package:")
+	for _, pkg := range allPakPkgs {
+		color.Printf("@g    %s\n", pkg.Name)
 	}
 }

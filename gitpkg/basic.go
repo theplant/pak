@@ -4,292 +4,265 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/theplant/pak/share"
-	"os"
+	// "os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
-// Notes:
-// Containing branch named pak does not mean that pkg is managed by pak.
-// Containing tag named _pak_latest_ means this pkg is managed by pak, but
-// still can't make sure the pkg is on the pak branch or it's status is wanted
-// by Pakfile or Pakfile.lock.
-type GitPkgState struct {
-	IsPkgExist             bool
-	UnderGitControl        bool
-	ContainsBranchNamedPak bool
-	ContainsPaktag         bool
-	OnPakbranch            bool
-	OwnPakbranch           bool
-	IsRemoteBranchExist    bool
-	IsClean                bool
-}
-
 type GitPkg struct {
-	Name              string // github.com/theplant/pak
-	Remote            string // origin, etc
-	Branch            string // master, dev, etc
-	Path              string // $GOPATH/src/:Name
-	RemoteBranch      string // refs/remotes/:Remote/:Branch
-	Pakbranch         string // refs/heads/pak
-	Paktag            string // refs/tags/_pak_latest_
-	WorkTree          string
-	GitDir            string
-	HeadRefsName      string
-	HeadChecksum      string
-	PakbranchChecksum string
-	PaktagChecksum    string
+	Name         string // github.com/theplant/pak
+	Remote       string // origin, etc
+	Branch       string // master, dev, etc
+	Path         string // $GOPATH/src/:Name
+	RemoteBranch string // refs/remotes/:Remote/:Branch
+	PakbranchRef string // refs/heads/pak
+	PaktagRef    string // refs/tags/_pak_latest_
 
-	State GitPkgState
+	PkgRoot  string
+	WorkTree string
+	GitDir   string
 }
 
-func NewGitPkg(name, remote, branch string) (gitPkg GitPkg) {
+// NewGitPkg now will panic, make sure to be invoked after IsTracking
+func NewGitPkg(name, remote, branch string) PkgProxy {
+	gitPkg := GitPkg{}
 	gitPkg.Name = name
 	gitPkg.Remote = remote
 	gitPkg.Branch = branch
 	gitPkg.RemoteBranch = fmt.Sprintf("refs/remotes/%s/%s", remote, branch)
-	gitPkg.Pakbranch = "refs/heads/" + Pakbranch
-	gitPkg.Paktag = "refs/tags/" + Paktag
-	gitPkg.Path = getGitPkgPath(name)
-	gitPkg.WorkTree = getGitWorkTreeOpt(gitPkg.Path)
-	gitPkg.GitDir = getGitDirOpt(gitPkg.Path)
+	gitPkg.PakbranchRef = "refs/heads/" + Pakbranch
+	gitPkg.PaktagRef = "refs/tags/" + Paktag
+	gitPkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
 
-	return
+	root, err := GetPkgRoot(gitPkg.Name)
+	if err != nil {
+		panic(err) // TODO: would be nice if don't panic
+	}
+
+	gitPkg.PkgRoot = fmt.Sprintf("%s/src/%s", Gopath, root)
+	gitPkg.WorkTree = fmt.Sprintf("--work-tree=%s", gitPkg.PkgRoot)
+	gitPkg.GitDir = fmt.Sprintf("--git-dir=%s/.git", gitPkg.PkgRoot)
+
+	return &gitPkg
 }
 
-func getGitPkgPath(pkg string) string {
-	return fmt.Sprintf("%s/src/%s", Gopath, pkg)
+func GetPkgRoot(pkg string) (string, error) {
+	return GetPkgRootImpl(pkg, "git")
 }
 
-func getGitDirOpt(pkgPath string) string {
-	return fmt.Sprintf("--git-dir=%s/.git", pkgPath)
+// Git is simple git command wrapper.
+func (this *GitPkg) Git(params ...string) (*exec.Cmd, error) {
+	fullParams := append([]string{this.GitDir, this.WorkTree}, params...)
+	cmd := exec.Command("git", fullParams...)
+
+	stdout := bytes.Buffer{}
+	stderr := bytes.Buffer{}
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		err = fmt.Errorf("Error\n%s: git %s => %s", this.Name, strings.Join(params, " "), stderr.String())
+		return cmd, err
+	}
+
+	return cmd, nil
 }
 
-func getGitWorkTreeOpt(pkgPath string) string {
-	return fmt.Sprintf("--work-tree=%s", pkgPath)
+func (this *GitPkg) GetPakbranchRef() string {
+	return this.PakbranchRef
 }
 
-// TODO: refactor, make use of stderr instead of using hard-coded err info
-func RunCmd(cmd *exec.Cmd) (out bytes.Buffer, err error) {
-	cmd.Stdout = &out
-	err = cmd.Run()
-
-	return
+func (this *GitPkg) GetPaktagRef() string {
+	return this.PaktagRef
 }
 
-func (this *GitPkg) Sync() (err error) {
-	// Should be Under the Control of Git
-	var state bool
-	state, err = this.IsPkgExist()
-	if err != nil {
-		return err
-	}
-	this.State.IsPkgExist = state
-	if !this.State.IsPkgExist {
-		return fmt.Errorf("Package %s Is Not Exist.", this.Name)
-	}
-
-	state, err = this.IsUnderGitControl()
-	if err != nil {
-		return err
-	}
-	this.State.UnderGitControl = state
-
-	var info string
-	info, err = this.GetHeadRefName()
-	if err != nil {
-		return
-	}
-	this.HeadRefsName = info
-
-	info, err = this.GetHeadChecksum()
-	this.HeadChecksum = info
-	// Retrieve State
-	// Branch Named Pak
-	state, err = this.ContainsPakbranch()
-	if err != nil {
-		return
-	}
-
-	this.State.ContainsBranchNamedPak = state
-	if this.State.ContainsBranchNamedPak {
-		var checksum string
-		checksum, err = this.GetChecksum(this.Pakbranch)
-		if err != nil {
-			return
-		}
-
-		this.PakbranchChecksum = checksum
-	}
-
-	// Paktag _pak_latest_
-	state, err = this.ContainsPaktag()
-	if err != nil {
-		return
-	}
-	this.State.ContainsPaktag = state
-	if this.State.ContainsPaktag {
-		var checksum string
-		checksum, err = this.GetChecksum(this.Paktag)
-		if err != nil {
-			return
-		}
-
-		this.PaktagChecksum = checksum
-	}
-
-	this.State.OwnPakbranch = this.State.ContainsBranchNamedPak &&
-		this.State.ContainsPaktag &&
-		this.PaktagChecksum == this.PakbranchChecksum
-
-	// on Pakbranch
-	// TODO: add OnPakbranch Test(same checksum but different refs)
-	state = false
-	if this.State.ContainsBranchNamedPak &&
-		this.State.ContainsPaktag &&
-		this.PaktagChecksum == this.PakbranchChecksum &&
-		this.PakbranchChecksum == this.HeadChecksum &&
-		this.Pakbranch == this.HeadRefsName {
-		state = true
-	}
-	this.State.OnPakbranch = state
-
-	state, err = this.IsClean()
-	if err != nil {
-		return
-	}
-	this.State.IsClean = state
-
-	state, err = this.ContainsRemoteBranch()
-	if err != nil {
-		return
-	}
-	this.State.IsRemoteBranchExist = state
-
-	return
+func (this *GitPkg) GetRemoteBranch() string {
+	return this.RemoteBranch
 }
 
-func (this *GitPkg) IsPkgExist() (bool, error) {
-	_, err := os.Stat(this.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, err
-		}
-	}
-
-	return true, nil
-}
-
-func (this *GitPkg) IsUnderGitControl() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "rev-parse", "--is-inside-work-tree"))
-	if err != nil {
-		return false, fmt.Errorf("Package %s Is Not Git Tracked\n%s", this.Name, out.String())
-	}
-
-	return true, nil
-}
-
-// Not to check out the pakbranch, but just a branch named refs/heads/pak
+// ContainsPakbranch will tell the existence of a branch named refs/heads/pak
 func (this *GitPkg) ContainsPakbranch() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
+	cmd, err := this.Git("show-ref")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
+		return false, err
 	}
 
-	return strings.Contains(out.String(), " "+this.Pakbranch+"\n"), nil
+	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.PakbranchRef+"\n"), nil
 }
 
 func (this *GitPkg) ContainsPaktag() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
+	cmd, err := this.Git("show-ref")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
+		return false, err
 	}
 
-	return strings.Contains(out.String(), " "+this.Paktag+"\n"), nil
+	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.PaktagRef+"\n"), nil
 }
 
+// IsClean will check whether the package contains modified file, but it allows the existence of untracked file.
 func (this *GitPkg) IsClean() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "status", "--porcelain", "--untracked-files=no"))
+	cmd, err := this.Git("status", "--porcelain", "--untracked-files=no")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s status --porcelain --untracked-files=no\n%s", this.GitDir, this.WorkTree, err.Error())
+		return false, err
 	}
 
-	return out.String() == "", nil
+	return cmd.Stdout.(*bytes.Buffer).String() == "", nil
 }
 
 func (this *GitPkg) GetChecksum(ref string) (string, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", ref, "--hash"))
+	cmd, err := this.Git("show-ref", ref, "--hash")
 	if err != nil {
-		return "", fmt.Errorf("git %s %s show-ref %s --hash\n%s", this.GitDir, this.WorkTree, ref, err.Error())
+		return "", err
 	}
 
-	checksum := out.String()[:40]
+	checksum := cmd.Stdout.(*bytes.Buffer).String()[:40]
 
 	return checksum, nil
 }
 
 func (this *GitPkg) Fetch() error {
-	// _, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch", this.Remote, this.Branch))
-	_, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "fetch"))
-	if err != nil {
-		err = fmt.Errorf("git %s %s fetch\n%s", this.GitDir, this.WorkTree, err.Error())
-	}
+	// TODO: add tests for => 1. remote is changed; 2. remote is no exist
+	_, err := this.Git("fetch", this.Remote, this.Branch+":"+this.RemoteBranch)
 
 	return err
 }
 
 func (this *GitPkg) ContainsRemoteBranch() (bool, error) {
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref"))
+	cmd, err := this.Git("show-ref")
 	if err != nil {
-		return false, fmt.Errorf("git %s %s show-ref\n%s", this.GitDir, this.WorkTree, err.Error())
+		return false, err
 	}
 
-	return strings.Contains(out.String(), " "+this.RemoteBranch+"\n"), nil
+	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.RemoteBranch+"\n"), nil
 }
 
+var RefsRegexp = regexp.MustCompile("^ref: (.+)\n")
+
+// TODO: add tests
 func (this *GitPkg) GetHeadRefName() (string, error) {
-	cmd := exec.Command("git", this.GitDir, this.WorkTree, "symbolic-ref", "HEAD")
-	out, errOut := bytes.Buffer{}, bytes.Buffer{}
-	cmd.Stdout = &out
-	cmd.Stderr = &errOut
+	cmd := exec.Command("cat", this.PkgRoot+"/.git/HEAD")
+	cmd.Stdout = &bytes.Buffer{}
+	cmd.Stderr = &bytes.Buffer{}
 	err := cmd.Run()
-
-	refs := ""
-	// TODO: add tests
 	if err != nil {
-		if errOut.String() == "fatal: ref HEAD is not a symbolic ref\n" {
-			refs = "no branch"
-			err = nil
-		} else {
-			return "", fmt.Errorf("git %s %s symbolic-ref HEAD", this.GitDir, this.WorkTree)
-		}
-	} else {
-		refs = out.String()
+		return "", fmt.Errorf("Package %s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
 	}
 
-	return refs[:len(refs)-1], err
+	refline := cmd.Stdout.(*bytes.Buffer).String()
+	ref := ""
+	if RefsRegexp.MatchString(refline) {
+		ref = RefsRegexp.FindStringSubmatch(refline)[1]
+	} else {
+		ref = "no branch"
+	}
+
+	return ref, nil
 }
 
+// TODO: add tests
 func (this *GitPkg) GetHeadChecksum() (string, error) {
 	headBranch, err := this.GetHeadRefName()
 	if err != nil {
 		return "", err
 	}
 
-	out, err := RunCmd(exec.Command("git", this.GitDir, this.WorkTree, "show-ref", "--hash", headBranch))
-	if err != nil {
-		return "", fmt.Errorf("git %s %s show-ref --hash %s", this.GitDir, this.WorkTree, headBranch)
+	if headBranch == "no branch" {
+		cmd := exec.Command("cat", this.PkgRoot+"/.git/HEAD")
+		cmd.Stdout = &bytes.Buffer{}
+		cmd.Stderr = &bytes.Buffer{}
+		err := cmd.Run()
+		if err != nil {
+			return "", fmt.Errorf("Package %s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+		}
+
+		checksum := cmd.Stdout.(*bytes.Buffer).String()
+		return checksum[:len(checksum)-1], nil
 	}
 
-	refs := out.String()
+	cmd, err := this.Git("show-ref", "--hash", headBranch)
+	if err != nil {
+		return "", err
+	}
+
+	refs := cmd.Stdout.(*bytes.Buffer).String()
+
 	return refs[:len(refs)-1], err
 }
 
-func (this *GitPkg) GoGet() error {
-	_, err := RunCmd(exec.Command("go", "get", this.Name))
+// Unpak will create a branch named pak and a tag named _pak_latest_.
+// Caution: Make sure you the branch and tag is not exist.
+func (this *GitPkg) Pak(ref string) (string, error) {
+	// Create Pakbranch
+	_, err := this.Git("checkout", "-b", Pakbranch, ref)
 	if err != nil {
-		err = fmt.Errorf("go get %s: %s", this.Name, "Can't succeed: %s", err.Error())
+		return "", err
 	}
 
+	// Create Paktag
+	checksum, err := this.GetChecksum(this.PakbranchRef)
+	if err != nil {
+		return "", err
+	}
+	_, err = this.Git("tag", Paktag, checksum)
+	if err != nil {
+		return "", err
+	}
+
+	return checksum, err
+}
+
+// Unpak will remove a branch named pak and a tag named _pak_latest_ in a git repo.
+func (this *GitPkg) Unpak() error {
+	// Move to Master Branch
+	if _, err := this.Git("checkout", "master"); err != nil {
+		return err
+	}
+
+	// Delete Pakbranch
+	if contained, err := this.ContainsPakbranch(); err == nil {
+		if contained {
+			_, err = this.Git("branch", "-D", Pakbranch)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		return err
+	}
+
+	// Delete Paktag
+	if contained, err := this.ContainsPaktag(); err == nil {
+		if contained {
+			_, err = this.Git("tag", "-d", Paktag)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		return err
+	}
+
+	return nil
+}
+
+func (this *GitPkg) NewBranch(name string) error {
+	_, err := this.Git("branch", name)
+	return err
+}
+
+func (this *GitPkg) CheckOut(ref string) error {
+	_, err := this.Git("checkout", ref)
+	return err
+}
+
+func (this *GitPkg) NewTag(tag, object string) error {
+	_, err := this.Git("tag", tag, object)
+	return err
+}
+
+func (this *GitPkg) RemoveTag(tag string) error {
+	_, err := this.Git("tag", "-d", tag)
 	return err
 }
