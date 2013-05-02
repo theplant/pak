@@ -107,6 +107,7 @@ func init() {
 	check.Check()
 }`
 
+// ImportPakCheck will scan the whole package and try to find out what kind of packages that is needed to be managed by pak, then save the result in Pakfile.
 func ImportPakCheck() (err error) {
 	// pkgName, gofileCount, mainGoFile, err := parsePkg()
 	// if err != nil {
@@ -186,7 +187,7 @@ func ImportPakCheck() (err error) {
 
 var packageExp *regexp.Regexp = regexp.MustCompile(`^package (\w+)$`)
 
-// Parse out the package name, how many go files it contains, and a go file
+// parsePkg will parse out the package name, how many go files it contains, and a go file
 // name in the current directory.
 func parsePkg() (pkgName string, gofileCount int, mainGoFile string, err error) {
 	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {

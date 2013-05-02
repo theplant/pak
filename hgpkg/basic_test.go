@@ -110,6 +110,13 @@ func (s *HgPkgSuite) TestGetHeadChecksum(c *C) {
 	checksum, err := s.pkg.GetHeadChecksum()
 	c.Check(err, Equals, nil)
 	c.Check(checksum, Equals, "1eebd4597062386493ac83ac80b0b9e3d08f7af7")
+
+	MustRun("sh", "-c", "cd ../../hgpkg-package1; hg tag --local another-tag")
+	MustRun("sh", "-c", "cd ../../hgpkg-package1; hg tag --local third-tag")
+
+	checksum, err = s.pkg.GetHeadChecksum()
+	c.Check(err, Equals, nil)
+	c.Check(checksum, Equals, "1eebd4597062386493ac83ac80b0b9e3d08f7af7")
 }
 
 func (s *HgPkgSuite) TestPak(c *C) {

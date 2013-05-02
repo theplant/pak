@@ -138,7 +138,7 @@ func (this *HgPkg) GetHeadRefName() (string, error) {
 	return "non-pak", err
 }
 
-var ChecksumRegexp = regexp.MustCompile(`parent: \d:(.*) .*\n`)
+var ChecksumRegexp = regexp.MustCompile(`parent: \d:(.*?) .*\n`)
 
 func (this *HgPkg) GetHeadChecksum() (string, error) {
 	cmd, err := this.Hg("summary")
@@ -174,7 +174,7 @@ func (this *HgPkg) Pak(ref string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = this.Hg("tag", "-r", checksum, Paktag)
+	_, err = this.Hg("tag", "--local", "-r", checksum, Paktag)
 	if err != nil {
 		return "", err
 	}
@@ -199,7 +199,7 @@ func (this *HgPkg) Unpak() error {
 	// Delete Paktag
 	if contained, err := this.ContainsPaktag(); err == nil {
 		if contained {
-			_, err = this.Hg("tag", "--remove", Paktag)
+			_, err = this.Hg("tag", "--local", "--remove", Paktag)
 			if err != nil {
 				return err
 			}
@@ -212,7 +212,7 @@ func (this *HgPkg) Unpak() error {
 }
 
 func (this *HgPkg) NewBranch(name string) error {
-	_, err := this.Hg("branch", name)
+	_, err := this.Hg("bookmark", name)
 	return err
 }
 
@@ -221,12 +221,13 @@ func (this *HgPkg) CheckOut(ref string) error {
 	return err
 }
 
+// TODO: add test
 func (this *HgPkg) NewTag(tag, object string) error {
-	_, err := this.Hg("tag", tag, object)
+	_, err := this.Hg("tag", "--local", "-r", object, tag)
 	return err
 }
 
 func (this *HgPkg) RemoveTag(tag string) error {
-	_, err := this.Hg("tag", "--remove", tag)
+	_, err := this.Hg("tag", "--local", "--remove", tag)
 	return err
 }

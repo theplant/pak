@@ -41,9 +41,9 @@ func (s *PakPkgStateSuite) TestIsPkgExist(c *C) {
 	c.Check(exist, Equals, false)
 }
 
-func (s *PakPkgStateSuite) TestGoGet(c *C) {
-	// TODO
-}
+// func (s *PakPkgStateSuite) TestGoGet(c *C) {
+// 	// TODO
+// }
 
 // TODO: add multiple svc tests
 func (s *PakPkgStateSuite) TestDial(c *C) {
@@ -202,6 +202,12 @@ var _ = Suite(&PakPkgActionSuite{
 			setUpFixtures:    []string{"git", "clone", "fixtures/package1", "../../pakpkg-action-git-package"},
 			tearDownFixtures: []string{"rm", "-rf", "../../pakpkg-action-git-package"},
 		},
+		{
+			pkgArgs:          []string{"github.com/theplant/pakpkg-action-hg-package", "default", "default"},
+			masterChecksum:   "1eebd4597062386493ac83ac80b0b9e3d08f7af7",
+			setUpFixtures:    []string{"hg", "clone", "fixtures/package1-for-hg", "../../pakpkg-action-hg-package"},
+			tearDownFixtures: []string{"rm", "-rf", "../../pakpkg-action-hg-package"},
+		},
 	},
 })
 
@@ -215,20 +221,33 @@ func (s *PakPkgActionSuite) SetUpTest(c *C) {
 		if err != nil {
 			c.Fatal(err)
 		}
+
+		GoGetImpl = func(name string) error { return nil }
 	}
 }
 func (s *PakPkgActionSuite) TearDownTest(c *C) {
-	for _, p := range s.pkgs {
+	for i, p := range s.pkgs {
+		_ = i
 		MustRun(p.tearDownFixtures...)
 	}
 }
 
 func (s *PakPkgActionSuite) TestSimplePak(c *C) {
-	for _, p := range s.pkgs {
+	var simplePakHelper = [][]string{
+		{"refs/heads/master", "refs/heads/pak"},
+		{"non-pak", "pak"},
+	}
+	titles := []string{
+		"Git Package",
+		"Hg Package",
+	}
+	for i, p := range s.pkgs {
+		c.Log(titles[i])
+
 		err := p.pkg.Sync()
 		c.Check(err, Equals, nil)
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/master")
+		c.Check(p.pkg.HeadRefName, Equals, simplePakHelper[i][0])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, "")
 		c.Check(p.pkg.PaktagChecksum, Equals, "")
@@ -241,7 +260,7 @@ func (s *PakPkgActionSuite) TestSimplePak(c *C) {
 		p.pkg.Pak(GetOption{Force: true, Checksum: ""})
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/pak")
+		c.Check(p.pkg.HeadRefName, Equals, simplePakHelper[i][1])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, p.masterChecksum)
@@ -254,11 +273,15 @@ func (s *PakPkgActionSuite) TestSimplePak(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestWeakPak(c *C) {
-	for _, p := range s.pkgs {
+	var weakPakHelper = [][]string{
+		{"refs/heads/master", "refs/heads/master"},
+		{"pak", "pak"},
+	}
+	for i, p := range s.pkgs {
 		p.pkg.PkgProxy.NewBranch("pak")
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/master")
+		c.Check(p.pkg.HeadRefName, Equals, weakPakHelper[i][0])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, "")
@@ -272,7 +295,7 @@ func (s *PakPkgActionSuite) TestWeakPak(c *C) {
 		p.pkg.Pak(GetOption{Force: false, Checksum: ""})
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/master")
+		c.Check(p.pkg.HeadRefName, Equals, weakPakHelper[i][1])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, "")
@@ -286,14 +309,18 @@ func (s *PakPkgActionSuite) TestWeakPak(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestForcefulPak(c *C) {
-	for _, p := range s.pkgs {
+	var forcefulPakHelper = [][]string{
+		{"refs/heads/pak"},
+		{"pak"},
+	}
+	for i, p := range s.pkgs {
 		p.pkg.PkgProxy.NewBranch("pak")
 		p.pkg.Sync()
 
 		p.pkg.Pak(GetOption{Force: true, Checksum: ""})
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/pak")
+		c.Check(p.pkg.HeadRefName, Equals, forcefulPakHelper[i][0])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, p.masterChecksum)
@@ -307,13 +334,17 @@ func (s *PakPkgActionSuite) TestForcefulPak(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestGetWithChecksum(c *C) {
-	for _, p := range s.pkgs {
-		devChecksum := "711c1e206bca5ad99edf6da12074bbbe4a349932"
+	var helper = [][]string{
+		{"711c1e206bca5ad99edf6da12074bbbe4a349932", "refs/heads/pak"},
+		{"a8d6d716129a1bb5678e195828dfe4b53c078c2e", "pak"},
+	}
+	for i, p := range s.pkgs {
+		devChecksum := helper[i][0]
 		p.pkg.Sync()
 		p.pkg.Pak(GetOption{Force: true, Checksum: devChecksum})
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/pak")
+		c.Check(p.pkg.HeadRefName, Equals, helper[i][1])
 		c.Check(p.pkg.HeadChecksum, Equals, devChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, devChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, devChecksum)
@@ -327,14 +358,29 @@ func (s *PakPkgActionSuite) TestGetWithChecksum(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestForcefulUnpak(c *C) {
-	for _, p := range s.pkgs {
-		p.pkg.Sync()
-		p.pkg.Pak(GetOption{Force: true, Checksum: p.masterChecksum})
-		p.pkg.Sync()
-		p.pkg.Unpak(true)
-		p.pkg.Sync()
+	helper := [][]string{
+		{"refs/heads/master"},
+		{"non-pak"},
+	}
+	titles := []string{
+		"Git Package",
+		"Hg Package",
+	}
+	for i, p := range s.pkgs {
+		c.Log(titles[i])
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/master")
+		err := p.pkg.Sync()
+		c.Check(err, Equals, nil)
+		_, err = p.pkg.Pak(GetOption{Force: true, Checksum: p.masterChecksum})
+		c.Check(err, Equals, nil)
+		err = p.pkg.Sync()
+		c.Check(err, Equals, nil)
+		err = p.pkg.Unpak(true)
+		c.Check(err, Equals, nil)
+		err = p.pkg.Sync()
+		c.Check(err, Equals, nil)
+
+		c.Check(p.pkg.HeadRefName, Equals, helper[i][0])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, p.masterChecksum)
@@ -348,13 +394,23 @@ func (s *PakPkgActionSuite) TestForcefulUnpak(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestWeakUnpak(c *C) {
-	for _, p := range s.pkgs {
+	helper := [][]string{
+		{"refs/heads/master"},
+		{"pak"},
+	}
+	titles := []string{
+		"Git Package",
+		"Hg Package",
+	}
+	for i, p := range s.pkgs {
+		c.Log(titles[i])
+
 		p.pkg.NewBranch("pak")
 		p.pkg.Sync()
 		p.pkg.Unpak(false)
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, "refs/heads/master")
+		c.Check(p.pkg.HeadRefName, Equals, helper[i][0])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, "")
@@ -368,7 +424,17 @@ func (s *PakPkgActionSuite) TestWeakUnpak(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestPakBranchOwnership(c *C) {
-	for _, p := range s.pkgs {
+	helpers := [][]string{
+		{"HEAD^", "refs/heads/pak"},
+		{"ca48dd9fbded", "pak"},
+	}
+	titles := []string{
+		"Git Package",
+		"Hg Package",
+	}
+	for i, p := range s.pkgs {
+		c.Log(titles[i])
+
 		p.pkg.Unpak(true)
 
 		p.pkg.Sync()
@@ -384,7 +450,7 @@ func (s *PakPkgActionSuite) TestPakBranchOwnership(c *C) {
 
 		// Although package has both pak branch and _pak_latest_ tag, but their commit hash are different, so
 		// Pak wouldn't consider that pak branch is owned by it.
-		p.pkg.NewTag("_pak_latest_", "HEAD^")
+		p.pkg.NewTag("_pak_latest_", helpers[i][0])
 		p.pkg.Sync()
 		c.Check(p.pkg.ContainsBranchNamedPak, Equals, true)
 		c.Check(p.pkg.ContainsPaktag, Equals, true)
@@ -392,7 +458,7 @@ func (s *PakPkgActionSuite) TestPakBranchOwnership(c *C) {
 
 		err := p.pkg.RemoveTag("_pak_latest_")
 		c.Check(err, Equals, nil)
-		err = p.pkg.NewTag("_pak_latest_", "refs/heads/pak")
+		err = p.pkg.NewTag("_pak_latest_", helpers[i][1])
 		c.Check(err, Equals, nil)
 		p.pkg.Sync()
 		c.Check(p.pkg.ContainsBranchNamedPak, Equals, true)

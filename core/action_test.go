@@ -1,11 +1,8 @@
 package core
 
 import (
-	// "bytes"
-	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	. "launchpad.net/gocheck"
-	// "os/exec"
 )
 
 type GetSuite struct {
@@ -27,15 +24,19 @@ func (s *GetSuite) TearDownSuite(c *C) {
 func (s *GetSuite) SetUpTest(c *C) {
 	MustRun("git", "clone", "fixtures/package1", "../../package1")
 	MustRun("git", "clone", "fixtures/package2", "../../package2")
-	MustRun("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_")
 	MustRun("git", "clone", "fixtures/package3", "../../package3")
+	MustRun("hg", "clone", "fixtures/package1-for-hg", "../../package1-for-hg-get-test")
 	MustRun("cp", "fixtures/Pakfile3", "Pakfile")
+
+	// make package1 a pakcage managed by pak
+	MustRun("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_")
 
 	s.pakPkgs = []*PakPkg{}
 	pkgsFixtures := [][]string{
 		{"github.com/theplant/package1", "origin", "master"},
 		{"github.com/theplant/package2", "origin", "dev"},
 		{"github.com/theplant/package3", "origin", "master"},
+		{"github.com/theplant/package1-for-hg-get-test", "default", "default"},
 	}
 	for _, vals := range pkgsFixtures {
 		pkg := NewPakPkg(vals[0], vals[1], vals[2])
@@ -51,6 +52,7 @@ func (s *GetSuite) TearDownTest(c *C) {
 	MustRun("rm", "-rf", "../../package1")
 	MustRun("rm", "-rf", "../../package2")
 	MustRun("rm", "-rf", "../../package3")
+	MustRun("rm", "-rf", "../../package1-for-hg-get-test")
 	MustRun("rm", "-rf", "Pakfile")
 	MustRun("rm", "-rf", "Pakfile.lock")
 }
@@ -63,12 +65,17 @@ func (s *GetSuite) TestSimpleGet(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
+	c.Log("Git Packages")
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
+
+	c.Log("Hg Packages")
+	s.pakPkgs[3].Sync()
+	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
 }
 
 func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
@@ -82,12 +89,17 @@ func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
+	c.Log("Git Packages")
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	s.pakPkgs[2].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
+
+	c.Log("Hg Packages")
+	s.pakPkgs[3].Sync()
+	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
 }
 
 func (s *GetSuite) TestGetWithPakMeter(c *C) {
@@ -118,9 +130,10 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 
 func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	expectedPaklockInfo := PaklockInfo{
-		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
-		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
-		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
+		"github.com/theplant/package3":                 "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
+		"github.com/theplant/package1":                 "11b174bd5acbf990687e6b068c97378d3219de04",
+		"github.com/theplant/package2":                 "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
+		"github.com/theplant/package1-for-hg-get-test": "1eebd4597062386493ac83ac80b0b9e3d08f7af7",
 	}
 
 	err := Get(PakOption{
@@ -131,7 +144,7 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	c.Check(err, Equals, nil)
 
 	paklockInfo, _ := GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo, DeepEquals, expectedPaklockInfo)
 
 	err = Get(PakOption{
@@ -142,7 +155,7 @@ func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
 	c.Check(err, Equals, nil)
 
 	paklockInfo, _ = GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo, DeepEquals, expectedPaklockInfo)
 }
 
@@ -285,7 +298,7 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "941af3b182a1d0a5859fd451a8b5a633f479d7bc")
 
 	paklockInfo, _ := GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 
 	MustRun("rm", "-rf", "Pakfile")
 	MustRun("cp", "fixtures/Pakfile3-updated", "Pakfile")
@@ -455,7 +468,7 @@ func (s *GetSuite) TestShouldNotRemoveUncleanPkgChecksumInPakfileLockWithSkipOpt
 	c.Check(err, Equals, nil)
 
 	paklockInfo, _ := GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 
 	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
 
@@ -471,7 +484,7 @@ func (s *GetSuite) TestShouldNotRemoveUncleanPkgChecksumInPakfileLockWithSkipOpt
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
 
 	paklockInfo, _ = GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo["github.com/theplant/package1"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package2"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package3"], Not(Equals), "")
@@ -486,7 +499,7 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 	c.Check(err, Equals, nil)
 
 	paklockInfo, _ := GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 
 	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
 
@@ -502,7 +515,7 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
 
 	paklockInfo, _ = GetPaklockInfo()
-	c.Check(len(paklockInfo), Equals, 3)
+	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo["github.com/theplant/package1"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package2"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package3"], Not(Equals), "")
