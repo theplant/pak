@@ -96,7 +96,7 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 	c.Check(headChecksum, Equals, testGpMasterChecksum)
 
 	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
-	MustRun("git", "--git-dir=fixtures/updated-package1/.git", "--work-tree=fixtures/updated-package1", "push", "origin", "master")
+	MustRun("sh", "-c", "cd fixtures/updated-package1; git push origin master")
 	defer func() {
 		MustRun("rm", "-rf", "fixtures/package1")
 		MustRun("mv", "fixtures/package1-backup", "fixtures/package1")
