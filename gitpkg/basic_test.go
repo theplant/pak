@@ -96,7 +96,7 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 	c.Check(headChecksum, Equals, testGpMasterChecksum)
 
 	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
-	MustRun("sh", "-c", "cd fixtures; git clone package1 ../../../package1-for-fetch; cd ../../package1-for-fetch; touch file4; git add file4; git commit -m 'file4'; git push origin master")
+	MustRun("sh", "-c", "cd fixtures; git clone package1 ../../../package1-for-fetch; cd ../../../package1-for-fetch; touch file4; git add file4; git commit -m 'file4'; git push origin master")
 	defer func() {
 		MustRun("rm", "-rf", "fixtures/package1")
 		MustRun("rm", "-rf", "../../../package1-for-fetch")
@@ -107,7 +107,7 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 
 	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
 	c.Check(err, Equals, nil)
-	c.Check(headChecksum, Equals, "71bfc258cb84f62969883c1f6fe47de3768413c2")
+	c.Check(headChecksum, Equals, "f25db07cc6d3981efd38a2892e7ebf3db27563c7")
 }
 
 func (s *GitPkgSuite) TestContainsRemotebranch(c *C) {
