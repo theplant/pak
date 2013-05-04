@@ -90,25 +90,25 @@ func (s *GitPkgSuite) TestGetChecksum(c *C) {
 	c.Check(err, Not(Equals), nil)
 }
 
-// func (s *GitPkgSuite) TestFetch(c *C) {
-// 	headChecksum, err := testGitPkg.GetHeadChecksum()
-// 	c.Check(err, Equals, nil)
-// 	c.Check(headChecksum, Equals, testGpMasterChecksum)
-//
-// 	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
-// 	MustRun("sh", "-c", "cd fixtures; git clone package1 ../../../package1-for-fetch; cd ../../../package1-for-fetch; touch file4; git add file4; git commit -m 'file4'; git push origin master")
-// 	defer func() {
-// 		MustRun("rm", "-rf", "fixtures/package1")
-// 		MustRun("rm", "-rf", "../../../package1-for-fetch")
-// 		MustRun("mv", "fixtures/package1-backup", "fixtures/package1")
-// 	}()
-//
-// 	c.Check(testGitPkg.Fetch(), Equals, nil)
-//
-// 	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
-// 	c.Check(err, Equals, nil)
-// 	c.Check(headChecksum, Equals, "f25db07cc6d3981efd38a2892e7ebf3db27563c7")
-// }
+func (s *GitPkgSuite) TestFetch(c *C) {
+	headChecksum, err := testGitPkg.GetHeadChecksum()
+	c.Check(err, Equals, nil)
+	c.Check(headChecksum, Equals, testGpMasterChecksum)
+
+	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
+	MustRun("sh", "-c", "git clone fixtures/package1 ../../package1-for-fetch; cd ../../package1-for-fetch; touch file4; git add file4; git commit -m 'file4'; git push origin master")
+	defer func() {
+		MustRun("rm", "-rf", "fixtures/package1")
+		MustRun("rm", "-rf", "../../package1-for-fetch")
+		MustRun("mv", "fixtures/package1-backup", "fixtures/package1")
+	}()
+
+	c.Check(testGitPkg.Fetch(), Equals, nil)
+
+	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
+	c.Check(err, Equals, nil)
+	c.Check(headChecksum, Equals, "f25db07cc6d3981efd38a2892e7ebf3db27563c7")
+}
 
 func (s *GitPkgSuite) TestContainsRemotebranch(c *C) {
 	contained, err := testGitPkg.ContainsRemoteBranch()
