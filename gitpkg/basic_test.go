@@ -91,29 +91,28 @@ func (s *GitPkgSuite) TestGetChecksum(c *C) {
 }
 
 // TODO: get travis.ci passed
-// func (s *GitPkgSuite) TestFetch(c *C) {
-// 	headChecksum, err := testGitPkg.GetHeadChecksum()
-// 	c.Check(err, Equals, nil)
-// 	c.Check(headChecksum, Equals, testGpMasterChecksum)
-//
-// 	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
-// 	MustRun("sh", "-c", "git clone fixtures/package1 ../../package1-for-fetch; cd ../../package1-for-fetch; touch file4; git add file4; git commit -m 'file4'; git push")
-// 	// MustRun("sh", "-c", "cd fixtures/updated-package1; git push")
-// 	defer func() {
-// 		MustRun("rm", "-rf", "fixtures/package1")
-// 		MustRun("rm", "-rf", "../../package1-for-fetch")
-// 		MustRun("mv", "fixtures/package1-backup", "fixtures/package1")
-// 	}()
-//
-// 	err = testGitPkg.Fetch()
-// 	c.Check(err, Equals, nil)
-//
-// 	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
-// 	testPkg := NewGitPkg("github.com/theplant/package1-for-fetch", "origin", "master").(*GitPkg)
-// 	testChecksum, err := testGitPkg.GetChecksum("refs/remotes/origin/master")
-// 	c.Check(err, Equals, nil)
-// 	c.Check(headChecksum, Equals, "149b1e18aa3e118a804ccddeefbb6e64b4a5807e")
-// }
+func (s *GitPkgSuite) TestFetch(c *C) {
+	headChecksum, err := testGitPkg.GetHeadChecksum()
+	c.Check(err, Equals, nil)
+	c.Check(headChecksum, Equals, testGpMasterChecksum)
+
+	MustRun("cp", "-r", "fixtures/package1", "fixtures/package1-backup")
+	MustRun("sh", "-c", "git clone fixtures/package1 ../../package1-for-fetch; cd ../../package1-for-fetch; touch file4; git add file4; git commit -m 'file4' --author 'gitpkg-fetch-test <test@test.com>'; git push")
+	defer func() {
+		MustRun("rm", "-rf", "fixtures/package1")
+		MustRun("rm", "-rf", "../../package1-for-fetch")
+		MustRun("mv", "fixtures/package1-backup", "fixtures/package1")
+	}()
+
+	err = testGitPkg.Fetch()
+	c.Check(err, Equals, nil)
+
+	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
+	testPkg := NewGitPkg("github.com/theplant/package1-for-fetch", "origin", "master").(*GitPkg)
+	testChecksum, err := testPkg.GetChecksum("refs/remotes/origin/master")
+	c.Check(err, Equals, nil)
+	c.Check(headChecksum, Equals, testChecksum)
+}
 
 func (s *GitPkgSuite) TestContainsRemotebranch(c *C) {
 	contained, err := testGitPkg.ContainsRemoteBranch()
