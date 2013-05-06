@@ -1,18 +1,18 @@
 # Pak [![Build Status](https://travis-ci.org/theplant/pak.png?branch=master)](https://travis-ci.org/theplant/pak)
 
-Whether Pak is useful or not depends on the development strategy that you and your teammates take. When you are developing a project, and you divides it into a few smaller projects, like bellow:
+Whether Pak is useful or not depends on what kind of the development strategy that you and your team take. When you are developing a project, which is divided into few smaller projects, like bellow:
 
 	github.com/team/project
 	github.com/team/sub-project2
 	github.com/team/sub-project3
 
-And in each project, you use different branches for different intensions. For instance, you define that in each project, branch master is used for production, and branch dev is used for implementing new features. Sooner or later, you will find out that you have to switch between different branches from time to time. And when you switch `github.com/team/project` from branch master to branch dev, you also need to make sure `sub-project2` and `sub-project3` is also on the branch dev. And also, you need to remember to check out some new changes committed by your teammates.
+And in each project, you use different branches or something to mark project state. For instance, you might define that in each project, a branch named master is used for production, and branch dev used for implementing new features. Sooner or later, you will find out that you have to switch branches between projects from time to time. And when you switch `github.com/team/project` from branch master to branch dev, you may also need to make sure `sub-project2` and `sub-project3` is also on the branch dev. When you update some of them, you may also need to remember to remind your teammates of the updates.
 
-Such process could be annoying. So there is Pak.
+Experiences like this is nuisance. So Pak comes.
 
 ## Introduction
 
-Pak uses a Pakfile and Pakfile.lock for easy package state management and synchronisation. After you specify packages to be managed by Pak, use `get` and `update` command to ask Pak get your dependencies on the right state.
+Pak uses a Pakfile and Pakfile.lock for easy package version synchronisation and management. After specify packages in Pakfile, running `get` and `update` command to ask Pak get your dependencies on the right state.
 
 For example, If you have a Pakfile like bellow:
 
@@ -46,12 +46,16 @@ Currently available commands are list bellow:
 ```
 Usage:
     pak init
-    pak [-uf] get
-    pak update [package]
-
+    pak [-sf] get [package]
+    pak [-s] update [package]
+    pak open [package]
+    pak list
+    pak version
+  -f=false: Force pak to remove pak branch.
+  -s=false: Left out unclean packages.
 ```
 
-### Auto-Check
+### Auto-Checking
 
 This feature is used to force your app dependencies to be up-to-date with Pakfile and Pakfile.lock.
 
@@ -71,8 +75,7 @@ And each time you start your app, pak will auto check the dependencies of your a
 
 ## Others
 
-Curretnly, Pak just support git. New commands and other version control system might be supported in the future.
-
+Currently, git and mercurial are supported.
 
 <!--## License
 
