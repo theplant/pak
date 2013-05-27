@@ -94,6 +94,8 @@ func Get(option PakOption) error {
 
 func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 	for i := 0; i < len((*allPakPkgs)); i++ {
+		fmt.Printf("-- %s\n", (*allPakPkgs)[i].Name)
+
 		(*allPakPkgs)[i].GetOption.Force = option.Force
 		(*allPakPkgs)[i].GetOption.SkipUncleanPkgs = option.SkipUncleanPkgs
 
