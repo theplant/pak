@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/theplant/pak/share"
+	"github.com/wsxiaoys/terminal/color"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func Init() error {
@@ -22,6 +24,12 @@ func Init() error {
 }
 
 func Get(option PakOption) error {
+	var start time.Time
+	if option.Verbose {
+		color.Printf("Start paking.\n")
+		start = time.Now()
+	}
+
 	// Retrieve PakPkgs from Pakfile
 	allPakPkgs, err := ParsePakfile()
 	if err != nil {
@@ -69,6 +77,9 @@ func Get(option PakOption) error {
 	}
 
 	// Assign GetOption && Sync && Report Erorrs
+	if option.Verbose {
+		color.Printf("Checking Packages.\n")
+	}
 	err = loadPkgs(&pakPkgs, option)
 	if err != nil {
 		return err
@@ -81,25 +92,43 @@ func Get(option PakOption) error {
 		}
 	}
 	// Ask Pak to Ignore Pakfile.lock when Updating
+	if option.Verbose {
+		color.Printf("Paking Packages.\n")
+	}
 	if !option.UsePakfileLock {
 		paklockInfo = nil
 	}
-	err = pakDependencies(pakPkgs, paklockInfo, newPaklockInfo)
+	err = pakDependencies(pakPkgs, paklockInfo, newPaklockInfo, option)
 	if err != nil {
 		return err
 	}
 
-	return writePaklockInfo(newPaklockInfo)
+	if option.Verbose {
+		color.Printf("Writing Pakfile.lock.\n")
+	}
+	err = writePaklockInfo(newPaklockInfo)
+	if err != nil {
+		return err
+	}
+
+	var end time.Time
+	if option.Verbose {
+		end = time.Now()
+		color.Printf("Pak Done.\nTook: %ds.\n", int(end.Sub(start).Seconds()))
+	}
+	return nil
 }
 
 func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
 	for i := 0; i < len((*allPakPkgs)); i++ {
-		fmt.Printf("-- %s\n", (*allPakPkgs)[i].Name)
+		if option.Verbose {
+			color.Printf("Checking @g%s@w.\n", (*allPakPkgs)[i].Name)
+		}
 
 		(*allPakPkgs)[i].GetOption.Force = option.Force
 		(*allPakPkgs)[i].GetOption.SkipUncleanPkgs = option.SkipUncleanPkgs
 
-		// Go Get Package when the Package is not Downloaded Before
+		// Go Get Package when the Package is not existing
 		isPkgExist, err := (*allPakPkgs)[i].IsPkgExist()
 		if err != nil {
 			return err
@@ -181,7 +210,7 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 	return matched, matchedPakPkg, nil
 }
 
-func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo PaklockInfo) error {
+func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo PaklockInfo, option PakOption) error {
 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := CategorizePakPkgs(pakPkgs, paklockInfo)
 
 	var (
@@ -190,6 +219,10 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo P
 	)
 
 	for i := 0; i < len(newPakPkgs); i++ {
+		if option.Verbose {
+			color.Printf("Getting @g%s@w.\n", newPakPkgs[i].Name)
+		}
+
 		if !newPakPkgs[i].IsClean {
 			return fmt.Errorf("Package %s is a New Package and is Not Clean.", newPakPkgs[i].Name)
 		}
@@ -210,6 +243,10 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo P
 
 	usingPakMeter := len(pakInfo.Packages) != len(pakPkgs)
 	for i := 0; i < len(toUpdatePakPkgs); i++ {
+		if option.Verbose {
+			color.Printf("Updating @g%s@w.\n", toUpdatePakPkgs[i].Name)
+		}
+
 		if !toUpdatePakPkgs[i].IsClean {
 			if usingPakMeter {
 				return fmt.Errorf("Package %s is Not Clean.", toUpdatePakPkgs[i].Name)
@@ -227,11 +264,7 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo P
 	}
 
 	for i := 0; i < len(toRemovePakPkgs); i++ {
-		exist, err := toRemovePakPkgs[i].IsPkgExist()
-		if err != nil {
-			return err
-		}
-
+		// For PakMeter
 		dependentPkg := false
 		for _, pkg := range pakInfo.Packages {
 			if strings.Contains(pkg, toRemovePakPkgs[i].Name) {
@@ -241,6 +274,14 @@ func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo P
 		}
 		if dependentPkg {
 			continue
+		}
+
+		if option.Verbose {
+			color.Printf("@rUnpaking @g%s@w.\n", toRemovePakPkgs[i].Name)
+		}
+		exist, err := toRemovePakPkgs[i].IsPkgExist()
+		if err != nil {
+			return err
 		}
 
 		if exist {

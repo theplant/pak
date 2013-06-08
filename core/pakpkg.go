@@ -80,6 +80,7 @@ func (this *PakPkg) Dial() error {
 }
 
 // GoGet invokes command `go get {package}`.
+// TODO: duplicate with fetch, pick one
 func (this *PakPkg) GoGet() error {
 	return GoGetImpl(this.Name)
 }

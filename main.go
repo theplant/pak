@@ -48,7 +48,7 @@ func main() {
 	case "list":
 		listPakfilePkgs()
 	case "version":
-		color.Println("@g1.2.2")
+		color.Println("@g1.2.3")
 	default:
 		flag.Usage()
 	}
@@ -60,6 +60,7 @@ func getPakPkgs() {
 		UsePakfileLock:  true,
 		Force:           force,
 		SkipUncleanPkgs: skipUncleanPkgs,
+		Verbose:         true,
 	})
 
 	if err != nil {
@@ -73,6 +74,7 @@ func updatePakPkgs() {
 		Force:           true,
 		SkipUncleanPkgs: skipUncleanPkgs,
 		PakMeter:        flag.Args()[1:],
+		Verbose:         true,
 	})
 
 	if err != nil {

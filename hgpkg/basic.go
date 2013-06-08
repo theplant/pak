@@ -138,7 +138,14 @@ func (this *HgPkg) GetHeadRefName() (string, error) {
 	return "non-pak", err
 }
 
-var ChecksumRegexp = regexp.MustCompile(`parent: \d:(.*?) .*\n`)
+// TODO: add tests for summary output below:
+// 		parent: 27:433267630715 tip
+// 		 Add windows-51932 Japanese encoding
+// 		branch: default
+// 		commit: (clean)
+// 		update: (current)
+
+var ChecksumRegexp = regexp.MustCompile(`parent: \d+:(.*?) .*\n`)
 
 func (this *HgPkg) GetHeadChecksum() (string, error) {
 	cmd, err := this.Hg("summary")

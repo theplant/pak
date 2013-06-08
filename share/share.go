@@ -26,6 +26,7 @@ type PaklockInfo map[string]string
 type PakOption struct {
 	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
+	Verbose        bool
 
 	// Force option is designed for asking pak to update package state as long
 	// as the package is exist and clean. This option is always true when pak is
