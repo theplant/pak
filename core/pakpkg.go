@@ -217,27 +217,38 @@ func (this *PakPkg) Unpak(force bool) (err error) {
 	return this.PkgProxy.Unpak()
 }
 
-func CategorizePakPkgs(pakfilePakPkgs []PakPkg, paklockInfo PaklockInfo) (newPkgs []PakPkg, toUpdatePkgs []PakPkg, toRemovePkgs []PakPkg) {
-	if paklockInfo == nil {
-		newPkgs = pakfilePakPkgs
+func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option PakOption) {
+	// if paklockInfo == nil {
+	if !option.UsePakfileLock {
+		for i, _ := range *pakfilePakPkgs {
+			(*pakfilePakPkgs)[i].ActionType = "New"
+		}
 		return
 	}
 
-	for _, pakPkg := range pakfilePakPkgs {
+	for i, pakPkg := range *pakfilePakPkgs {
 		if paklockInfo[pakPkg.Name] == "" {
-			newPkgs = append(newPkgs, pakPkg)
+			(*pakfilePakPkgs)[i].ActionType = "New"
 		} else {
-			pakPkg.Checksum = paklockInfo[pakPkg.Name]
-			toUpdatePkgs = append(toUpdatePkgs, pakPkg)
+			(*pakfilePakPkgs)[i].Checksum = paklockInfo[pakPkg.Name]
+			(*pakfilePakPkgs)[i].ActionType = "Update"
 
 			delete(paklockInfo, pakPkg.Name)
 		}
 	}
+
+	if len(option.PakMeter) > 0 {
+		return
+	}
+
 	if len(paklockInfo) != 0 {
 		for key, val := range paklockInfo {
 			pakPkg := NewPakPkg(key, "", "")
 			pakPkg.Checksum = val
-			toRemovePkgs = append(toRemovePkgs, pakPkg)
+			pakPkg.ActionType = "Remove"
+
+			pkgs := append(*pakfilePakPkgs, pakPkg)
+			*pakfilePakPkgs = pkgs
 		}
 	}
 

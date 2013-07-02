@@ -113,6 +113,7 @@ func init() {
 }`
 
 // ImportPakCheck will scan the whole package and try to find out what kind of packages that is needed to be managed by pak, then save the result in Pakfile.
+// TODO: auto detect packages and setting up a complete and basic Pakfile
 func ImportPakCheck() (err error) {
 	// pkgName, gofileCount, mainGoFile, err := parsePkg()
 	// if err != nil {

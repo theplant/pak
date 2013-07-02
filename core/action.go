@@ -8,7 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	"strings"
+
+	// "strings"
 	"time"
 )
 
@@ -36,6 +37,7 @@ func Get(option PakOption) error {
 		return err
 	}
 
+	// Retrieve PaklockInfo from Pakfile.lock
 	var paklockInfo PaklockInfo
 	paklockInfo, err = GetPaklockInfo()
 	if err != nil {
@@ -50,7 +52,7 @@ func Get(option PakOption) error {
 		}
 	}
 
-	// For: pak update <package, ...>
+	// For: pak [update|get] <package, ...>
 	// Pick up PakPkgs to be updated this time
 	pakPkgs := []PakPkg{}
 	if len(option.PakMeter) != 0 {
@@ -76,14 +78,61 @@ func Get(option PakOption) error {
 		pakPkgs = allPakPkgs
 	}
 
-	// Assign GetOption && Sync && Report Erorrs
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		fmt.Printf("Error ", r)
+	// 	}
+	// }()
+
 	if option.Verbose {
-		color.Printf("Checking Packages.\n")
+		color.Printf("Paking Packages.\n")
 	}
-	err = loadPkgs(&pakPkgs, option)
-	if err != nil {
-		return err
+	// if !option.UsePakfileLock {
+	// 	paklockInfo = nil
+	// }
+
+	CategorizePakPkgs(&pakPkgs, paklockInfo, option)
+
+	errChan := make(chan error)
+	doneChan := make(chan bool)
+	checksumChan := make(chan [2]string)
+
+	for i, _ := range pakPkgs {
+		pakPkgs[i].Force = option.Force
+		pakPkgs[i].Verbose = option.Verbose
+		pakPkgs[i].UsingPakMeter = len(option.PakMeter) > 0
+		pakPkgs[i].SkipUncleanPkgs = option.SkipUncleanPkgs
+
+		pkg := pakPkgs[i]
+
+		go func() {
+			pkgNameAndChecksum, err := pkg.Get()
+			if err != nil {
+				errChan <- err
+
+				return
+			}
+
+			checksumChan <- pkgNameAndChecksum
+			doneChan <- true
+		}()
 	}
+
+	// // Assign GetOption && Sync && Report Erorrs
+	// if option.Verbose {
+	// 	color.Printf("Checking Packages.\n")
+	// }
+	// err = loadPkgs(&pakPkgs, option)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// // Ask Pak to Ignore Pakfile.lock when Updating
+
+	// err = pakDependencies(pakPkgs, paklockInfo, newPaklockInfo, option)
+	// if err != nil {
+	// 	return err
+	// }
 
 	newPaklockInfo := PaklockInfo{}
 	if paklockInfo != nil {
@@ -91,14 +140,7 @@ func Get(option PakOption) error {
 			newPaklockInfo[k] = v
 		}
 	}
-	// Ask Pak to Ignore Pakfile.lock when Updating
-	if option.Verbose {
-		color.Printf("Paking Packages.\n")
-	}
-	if !option.UsePakfileLock {
-		paklockInfo = nil
-	}
-	err = pakDependencies(pakPkgs, paklockInfo, newPaklockInfo, option)
+	err = waitForPkgsProcessing(&newPaklockInfo, len(pakPkgs), checksumChan, doneChan, errChan)
 	if err != nil {
 		return err
 	}
@@ -116,54 +158,222 @@ func Get(option PakOption) error {
 		end = time.Now()
 		color.Printf("Pak Done.\nTook: %ds.\n", int(end.Sub(start).Seconds()))
 	}
+
 	return nil
 }
 
-func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
-	for i := 0; i < len((*allPakPkgs)); i++ {
-		if option.Verbose {
-			color.Printf("Checking @g%s@w.\n", (*allPakPkgs)[i].Name)
-		}
+func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan chan [2]string, doneChan chan bool, errChan chan error) (err error) {
+	count := 0
+	for {
+		select {
+		case nameAndChecksum := <-checksumChan:
+			if nameAndChecksum[1] == "" {
+				delete(*newPaklockInfo, nameAndChecksum[0])
 
-		(*allPakPkgs)[i].GetOption.Force = option.Force
-		(*allPakPkgs)[i].GetOption.SkipUncleanPkgs = option.SkipUncleanPkgs
-
-		// Go Get Package when the Package is not existing
-		isPkgExist, err := (*allPakPkgs)[i].IsPkgExist()
-		if err != nil {
-			return err
-		}
-		if !isPkgExist {
-			err = (*allPakPkgs)[i].GoGet()
-			if err != nil {
-				return err
+				break
 			}
-		}
 
-		err = (*allPakPkgs)[i].Dial()
-		if err != nil {
-			return err
-		}
-
-		// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
-		err = (*allPakPkgs)[i].Fetch()
-		if err != nil {
-			return err
-		}
-
-		err = (*allPakPkgs)[i].Sync()
-		if err != nil {
-			return err
-		}
-
-		err = (*allPakPkgs)[i].Report()
-		if err != nil {
-			return err
+			(*newPaklockInfo)[nameAndChecksum[0]] = nameAndChecksum[1]
+		case errI := <-errChan:
+			// TODO: make a public error chanle to inform other working gorutine to stop running before panic this error
+			// debug.PrintStack()
+			// panic(err)
+			if err == nil {
+				err = fmt.Errorf("", "")
+			}
+			err = fmt.Errorf("%s\nError %d\n%s", err.Error(), errI.Error())
+			count += 1
+			if pkgLen == count {
+				return
+			}
+		case <-doneChan:
+			count += 1
+			if pkgLen == count {
+				return
+			}
 		}
 	}
 
 	return
 }
+
+func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
+	if this.Verbose {
+		color.Printf("Checking @g%s@w.\n", this.Name)
+	}
+
+	// Go Get Package when the Package is not existing
+	isPkgExist, err := this.IsPkgExist()
+	if err != nil {
+		return nameAndChecksum, err
+	}
+	if !isPkgExist && this.ActionType != "Remove" {
+		err = this.GoGet()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
+	err = this.Dial()
+	if err != nil {
+		return nameAndChecksum, err
+	}
+
+	// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
+	if this.ActionType != "Remove" {
+		err = this.Fetch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
+	err = this.Sync()
+	if err != nil {
+		return nameAndChecksum, err
+	}
+
+	if this.ActionType != "Remove" {
+		err = this.Report()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
+	switch this.ActionType {
+	case "New":
+		if this.Verbose {
+			color.Printf("Getting @g%s@w.\n", this.Name)
+		}
+
+		if !this.IsClean {
+			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.", this.Name)
+		}
+
+		checksum, err := this.Pak(this.GetOption)
+		if err != nil {
+			return nameAndChecksum, err
+		}
+
+		// newPaklockInfo[newPakPkgs[i].Name] = checksum
+		nameAndChecksum[0] = this.Name
+		nameAndChecksum[1] = checksum
+	case "Update":
+		if this.Verbose {
+			color.Printf("Updating @g%s@w.\n", this.Name)
+		}
+
+		// Can't Update/Get(by PakMeter) specific packages which is not clean
+		if !this.IsClean {
+			if this.UsingPakMeter {
+				return nameAndChecksum, fmt.Errorf("Package %s is Not Clean.", this.Name)
+			}
+
+			nameAndChecksum[0] = this.Name
+			nameAndChecksum[1] = this.PakbranchChecksum
+
+			return nameAndChecksum, nil
+		}
+
+		checksum, err := this.Pak(this.GetOption)
+		if err != nil {
+			return nameAndChecksum, err
+		}
+
+		// newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
+		nameAndChecksum[0] = this.Name
+		nameAndChecksum[1] = checksum
+	case "Remove":
+		// For PakMeter
+		// dependentPkg := false
+		// for _, pkg := range pakInfo.Packages {
+		// 	if strings.Contains(pkg, toRemovePakPkgs[i].Name) {
+		// 		dependentPkg = true
+		// 		break
+		// 	}
+		// }
+		// if dependentPkg {
+		// 	continue
+		// }
+
+		if this.Verbose {
+			color.Printf("@rUnpaking @g%s@w.\n", this.Name)
+		}
+		// exist, err := this.IsPkgExist()
+		// if err != nil {
+		// 	return nameAndChecksum, err
+		// }
+
+		// if exist {
+		// 	err = this.Dial()
+		// 	if err != nil {
+		// 		return nameAndChecksum, err
+		// 	}
+		// 	err = this.Sync()
+		// 	if err != nil {
+		// 		return nameAndChecksum, err
+		// 	}
+
+		if this.OnPakbranch && this.IsClean {
+			err = this.Unpak(this.Force)
+			if err != nil {
+				return nameAndChecksum, err
+			}
+		}
+
+		// TODO: Add tests for removing Pakfile.lock record
+		// delete(newPaklockInfo, toRemovePakPkgs[i].Name)
+		nameAndChecksum[0] = this.Name
+		nameAndChecksum[1] = ""
+	}
+
+	return
+}
+
+// func loadPkgs(allPakPkgs *[]PakPkg, option PakOption) (err error) {
+// 	for i := 0; i < len((*allPakPkgs)); i++ {
+// 		if option.Verbose {
+// 			color.Printf("Checking @g%s@w.\n", (*allPakPkgs)[i].Name)
+// 		}
+
+// 		(*allPakPkgs)[i].GetOption.Force = option.Force
+// 		(*allPakPkgs)[i].GetOption.SkipUncleanPkgs = option.SkipUncleanPkgs
+
+// 		// Go Get Package when the Package is not existing
+// 		isPkgExist, err := (*allPakPkgs)[i].IsPkgExist()
+// 		if err != nil {
+// 			return err
+// 		}
+// 		if !isPkgExist {
+// 			err = (*allPakPkgs)[i].GoGet()
+// 			if err != nil {
+// 				return err
+// 			}
+// 		}
+
+// 		err = (*allPakPkgs)[i].Dial()
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
+// 		err = (*allPakPkgs)[i].Fetch()
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		err = (*allPakPkgs)[i].Sync()
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		err = (*allPakPkgs)[i].Report()
+// 		if err != nil {
+// 			return err
+// 		}
+// 	}
+
+// 	return
+// }
 
 func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) {
 	matched := false
@@ -210,104 +420,104 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 	return matched, matchedPakPkg, nil
 }
 
-func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo PaklockInfo, option PakOption) error {
-	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := CategorizePakPkgs(pakPkgs, paklockInfo)
+// func pakDependencies(pakPkgs []PakPkg, paklockInfo PaklockInfo, newPaklockInfo PaklockInfo, option PakOption) error {
+// 	newPakPkgs, toUpdatePakPkgs, toRemovePakPkgs := CategorizePakPkgs(pakPkgs, paklockInfo)
 
-	var (
-		checksum string
-		err      error
-	)
+// 	var (
+// 		checksum string
+// 		err      error
+// 	)
 
-	for i := 0; i < len(newPakPkgs); i++ {
-		if option.Verbose {
-			color.Printf("Getting @g%s@w.\n", newPakPkgs[i].Name)
-		}
+// 	for i := 0; i < len(newPakPkgs); i++ {
+// 		if option.Verbose {
+// 			color.Printf("Getting @g%s@w.\n", newPakPkgs[i].Name)
+// 		}
 
-		if !newPakPkgs[i].IsClean {
-			return fmt.Errorf("Package %s is a New Package and is Not Clean.", newPakPkgs[i].Name)
-		}
+// 		if !newPakPkgs[i].IsClean {
+// 			return fmt.Errorf("Package %s is a New Package and is Not Clean.", newPakPkgs[i].Name)
+// 		}
 
-		checksum, err = newPakPkgs[i].Pak(newPakPkgs[i].GetOption)
-		if err != nil {
-			return err
-		}
+// 		checksum, err = newPakPkgs[i].Pak(newPakPkgs[i].GetOption)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		newPaklockInfo[newPakPkgs[i].Name] = checksum
-	}
+// 		newPaklockInfo[newPakPkgs[i].Name] = checksum
+// 	}
 
-	// TODO: refactor. shouldn't read Pakfile twice.
-	pakInfo, err := GetPakInfo()
-	if err != nil {
-		return err
-	}
+// 	// TODO: refactor. shouldn't read Pakfile twice.
+// 	pakInfo, err := GetPakInfo()
+// 	if err != nil {
+// 		return err
+// 	}
 
-	usingPakMeter := len(pakInfo.Packages) != len(pakPkgs)
-	for i := 0; i < len(toUpdatePakPkgs); i++ {
-		if option.Verbose {
-			color.Printf("Updating @g%s@w.\n", toUpdatePakPkgs[i].Name)
-		}
+// 	usingPakMeter := len(pakInfo.Packages) != len(pakPkgs)
+// 	for i := 0; i < len(toUpdatePakPkgs); i++ {
+// 		if option.Verbose {
+// 			color.Printf("Updating @g%s@w.\n", toUpdatePakPkgs[i].Name)
+// 		}
 
-		if !toUpdatePakPkgs[i].IsClean {
-			if usingPakMeter {
-				return fmt.Errorf("Package %s is Not Clean.", toUpdatePakPkgs[i].Name)
-			}
+// 		if !toUpdatePakPkgs[i].IsClean {
+// 			if usingPakMeter {
+// 				return fmt.Errorf("Package %s is Not Clean.", toUpdatePakPkgs[i].Name)
+// 			}
 
-			continue
-		}
+// 			continue
+// 		}
 
-		checksum, err = toUpdatePakPkgs[i].Pak(toUpdatePakPkgs[i].GetOption)
-		if err != nil {
-			return err
-		}
+// 		checksum, err = toUpdatePakPkgs[i].Pak(toUpdatePakPkgs[i].GetOption)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
-	}
+// 		newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
+// 	}
 
-	for i := 0; i < len(toRemovePakPkgs); i++ {
-		// For PakMeter
-		dependentPkg := false
-		for _, pkg := range pakInfo.Packages {
-			if strings.Contains(pkg, toRemovePakPkgs[i].Name) {
-				dependentPkg = true
-				break
-			}
-		}
-		if dependentPkg {
-			continue
-		}
+// 	for i := 0; i < len(toRemovePakPkgs); i++ {
+// 		// For PakMeter
+// 		dependentPkg := false
+// 		for _, pkg := range pakInfo.Packages {
+// 			if strings.Contains(pkg, toRemovePakPkgs[i].Name) {
+// 				dependentPkg = true
+// 				break
+// 			}
+// 		}
+// 		if dependentPkg {
+// 			continue
+// 		}
 
-		if option.Verbose {
-			color.Printf("@rUnpaking @g%s@w.\n", toRemovePakPkgs[i].Name)
-		}
-		exist, err := toRemovePakPkgs[i].IsPkgExist()
-		if err != nil {
-			return err
-		}
+// 		if option.Verbose {
+// 			color.Printf("@rUnpaking @g%s@w.\n", toRemovePakPkgs[i].Name)
+// 		}
+// 		exist, err := toRemovePakPkgs[i].IsPkgExist()
+// 		if err != nil {
+// 			return err
+// 		}
 
-		if exist {
-			err = toRemovePakPkgs[i].Dial()
-			if err != nil {
-				return err
-			}
-			err = toRemovePakPkgs[i].Sync()
-			if err != nil {
-				return err
-			}
+// 		if exist {
+// 			err = toRemovePakPkgs[i].Dial()
+// 			if err != nil {
+// 				return err
+// 			}
+// 			err = toRemovePakPkgs[i].Sync()
+// 			if err != nil {
+// 				return err
+// 			}
 
-			if toRemovePakPkgs[i].IsClean {
-				err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
-				if err != nil {
-					return err
-				}
-			}
-		}
+// 			if toRemovePakPkgs[i].IsClean {
+// 				err = toRemovePakPkgs[i].Unpak(toRemovePakPkgs[i].Force)
+// 				if err != nil {
+// 					return err
+// 				}
+// 			}
+// 		}
 
-		// TODO: Add tests for removing Pakfile.lock record
-		delete(newPaklockInfo, toRemovePakPkgs[i].Name)
-	}
+// 		// TODO: Add tests for removing Pakfile.lock record
+// 		delete(newPaklockInfo, toRemovePakPkgs[i].Name)
+// 	}
 
-	return err
-}
+// 	return err
+// }
 
 func FindPackage(name string) (bool, PakPkg, error) {
 	allPakPkgs, err := ParsePakfile()

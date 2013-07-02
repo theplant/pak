@@ -73,7 +73,7 @@ func (s *GetSuite) TestSimpleGet(c *C) {
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 
-	c.Log("Hg Packages")
+	// c.Log("Hg Packages")
 	s.pakPkgs[3].Sync()
 	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
 }
@@ -102,7 +102,7 @@ func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
 	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
 }
 
-func (s *GetSuite) TestGetWithPakMeter(c *C) {
+func (s *GetSuite) TestGetWithPakMeterForUpdating(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
@@ -128,7 +128,7 @@ func (s *GetSuite) TestGetWithPakMeter(c *C) {
 	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/master")
 }
 
-func (s *GetSuite) TestPaklockInfoShouldUpdateAfterGet(c *C) {
+func (s *GetSuite) TestPaklockInfoShouldBeUpdatedAfterGet(c *C) {
 	expectedPaklockInfo := PaklockInfo{
 		"github.com/theplant/package3":                 "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
 		"github.com/theplant/package1":                 "11b174bd5acbf990687e6b068c97378d3219de04",
@@ -405,7 +405,8 @@ func (s *GetSuite) TestLockedGetWithSkipUncleanPkgsOption(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/master")
-	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/master")
+	// c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/master")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 
 	err = Get(PakOption{
 		PakMeter:        []string{},
@@ -421,7 +422,7 @@ func (s *GetSuite) TestLockedGetWithSkipUncleanPkgsOption(c *C) {
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 }
 
-func (s *GetSuite) TestGetWithSkipUncleanPkgsOptionAfterUntrackUncleanPkgs(c *C) {
+func (s *GetSuite) TestGetWithSkipUncleanPkgsOptionAfterUntrackingUncleanPkgs(c *C) {
 	err := Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
@@ -454,6 +455,7 @@ func (s *GetSuite) TestGetWithSkipUncleanPkgsOptionAfterUntrackUncleanPkgs(c *C)
 	c.Check(s.pakPkgs[1].ContainsPaktag, Equals, true)
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
 	paklockInfo, _ := GetPaklockInfo()
+
 	c.Check(len(paklockInfo), Equals, 2)
 	c.Check(paklockInfo["github.com/theplant/package1"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package3"], Not(Equals), "")
@@ -521,7 +523,7 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 	c.Check(paklockInfo["github.com/theplant/package3"], Not(Equals), "")
 }
 
-func (s *GetSuite) TestGetArguments(c *C) {
+func (s *GetSuite) TestGetWithPakMeterForGetting(c *C) {
 	MustRun("sh", "-c", "cp fixtures/Pakfile3-for-get-args Pakfile")
 
 	err := Get(PakOption{

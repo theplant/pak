@@ -23,6 +23,7 @@ type PakInfo struct {
 
 type PaklockInfo map[string]string
 
+// For core interface function #Get
 type PakOption struct {
 	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
@@ -47,12 +48,32 @@ type PakOption struct {
 	SkipUncleanPkgs bool
 }
 
+// For PakPkg#Get
 type GetOption struct {
 	Force           bool
-	Checksum        string
 	SkipUncleanPkgs bool
+	UsingPakMeter   bool
+	Verbose         bool
+	Checksum        string
+	ActionType      string // New, Update, Remove
 }
 
+// TODO: 1. remove tag marking.
+// 2. new configuration interface, sample below:
+//
+//		# global default setting
+// 		Pak Branch Name: pak
+// 		Branch Auto Matching: true
+//
+// 		# specific packages and setting
+// 		Packages:
+// 			- Package:
+//	 			Pak Branch Name:
+//	 			Branch:
+//	 			branch-auto-matching:
+// 			-
+// 			-
+//
 type PkgProxy interface {
 	Fetch() error
 	NewBranch(string) error
