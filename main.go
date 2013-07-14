@@ -87,7 +87,7 @@ func openPkgWithPakEditor() {
 	pakEditor := os.Getenv("PAK_OPEN_EDITOR")
 	if pakEditor == "" {
 		color.Printf("@rPAK_OPEN_EDITOR is Not Configured.@w")
-		color.Println(" Please configure it like bellow in your ~/.bash_profile or anywhere that is accessible to pak.")
+		color.Println(" Please configure it like below in your ~/.bash_profile or anywhere that is accessible to pak.")
 		color.Println("    @gexport PAK_OPEN_EDITOR={mate or whatever editor that you like}@w")
 		return
 	}

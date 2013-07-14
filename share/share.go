@@ -23,7 +23,7 @@ type PakInfo struct {
 
 type PaklockInfo map[string]string
 
-// For core interface function #Get
+// For core function #Get
 type PakOption struct {
 	PakMeter       []string // used for containing spcified packages
 	UsePakfileLock bool
@@ -59,7 +59,7 @@ type GetOption struct {
 }
 
 // TODO: 1. remove tag marking.
-// 2. new configuration interface, sample below:
+// TODO: 2. new configuration interface, sample below:
 //
 //		# global default setting
 // 		Pak Branch Name: pak
@@ -69,8 +69,8 @@ type GetOption struct {
 // 		Packages:
 // 			- Package:
 //	 			Pak Branch Name:
-//	 			Branch:
-//	 			branch-auto-matching:
+//	 			Branch: [checksum | reference name]
+//	 			branch-auto-matching: bool
 // 			-
 // 			-
 //

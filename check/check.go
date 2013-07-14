@@ -75,7 +75,7 @@ func Check() {
 			}
 		}
 
-		color.Println("Warning: Packages bellow are out of the control of Pak:")
+		color.Println("Warning: Packages below are out of the control of Pak:")
 		paddingStr := fmt.Sprintf(`@g%%-%d`, paddingLen)
 		for _, warning := range warnings {
 			color.Printf(paddingStr+`s @w-> @r%s`, warning[0], warning[1])
@@ -94,7 +94,7 @@ func Check() {
 		}
 	}
 
-	color.Println("Force Exited by Pak. Packages listed bellow is not under the control of Pak:")
+	color.Println("Force Exited by Pak. Packages listed below is not under the control of Pak:")
 	paddingStr := fmt.Sprintf(`@g%%-%d`, paddingLen)
 	for _, info := range errors {
 		color.Printf(paddingStr+`s @w-> @r%s`, info[0], info[1])

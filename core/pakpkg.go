@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/theplant/pak/share"
+	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"os/exec"
 	"strings"
@@ -46,6 +47,111 @@ func NewPakPkg(name, remote, branch string) PakPkg {
 	pkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
 
 	return pkg
+}
+
+func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
+	if this.Verbose {
+		color.Printf("Checking @g%s@w.\n", this.Name)
+	}
+
+	// Go Get Package when the Package is not existing
+	isPkgExist, err := this.IsPkgExist()
+	if err != nil {
+		return nameAndChecksum, err
+	}
+	if !isPkgExist && this.ActionType != "Remove" {
+		err = this.GoGet()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
+	err = this.Dial()
+	if err != nil {
+		return nameAndChecksum, err
+	}
+
+	// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
+	if this.ActionType != "Remove" {
+		err = this.Fetch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
+	err = this.Sync()
+	if err != nil {
+		return nameAndChecksum, err
+	}
+
+	if this.ActionType != "Remove" {
+		err = this.Report()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
+	switch this.ActionType {
+	case "New":
+		if this.Verbose {
+			color.Printf("Getting @g%s@w.\n", this.Name)
+		}
+
+		if !this.IsClean {
+			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.", this.Name)
+		}
+
+		checksum, err := this.Pak(this.GetOption)
+		if err != nil {
+			return nameAndChecksum, err
+		}
+
+		// newPaklockInfo[newPakPkgs[i].Name] = checksum
+		nameAndChecksum[0] = this.Name
+		nameAndChecksum[1] = checksum
+	case "Update":
+		if this.Verbose {
+			color.Printf("Updating @g%s@w.\n", this.Name)
+		}
+
+		// Can't Update/Get(by PakMeter) specific packages which is not clean
+		if !this.IsClean {
+			if this.UsingPakMeter {
+				return nameAndChecksum, fmt.Errorf("Package %s is Not Clean.", this.Name)
+			}
+
+			nameAndChecksum[0] = this.Name
+			nameAndChecksum[1] = this.PakbranchChecksum
+
+			return nameAndChecksum, nil
+		}
+
+		checksum, err := this.Pak(this.GetOption)
+		if err != nil {
+			return nameAndChecksum, err
+		}
+
+		// newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
+		nameAndChecksum[0] = this.Name
+		nameAndChecksum[1] = checksum
+	case "Remove":
+		if this.Verbose {
+			color.Printf("@rUnpaking @g%s@w.\n", this.Name)
+		}
+
+		if this.OnPakbranch && this.IsClean {
+			err = this.Unpak(this.Force)
+			if err != nil {
+				return nameAndChecksum, err
+			}
+		}
+
+		// TODO: Add tests for removing Pakfile.lock record
+		nameAndChecksum[0] = this.Name
+		nameAndChecksum[1] = ""
+	}
+
+	return
 }
 
 func (this *PakPkg) IsPkgExist() (bool, error) {
