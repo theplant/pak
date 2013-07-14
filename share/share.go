@@ -17,8 +17,16 @@ const (
 
 var Gopath = os.Getenv("GOPATH")
 
+type PkgCfg struct {
+	PkgName                string
+	PakName                string // default: pak
+	TargetBranch           string
+	AutoMatchingHostBranch bool
+}
+
 type PakInfo struct {
 	Packages []string
+	// Packages []PkgCfg
 }
 
 type PaklockInfo map[string]string
@@ -50,12 +58,23 @@ type PakOption struct {
 
 // For PakPkg#Get
 type GetOption struct {
+	// Pakfile info
+	PkgCfg
+	// PkgName                string
+	// PakName                string // default: pak
+	// TargetBranch           string
+	// AutoMatchingHostBranch bool
+
+	// Pakfile.lock info
+	Checksum string
+
+	// PakOption
 	Force           bool
 	SkipUncleanPkgs bool
 	UsingPakMeter   bool
 	Verbose         bool
-	Checksum        string
-	ActionType      string // New, Update, Remove
+
+	ActionType string // New, Update, Remove
 }
 
 // TODO: 1. remove tag marking.
@@ -68,9 +87,9 @@ type GetOption struct {
 // 		# specific packages and setting
 // 		Packages:
 // 			- Package:
-//	 			Pak Branch Name:
-//	 			Branch: [checksum | reference name]
-//	 			branch-auto-matching: bool
+//	 			PakName:
+//	 			TargetBranch: [checksum | reference name]
+//	 			AutoMatchingHostBranch: bool
 // 			-
 // 			-
 //
