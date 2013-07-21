@@ -18,15 +18,14 @@ const (
 var Gopath = os.Getenv("GOPATH")
 
 type PkgCfg struct {
-	PkgName                string
+	Name                   string
 	PakName                string // default: pak
 	TargetBranch           string
 	AutoMatchingHostBranch bool
 }
 
 type PakInfo struct {
-	Packages []string
-	// Packages []PkgCfg
+	Packages []PkgCfg
 }
 
 type PaklockInfo map[string]string
@@ -58,13 +57,6 @@ type PakOption struct {
 
 // For PakPkg#Get
 type GetOption struct {
-	// Pakfile info
-	PkgCfg
-	// PkgName                string
-	// PakName                string // default: pak
-	// TargetBranch           string
-	// AutoMatchingHostBranch bool
-
 	// Pakfile.lock info
 	Checksum string
 

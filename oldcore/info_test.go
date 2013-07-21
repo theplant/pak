@@ -62,31 +62,31 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 	}
 }
 
-// var paklockPaths = []struct {
-// 	path         string
-// 	msg          string
-// 	paklockState bool
-// }{
-// 	{Paklock, "Can read Pakfile in curreint Folder", true},
-// 	{"../" + Paklock, "Can read Pakfile in parent Folder", true},
-// 	{Gopath + "/../" + Paklock, "Won't go beyond GOPATH to find Pakfile", false},
-// }
+var paklockPaths = []struct {
+	path         string
+	msg          string
+	paklockState bool
+}{
+	{Paklock, "Can read Pakfile in curreint Folder", true},
+	{"../" + Paklock, "Can read Pakfile in parent Folder", true},
+	{Gopath + "/../" + Paklock, "Won't go beyond GOPATH to find Pakfile", false},
+}
 
-// func (s *PakSuite) TestReadPakfileLock(c *C) {
-// 	paklockInfo := PaklockInfo{
-// 		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
-// 		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
-// 		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
-// 	}
-// 	paklockInfoBytes, _ := goyaml.Marshal(&paklockInfo)
-// 	for _, paklockPath := range paklockPaths {
-// 		ioutil.WriteFile(paklockPath.path, paklockInfoBytes, os.FileMode(0644))
+func (s *PakSuite) TestReadPakfileLock(c *C) {
+	paklockInfo := PaklockInfo{
+		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
+		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
+		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
+	}
+	paklockInfoBytes, _ := goyaml.Marshal(&paklockInfo)
+	for _, paklockPath := range paklockPaths {
+		ioutil.WriteFile(paklockPath.path, paklockInfoBytes, os.FileMode(0644))
 
-// 		paklockInfo2, err := GetPaklockInfo()
-// 		c.Log(paklockPath.msg)
-// 		c.Check(err == nil, Equals, paklockPath.paklockState)
-// 		c.Check(reflect.DeepEqual(paklockInfo2, paklockInfo), Equals, paklockPath.paklockState)
+		paklockInfo2, err := GetPaklockInfo()
+		c.Log(paklockPath.msg)
+		c.Check(err == nil, Equals, paklockPath.paklockState)
+		c.Check(reflect.DeepEqual(paklockInfo2, paklockInfo), Equals, paklockPath.paklockState)
 
-// 		os.Remove(paklockPath.path)
-// 	}
-// }
+		os.Remove(paklockPath.path)
+	}
+}

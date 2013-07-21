@@ -1,4 +1,6 @@
-# Pakfile[.yaml]
+package core
+
+const PakfileTemplate = `# Pakfile[.yaml]
 # Usage:
 #
 # Write down your package name to be checked out. You can specify branch.
@@ -13,15 +15,5 @@
 # - github.com/user/project1@dev
 #
 
-version: 2.0
 packages:
-# Git Packages
-- name: github.com/theplant/package1
-  targetbranch: origin/master
-- name: github.com/theplant/package2
-  targetbranch: origin/dev
-- name: github.com/theplant/package3
-  targetbranch: origin/master
-# Hg Packages
-- name: github.com/theplant/package1-for-hg-get-test
-  targetbranch: default/default
+# - package@dev`

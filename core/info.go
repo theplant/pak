@@ -19,6 +19,12 @@ func GetPakInfo() (pakInfo PakInfo, err error) {
 
 	err = goyaml.Unmarshal(pakInfoBytes, &pakInfo)
 
+	for i, _ := range pakInfo.Packages {
+		if pakInfo.Packages[i].PakName == "" {
+			pakInfo.Packages[i].PakName = "pak"
+		}
+	}
+
 	return
 }
 

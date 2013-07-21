@@ -39,16 +39,22 @@ func main() {
 	switch flag.Arg(0) {
 	case "init":
 		core.Init()
+		break
 	case "get":
 		getPakPkgs()
+		break
 	case "update":
 		updatePakPkgs()
+		break
 	case "open":
 		openPkgWithPakEditor()
+		break
 	case "list":
 		listPakfilePkgs()
+		break
 	case "version":
 		color.Println("@g1.3.0")
+		break
 	default:
 		flag.Usage()
 	}

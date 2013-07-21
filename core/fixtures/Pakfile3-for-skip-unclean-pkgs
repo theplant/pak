@@ -13,6 +13,9 @@
 # - github.com/user/project1@dev
 #
 
+version: 2.0
 packages:
-- github.com/theplant/package1
-- github.com/theplant/package3@origin/master
+- name: github.com/theplant/package1
+  targetbranch: origin/master
+- name: github.com/theplant/package3
+  targetbranch: origin/master

@@ -13,9 +13,8 @@ import (
 type PakPkg struct {
 	PkgProxy
 	GetOption
-	PkgCfg
 
-	// Name              string // moved to PkgCfg
+	Name              string
 	Remote            string
 	Branch            string
 	RemoteBranch      string
@@ -40,24 +39,12 @@ type PakPkg struct {
 	IsClean                bool
 }
 
-// func NewPakPkg(name, remote, branch string) PakPkg {
-func NewPakPkg(cfg PkgCfg) PakPkg {
-	pkg := PakPkg{PkgCfg: cfg}
-	// pkg.Name = cfg.Name
-
-	var remote, branch string
-	if strings.Contains(cfg.TargetBranch, "/") {
-		tb := strings.Split(cfg.TargetBranch, "/")
-		remote = tb[0]
-		branch = tb[1]
-	} else {
-		remote = ""
-		branch = cfg.TargetBranch
-	}
+func NewPakPkg(name, remote, branch string) PakPkg {
+	pkg := PakPkg{}
+	pkg.Name = name
 	pkg.Remote = remote
 	pkg.Branch = branch
-
-	pkg.Path = fmt.Sprintf("%s/src/%s", Gopath, pkg.Name)
+	pkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
 
 	return pkg
 }
@@ -114,7 +101,7 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.", this.Name)
 		}
 
-		checksum, err := this.Pak()
+		checksum, err := this.Pak(this.GetOption)
 		if err != nil {
 			return nameAndChecksum, err
 		}
@@ -139,7 +126,7 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, nil
 		}
 
-		checksum, err := this.Pak()
+		checksum, err := this.Pak(this.GetOption)
 		if err != nil {
 			return nameAndChecksum, err
 		}
@@ -294,9 +281,8 @@ func (this *PakPkg) Report() error {
 	return nil
 }
 
-func (this *PakPkg) Pak() (string, error) {
+func (this *PakPkg) Pak(option GetOption) (string, error) {
 	// TODO: add tests
-	option := this.GetOption
 	if this.OnPakbranch && this.PakbranchChecksum == option.Checksum && !option.Force {
 		err := this.GoGet()
 		if err != nil {
@@ -363,8 +349,7 @@ func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option
 
 	if len(paklockInfo) != 0 {
 		for key, val := range paklockInfo {
-			// pakPkg := NewPakPkg(key, "", "")
-			pakPkg := NewPakPkg(PkgCfg{Name: key})
+			pakPkg := NewPakPkg(key, "", "")
 			pakPkg.Checksum = val
 			pakPkg.ActionType = "Remove"
 
@@ -377,13 +362,11 @@ func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option
 }
 
 /**
- * This format is ONLY supported in Pakfile-1.0
  * Supported Pkg Description Formats:
  * 		"github.com/theplant/package2"
  * 		"github.com/theplant/package2@dev"
  * 		"github.com/theplant/package2@origin/dev"
  */
-// TODO: make it compartible with Pakfile-1.0 by adding a PakfileVersion configration
 func ParsePakfile() ([]PakPkg, error) {
 	pakInfo, err := GetPakInfo()
 
@@ -392,30 +375,27 @@ func ParsePakfile() ([]PakPkg, error) {
 	}
 
 	pakPkgs := []PakPkg{}
-	for _, pkgCfg := range pakInfo.Packages {
-		// atIndex := strings.LastIndex(pkg, "@")
-		// var name, remote, branch string
-		// if atIndex != -1 {
-		// 	name = pkg[:atIndex]
-		// 	branchInfo := pkg[atIndex+1:]
-		// 	if strings.Contains(branchInfo, "/") {
-		// 		slashIndex := strings.Index(branchInfo, "/")
-		// 		remote = branchInfo[:slashIndex]
-		// 		branch = branchInfo[slashIndex+1:]
-		// 	} else {
-		// 		remote = "origin"
-		// 		branch = branchInfo
-		// 	}
-		// } else {
-		// 	name = pkg
-		// 	remote = "origin"
-		// 	branch = "master"
-		// }
+	for _, pkg := range pakInfo.Packages {
+		atIndex := strings.LastIndex(pkg, "@")
+		var name, remote, branch string
+		if atIndex != -1 {
+			name = pkg[:atIndex]
+			branchInfo := pkg[atIndex+1:]
+			if strings.Contains(branchInfo, "/") {
+				slashIndex := strings.Index(branchInfo, "/")
+				remote = branchInfo[:slashIndex]
+				branch = branchInfo[slashIndex+1:]
+			} else {
+				remote = "origin"
+				branch = branchInfo
+			}
+		} else {
+			name = pkg
+			remote = "origin"
+			branch = "master"
+		}
 
-		// pakPkg := NewPakPkg(name, remote, branch)
-
-		pakPkg := NewPakPkg(pkgCfg)
-
+		pakPkg := NewPakPkg(name, remote, branch)
 		pakPkgs = append(pakPkgs, pakPkg)
 	}
 

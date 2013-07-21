@@ -12,12 +12,7 @@ type PakPkgStateSuite struct {
 }
 
 var _ = Suite(&PakPkgStateSuite{
-	pkg: NewPakPkg(PkgCfg{
-		Name:                   "github.com/theplant/pakpkg-package",
-		PakName:                "pak",
-		TargetBranch:           "origin/master",
-		AutoMatchingHostBranch: false,
-	}),
+	pkg: NewPakPkg("github.com/theplant/pakpkg-package", "origin", "master"),
 })
 
 func (s *PakPkgStateSuite) SetUpSuite(c *C) {
@@ -58,30 +53,10 @@ func (s *PakPkgStateSuite) TestDial(c *C) {
 func (s *PakPkgStateSuite) TestParsePakfile(c *C) {
 	pakPkgs, err := ParsePakfile()
 	expectedGitPkgs := []PakPkg{
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package1",
-			PakName:                "pak",
-			TargetBranch:           "origin/master",
-			AutoMatchingHostBranch: false,
-		}),
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package2",
-			PakName:                "pak",
-			TargetBranch:           "origin/dev",
-			AutoMatchingHostBranch: false,
-		}),
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package3",
-			PakName:                "pak",
-			TargetBranch:           "origin/dev",
-			AutoMatchingHostBranch: false,
-		}),
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package4",
-			PakName:                "pak",
-			TargetBranch:           "nonorigin/dev",
-			AutoMatchingHostBranch: false,
-		}),
+		NewPakPkg("github.com/theplant/package1", "origin", "master"),
+		NewPakPkg("github.com/theplant/package2", "origin", "dev"),
+		NewPakPkg("github.com/theplant/package3", "origin", "dev"),
+		NewPakPkg("github.com/theplant/package4", "nonorigin", "dev"),
 	}
 
 	c.Check(err, Equals, nil)
@@ -223,13 +198,13 @@ type PakPkgActionSuite struct {
 var _ = Suite(&PakPkgActionSuite{
 	pkgs: []*pakpkgTs{
 		{
-			pkgArgs:          []string{"github.com/theplant/pakpkg-action-git-package", "origin/master"},
+			pkgArgs:          []string{"github.com/theplant/pakpkg-action-git-package", "origin", "master"},
 			masterChecksum:   "11b174bd5acbf990687e6b068c97378d3219de04",
 			setUpFixtures:    []string{"git", "clone", "fixtures/package1", "../../pakpkg-action-git-package"},
 			tearDownFixtures: []string{"rm", "-rf", "../../pakpkg-action-git-package"},
 		},
 		{
-			pkgArgs:          []string{"github.com/theplant/pakpkg-action-hg-package", "default/default"},
+			pkgArgs:          []string{"github.com/theplant/pakpkg-action-hg-package", "default", "default"},
 			masterChecksum:   "1eebd4597062386493ac83ac80b0b9e3d08f7af7",
 			setUpFixtures:    []string{"hg", "clone", "fixtures/package1-for-hg", "../../pakpkg-action-hg-package"},
 			tearDownFixtures: []string{"rm", "-rf", "../../pakpkg-action-hg-package"},
@@ -238,19 +213,18 @@ var _ = Suite(&PakPkgActionSuite{
 })
 
 func (s *PakPkgActionSuite) SetUpTest(c *C) {
-	for i, p := range s.pkgs {
-		// p.pkg = NewPakPkg(p.pkgArgs[0], p.pkgArgs[1], p.pkgArgs[2])
-		(*s.pkgs[i]).pkg = NewPakPkg(PkgCfg{Name: p.pkgArgs[0], TargetBranch: p.pkgArgs[1], PakName: "pak"})
+	for _, p := range s.pkgs {
+		p.pkg = NewPakPkg(p.pkgArgs[0], p.pkgArgs[1], p.pkgArgs[2])
 
 		MustRun(p.setUpFixtures...)
 
-		err := (*s.pkgs[i]).pkg.Dial()
+		err := p.pkg.Dial()
 		if err != nil {
 			c.Fatal(err)
 		}
 
+		GoGetImpl = func(name string) error { return nil }
 	}
-	GoGetImpl = func(name string) error { return nil }
 }
 func (s *PakPkgActionSuite) TearDownTest(c *C) {
 	for i, p := range s.pkgs {
@@ -284,8 +258,7 @@ func (s *PakPkgActionSuite) TestSimplePak(c *C) {
 		c.Check(p.pkg.IsRemoteBranchExist, Equals, true)
 		c.Check(p.pkg.IsClean, Equals, true)
 
-		p.pkg.GetOption = GetOption{Force: true, Checksum: ""}
-		p.pkg.Pak()
+		p.pkg.Pak(GetOption{Force: true, Checksum: ""})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, simplePakHelper[i][1])
@@ -320,8 +293,7 @@ func (s *PakPkgActionSuite) TestWeakPak(c *C) {
 		c.Check(p.pkg.IsRemoteBranchExist, Equals, true)
 		c.Check(p.pkg.IsClean, Equals, true)
 
-		p.pkg.GetOption = GetOption{Force: false, Checksum: ""}
-		p.pkg.Pak()
+		p.pkg.Pak(GetOption{Force: false, Checksum: ""})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, weakPakHelper[i][1])
@@ -338,7 +310,7 @@ func (s *PakPkgActionSuite) TestWeakPak(c *C) {
 }
 
 func (s *PakPkgActionSuite) TestForcefulPak(c *C) {
-	var forcefulPakFixtures = [][]string{
+	var forcefulPakHelper = [][]string{
 		{"refs/heads/pak"},
 		{"pak"},
 	}
@@ -346,13 +318,10 @@ func (s *PakPkgActionSuite) TestForcefulPak(c *C) {
 		p.pkg.PkgProxy.NewBranch("pak")
 		p.pkg.Sync()
 
-		p.pkg.GetOption = GetOption{Force: true, Checksum: ""}
-		_, err := p.pkg.Pak()
-		c.Check(err, Equals, nil)
-
+		p.pkg.Pak(GetOption{Force: true, Checksum: ""})
 		p.pkg.Sync()
 
-		c.Check(p.pkg.HeadRefName, Equals, forcefulPakFixtures[i][0])
+		c.Check(p.pkg.HeadRefName, Equals, forcefulPakHelper[i][0])
 		c.Check(p.pkg.HeadChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PakbranchChecksum, Equals, p.masterChecksum)
 		c.Check(p.pkg.PaktagChecksum, Equals, p.masterChecksum)
@@ -373,8 +342,7 @@ func (s *PakPkgActionSuite) TestGetWithChecksum(c *C) {
 	for i, p := range s.pkgs {
 		devChecksum := helper[i][0]
 		p.pkg.Sync()
-		p.pkg.GetOption = GetOption{Force: true, Checksum: devChecksum}
-		p.pkg.Pak()
+		p.pkg.Pak(GetOption{Force: true, Checksum: devChecksum})
 		p.pkg.Sync()
 
 		c.Check(p.pkg.HeadRefName, Equals, helper[i][1])
@@ -404,8 +372,7 @@ func (s *PakPkgActionSuite) TestForcefulUnpak(c *C) {
 
 		err := p.pkg.Sync()
 		c.Check(err, Equals, nil)
-		p.pkg.GetOption = GetOption{Force: true, Checksum: p.masterChecksum}
-		_, err = p.pkg.Pak()
+		_, err = p.pkg.Pak(GetOption{Force: true, Checksum: p.masterChecksum})
 		c.Check(err, Equals, nil)
 		err = p.pkg.Sync()
 		c.Check(err, Equals, nil)

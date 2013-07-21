@@ -33,14 +33,13 @@ func (s *GetSuite) SetUpTest(c *C) {
 
 	s.pakPkgs = []*PakPkg{}
 	pkgsFixtures := [][]string{
-		{"github.com/theplant/package1", "origin/master"},
-		{"github.com/theplant/package2", "origin/dev"},
-		{"github.com/theplant/package3", "origin/master"},
-		{"github.com/theplant/package1-for-hg-get-test", "default/default"},
+		{"github.com/theplant/package1", "origin", "master"},
+		{"github.com/theplant/package2", "origin", "dev"},
+		{"github.com/theplant/package3", "origin", "master"},
+		{"github.com/theplant/package1-for-hg-get-test", "default", "default"},
 	}
 	for _, vals := range pkgsFixtures {
-		// pkg := NewPakPkg(vals[0], vals[1], vals[2])
-		pkg := NewPakPkg(PkgCfg{Name: vals[0], PakName: "pak", TargetBranch: vals[1]})
+		pkg := NewPakPkg(vals[0], vals[1], vals[2])
 		err := pkg.Dial()
 		if err != nil {
 			c.Fatal(err, Equals, nil)
