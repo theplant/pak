@@ -2,13 +2,16 @@ package core
 
 import (
 	"fmt"
-	// "github.com/theplant/pak/gitpkg"
 	. "github.com/theplant/pak/share"
 	"io/ioutil"
 	"launchpad.net/goyaml"
 	"os"
 	"path/filepath"
 )
+
+type PakInfo struct {
+	Packages []PkgCfg
+}
 
 func GetPakInfo() (pakInfo PakInfo, err error) {
 	var pakInfoBytes []byte
@@ -21,7 +24,7 @@ func GetPakInfo() (pakInfo PakInfo, err error) {
 
 	for i, _ := range pakInfo.Packages {
 		if pakInfo.Packages[i].PakName == "" {
-			pakInfo.Packages[i].PakName = "pak"
+			pakInfo.Packages[i].PakName = Pakbranch
 		}
 	}
 

@@ -11,23 +11,26 @@ import (
 )
 
 type HgPkg struct {
-	Name string // github.com/theplant/pak
+	Name    string // github.com/theplant/pak
+	PakName string
 	// Remote       string // origin, etc
 	Branch string // master, dev, etc
 	// Bookmark string
 	Path         string // $GOPATH/src/:Name
 	RemoteBranch string // refs/remotes/:Remote/:Branch
 	PakbranchRef string // pak; not longer a branch but a bookmark in mercurial
-	PaktagRef    string // _pak_latest_
+	// PaktagRef    string // _pak_latest_
 }
 
-func NewHgPkg(name, remote, branch string) PkgProxy {
+func NewHgPkg(name, remote, branch, pakName string) PkgProxy {
 	hgPkg := HgPkg{}
 	hgPkg.Name = name
+	hgPkg.PakName = pakName
 	hgPkg.Branch = branch
 	hgPkg.RemoteBranch = remote
-	hgPkg.PakbranchRef = Pakbranch
-	hgPkg.PaktagRef = Paktag
+	// hgPkg.PakbranchRef = Pakbranch
+	hgPkg.PakbranchRef = hgPkg.PakName
+	// hgPkg.PaktagRef = Paktag
 
 	hgPkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
 
@@ -61,9 +64,9 @@ func (this *HgPkg) GetPakbranchRef() string {
 	return this.PakbranchRef
 }
 
-func (this *HgPkg) GetPaktagRef() string {
-	return this.PaktagRef
-}
+// func (this *HgPkg) GetPaktagRef() string {
+// 	return this.PaktagRef
+// }
 
 func (this *HgPkg) GetRemoteBranch() string {
 	return this.RemoteBranch
@@ -79,14 +82,14 @@ func (this *HgPkg) ContainsPakbranch() (bool, error) {
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.PakbranchRef+" "), nil
 }
 
-func (this *HgPkg) ContainsPaktag() (bool, error) {
-	cmd, err := this.Hg("tags")
-	if err != nil {
-		return false, err
-	}
+// func (this *HgPkg) ContainsPaktag() (bool, error) {
+// 	cmd, err := this.Hg("tags")
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), this.PaktagRef+" "), nil
-}
+// 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), this.PaktagRef+" "), nil
+// }
 
 // IsClean will check whether the package contains modified file, but it allows the existence of untracked file.
 func (this *HgPkg) IsClean() (bool, error) {
@@ -122,17 +125,22 @@ func (this *HgPkg) ContainsRemoteBranch() (bool, error) {
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), this.RemoteBranch+" = "), nil
 }
 
-// GetHeadRefName will return the pak bookmark name if it contains
-var RefsRegexp = regexp.MustCompile("\nbookmarks:.*pak.*\n")
-
 func (this *HgPkg) GetHeadRefName() (string, error) {
+	// GetHeadRefName will return the pak bookmark name if it contains
+	// TODO: try to inform users when the PakName is illegal
+	RefsRegexp, err := regexp.Compile("\nbookmarks:.*" + this.PakName + ".*\n")
+	if err != nil {
+		return "", err
+	}
+
 	cmd, err := this.Hg("summary")
 	if err != nil {
 		return "", err
 	}
 
 	if RefsRegexp.MatchString(cmd.Stdout.(*bytes.Buffer).String()) {
-		return Pakbranch, nil
+		// return Pakbranch, nil
+		return this.PakName, nil
 	}
 
 	return "non-pak", err
@@ -176,15 +184,15 @@ func (this *HgPkg) Pak(ref string) (string, error) {
 		return "", err
 	}
 
-	// Create Paktag
 	checksum, err := this.GetChecksum(this.PakbranchRef)
 	if err != nil {
 		return "", err
 	}
-	_, err = this.Hg("tag", "--local", "-r", checksum, Paktag)
-	if err != nil {
-		return "", err
-	}
+	// // Create Paktag
+	// _, err = this.Hg("tag", "--local", "-r", checksum, Paktag)
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	return checksum, err
 }
@@ -194,7 +202,8 @@ func (this *HgPkg) Unpak() error {
 	// Delete Pakbranch
 	if contained, err := this.ContainsPakbranch(); err == nil {
 		if contained {
-			_, err = this.Hg("bookmark", "-d", Pakbranch)
+			// _, err = this.Hg("bookmark", "-d", Pakbranch)
+			_, err = this.Hg("bookmark", "-d", this.PakName)
 			if err != nil {
 				return err
 			}
@@ -203,17 +212,17 @@ func (this *HgPkg) Unpak() error {
 		return err
 	}
 
-	// Delete Paktag
-	if contained, err := this.ContainsPaktag(); err == nil {
-		if contained {
-			_, err = this.Hg("tag", "--local", "--remove", Paktag)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		return err
-	}
+	// // Delete Paktag
+	// if contained, err := this.ContainsPaktag(); err == nil {
+	// 	if contained {
+	// 		_, err = this.Hg("tag", "--local", "--remove", Paktag)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// } else {
+	// 	return err
+	// }
 
 	return nil
 }

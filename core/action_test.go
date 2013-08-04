@@ -28,8 +28,9 @@ func (s *GetSuite) SetUpTest(c *C) {
 	MustRun("hg", "clone", "fixtures/package1-for-hg", "../../package1-for-hg-get-test")
 	MustRun("cp", "fixtures/Pakfile3", "Pakfile")
 
-	// make package1 a pakcage managed by pak
-	MustRun("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_")
+	// Now this assupmption that a pakName might be used by user is no longer exist.
+	// // make package1 a pakcage managed by pak
+	// MustRun("sh", "-c", "cd ../../package1 && git checkout -b pak && git checkout master && git tag _pak_latest_")
 
 	s.pakPkgs = []*PakPkg{}
 	pkgsFixtures := [][]string{
@@ -452,8 +453,9 @@ func (s *GetSuite) TestGetWithSkipUncleanPkgsOptionAfterUntrackingUncleanPkgs(c 
 
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/master")
-	c.Check(s.pakPkgs[1].ContainsBranchNamedPak, Equals, true)
-	c.Check(s.pakPkgs[1].ContainsPaktag, Equals, true)
+	// c.Check(s.pakPkgs[1].ContainsBranchNamedPak, Equals, true)
+	c.Check(s.pakPkgs[1].HasPakBranch, Equals, true)
+	// c.Check(s.pakPkgs[1].ContainsPaktag, Equals, true)
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
 	paklockInfo, _ := GetPaklockInfo()
 

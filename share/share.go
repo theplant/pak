@@ -17,17 +17,6 @@ const (
 
 var Gopath = os.Getenv("GOPATH")
 
-type PkgCfg struct {
-	Name                   string
-	PakName                string // default: pak
-	TargetBranch           string
-	AutoMatchingHostBranch bool
-}
-
-type PakInfo struct {
-	Packages []PkgCfg
-}
-
 type PaklockInfo map[string]string
 
 // For core function #Get
@@ -45,28 +34,14 @@ type PakOption struct {
 	// don't contain a tag named [_pak_latest_].
 	Force bool
 
-	// When the option set, pak will stop complaining about unclean
+	// When set, pak will stop complaining about unclean
 	// packages, either installing or updating packages. That make it less
 	// painful for someone who is developing both the main project using pak
-	// and its dependent packages tracked by pak, because he no longer has to
-	// be clean up dependent packages that he is developing when all he want
-	// to is get other dependent packages of the main project updated.
+	// and its dependent packages tracked by pak, because the developer no longer
+	// has to be clean up dependent packages that he is developing when all he
+	// want to is get other dependent packages of the main project updated.
 	// But for package that hasn't been locked down by pak, it should be clean.
 	SkipUncleanPkgs bool
-}
-
-// For PakPkg#Get
-type GetOption struct {
-	// Pakfile.lock info
-	Checksum string
-
-	// PakOption
-	Force           bool
-	SkipUncleanPkgs bool
-	UsingPakMeter   bool
-	Verbose         bool
-
-	ActionType string // New, Update, Remove
 }
 
 // TODO: 1. remove tag marking.
@@ -85,6 +60,7 @@ type GetOption struct {
 // 			-
 // 			-
 //
+// TODO: 3. support PakName option
 type PkgProxy interface {
 	Fetch() error
 	NewBranch(string) error
@@ -96,18 +72,18 @@ type PkgProxy interface {
 	IsClean() (bool, error)
 	ContainsRemoteBranch() (bool, error)
 	ContainsPakbranch() (bool, error)
-	ContainsPaktag() (bool, error)
+	// ContainsPaktag() (bool, error)
 	GetChecksum(string) (string, error)
 	GetHeadChecksum() (string, error)
 	GetHeadRefName() (string, error)
-	GetPaktagRef() string
+	// GetPaktagRef() string
 	GetPakbranchRef() string
 	GetRemoteBranch() string
 }
 
 type PkgProxyBuilder struct {
 	IsTracking func(name string) (bool, error)
-	NewVCS     func(name, remote, branch string) PkgProxy
+	NewVCS     func(name, remote, branch, pakBranch string) PkgProxy
 }
 
 var PkgProxyList = []PkgProxyBuilder{}

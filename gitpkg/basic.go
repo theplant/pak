@@ -4,20 +4,20 @@ import (
 	"bytes"
 	"fmt"
 	. "github.com/theplant/pak/share"
-	// "os"
 	"os/exec"
 	"regexp"
 	"strings"
 )
 
 type GitPkg struct {
+	PakName      string
 	Name         string // github.com/theplant/pak
 	Remote       string // origin, etc
 	Branch       string // master, dev, etc
 	Path         string // $GOPATH/src/:Name
 	RemoteBranch string // refs/remotes/:Remote/:Branch
 	PakbranchRef string // refs/heads/pak
-	PaktagRef    string // refs/tags/_pak_latest_
+	// PaktagRef    string // refs/tags/_pak_latest_
 
 	PkgRoot  string
 	WorkTree string
@@ -25,14 +25,16 @@ type GitPkg struct {
 }
 
 // NewGitPkg now will panic, make sure to be invoked after IsTracking
-func NewGitPkg(name, remote, branch string) PkgProxy {
+func NewGitPkg(name, remote, branch, pakName string) PkgProxy {
 	gitPkg := GitPkg{}
 	gitPkg.Name = name
 	gitPkg.Remote = remote
 	gitPkg.Branch = branch
 	gitPkg.RemoteBranch = fmt.Sprintf("refs/remotes/%s/%s", remote, branch)
-	gitPkg.PakbranchRef = "refs/heads/" + Pakbranch
-	gitPkg.PaktagRef = "refs/tags/" + Paktag
+	gitPkg.PakName = pakName
+	gitPkg.PakbranchRef = "refs/heads/" + gitPkg.PakName
+	// gitPkg.PakbranchRef = "refs/heads/" + Pakbranch
+	// gitPkg.PaktagRef = "refs/tags/" + Paktag
 	gitPkg.Path = fmt.Sprintf("%s/src/%s", Gopath, name)
 
 	root, err := GetPkgRoot(gitPkg.Name)
@@ -74,9 +76,9 @@ func (this *GitPkg) GetPakbranchRef() string {
 	return this.PakbranchRef
 }
 
-func (this *GitPkg) GetPaktagRef() string {
-	return this.PaktagRef
-}
+// func (this *GitPkg) GetPaktagRef() string {
+// 	return this.PaktagRef
+// }
 
 func (this *GitPkg) GetRemoteBranch() string {
 	return this.RemoteBranch
@@ -92,14 +94,14 @@ func (this *GitPkg) ContainsPakbranch() (bool, error) {
 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.PakbranchRef+"\n"), nil
 }
 
-func (this *GitPkg) ContainsPaktag() (bool, error) {
-	cmd, err := this.Git("show-ref")
-	if err != nil {
-		return false, err
-	}
+// func (this *GitPkg) ContainsPaktag() (bool, error) {
+// 	cmd, err := this.Git("show-ref")
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.PaktagRef+"\n"), nil
-}
+// 	return strings.Contains(cmd.Stdout.(*bytes.Buffer).String(), " "+this.PaktagRef+"\n"), nil
+// }
 
 // IsClean will check whether the package contains modified file, but it allows the existence of untracked file.
 func (this *GitPkg) IsClean() (bool, error) {
@@ -195,7 +197,8 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 // Caution: Make sure you the branch and tag is not exist.
 func (this *GitPkg) Pak(ref string) (string, error) {
 	// Create Pakbranch
-	_, err := this.Git("checkout", "-b", Pakbranch, ref)
+	// _, err := this.Git("checkout", "-b", Pakbranch, ref)
+	_, err := this.Git("checkout", "-b", this.PakName, ref)
 	if err != nil {
 		return "", err
 	}
@@ -205,10 +208,10 @@ func (this *GitPkg) Pak(ref string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = this.Git("tag", Paktag, checksum)
-	if err != nil {
-		return "", err
-	}
+	// _, err = this.Git("tag", Paktag, checksum)
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	return checksum, err
 }
@@ -223,7 +226,8 @@ func (this *GitPkg) Unpak() error {
 	// Delete Pakbranch
 	if contained, err := this.ContainsPakbranch(); err == nil {
 		if contained {
-			_, err = this.Git("branch", "-D", Pakbranch)
+			// _, err = this.Git("branch", "-D", Pakbranch)
+			_, err = this.Git("branch", "-D", this.PakName)
 			if err != nil {
 				return err
 			}
@@ -232,17 +236,17 @@ func (this *GitPkg) Unpak() error {
 		return err
 	}
 
-	// Delete Paktag
-	if contained, err := this.ContainsPaktag(); err == nil {
-		if contained {
-			_, err = this.Git("tag", "-d", Paktag)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		return err
-	}
+	// // Delete Paktag
+	// if contained, err := this.ContainsPaktag(); err == nil {
+	// 	if contained {
+	// 		_, err = this.Git("tag", "-d", Paktag)
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// } else {
+	// 	return err
+	// }
 
 	return nil
 }

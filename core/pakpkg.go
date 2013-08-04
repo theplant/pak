@@ -10,6 +10,23 @@ import (
 	"strings"
 )
 
+// For PakPkg#Get
+type GetOption struct {
+	Checksum        string
+	Force           bool
+	SkipUncleanPkgs bool
+	UsingPakMeter   bool
+	Verbose         bool
+	ActionType      string // values ranging from => New, Update, Remove
+}
+
+type PkgCfg struct {
+	Name                   string
+	PakName                string // default: pak
+	TargetBranch           string
+	AutoMatchingHostBranch bool
+}
+
 type PakPkg struct {
 	PkgProxy
 	GetOption
@@ -23,21 +40,22 @@ type PakPkg struct {
 	HeadRefName       string
 	HeadChecksum      string
 	PakbranchChecksum string
-	PaktagChecksum    string
-	PakbranchRef      string
-	PaktagRef         string
+	// PaktagChecksum    string
+	PakbranchRef string
+	// PaktagRef    string
 
 	// Note:
 	// Containing abranch named pak does not mean that pkg is managed by pak.
 	// However, containing a tag named _pak_latest_ means this pkg is managed by
 	// pak, but still can't make sure the pkg is on the pak branch or it's status
 	// is consistent with Pakfile.lock.
-	IsRemoteBranchExist    bool
-	ContainsBranchNamedPak bool
-	ContainsPaktag         bool
-	OnPakbranch            bool
-	OwnPakbranch           bool
-	IsClean                bool
+	IsRemoteBranchExist bool
+	// ContainsBranchNamedPak bool
+	// ContainsPaktag         bool
+	HasPakBranch bool
+	OnPakbranch  bool
+	// OwnPakbranch           bool
+	IsClean bool
 }
 
 // func NewPakPkg(name, remote, branch string) PakPkg {
@@ -62,6 +80,7 @@ func NewPakPkg(cfg PkgCfg) PakPkg {
 	return pkg
 }
 
+// TODO: refactor to multiple small methods
 func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 	if this.Verbose {
 		color.Printf("Checking @g%s@w.\n", this.Name)
@@ -190,7 +209,7 @@ func (this *PakPkg) Dial() error {
 			return err
 		}
 		if tracking {
-			this.PkgProxy = engine.NewVCS(this.Name, this.Remote, this.Branch)
+			this.PkgProxy = engine.NewVCS(this.Name, this.Remote, this.Branch, this.PakName)
 			return nil
 		}
 	}
@@ -218,7 +237,7 @@ var GoGetImpl = func(name string) error {
 
 func (this *PakPkg) Sync() (err error) {
 	this.PakbranchRef = this.GetPakbranchRef()
-	this.PaktagRef = this.GetPaktagRef()
+	// this.PaktagRef = this.GetPaktagRef()
 	this.RemoteBranch = this.GetRemoteBranch()
 
 	// Should be Under the Control of Git
@@ -232,42 +251,43 @@ func (this *PakPkg) Sync() (err error) {
 		return err
 	}
 
-	// Retrieve info
+	// ============ Retrieve info ============
 
 	// Branch Named Pak
-	this.ContainsBranchNamedPak, err = this.ContainsPakbranch()
+	this.HasPakBranch, err = this.ContainsPakbranch()
 	if err != nil {
 		return
 	}
 
-	if this.ContainsBranchNamedPak {
+	if this.HasPakBranch {
 		this.PakbranchChecksum, err = this.GetChecksum(this.PakbranchRef)
 		if err != nil {
 			return
 		}
 	}
 
-	// Paktag _pak_latest_
-	this.ContainsPaktag, err = this.PkgProxy.ContainsPaktag()
-	if err != nil {
-		return
-	}
-	if this.ContainsPaktag {
-		this.PaktagChecksum, err = this.GetChecksum(this.PaktagRef)
-		if err != nil {
-			return
-		}
-	}
+	// // Paktag _pak_latest_
+	// this.ContainsPaktag, err = this.PkgProxy.ContainsPaktag()
+	// if err != nil {
+	// 	return
+	// }
+	// if this.ContainsPaktag {
+	// 	this.PaktagChecksum, err = this.GetChecksum(this.PaktagRef)
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// }
 
-	this.OwnPakbranch = this.ContainsBranchNamedPak && this.ContainsPaktag &&
-		this.PaktagChecksum == this.PakbranchChecksum
+	// this.OwnPakbranch = this.ContainsBranchNamedPak && this.ContainsPaktag &&
+	// 	this.PaktagChecksum == this.PakbranchChecksum
 
-	// on Pakbranch
-	// TODO: add OnPakbranch Test(same checksum but different refs)
-	this.OnPakbranch = this.ContainsBranchNamedPak && this.ContainsPaktag &&
-		this.PaktagChecksum == this.PakbranchChecksum &&
-		this.PakbranchChecksum == this.HeadChecksum &&
-		this.PakbranchRef == this.HeadRefName
+	// // on Pakbranch
+	// // TODO: add OnPakbranch Test(same checksum but different refs)
+	// this.OnPakbranch = this.ContainsBranchNamedPak && this.ContainsPaktag &&
+	// 	this.PaktagChecksum == this.PakbranchChecksum &&
+	// 	this.PakbranchChecksum == this.HeadChecksum &&
+	// 	this.PakbranchRef == this.HeadRefName
+	this.OnPakbranch = this.HasPakBranch && this.PakbranchChecksum == this.HeadChecksum && this.PakbranchRef == this.HeadRefName
 
 	this.IsClean, err = this.PkgProxy.IsClean()
 	if err != nil {
@@ -330,9 +350,13 @@ func (this *PakPkg) Pak() (string, error) {
 }
 
 func (this *PakPkg) Unpak(force bool) (err error) {
-	if this.ContainsBranchNamedPak && !this.OwnPakbranch && !force {
-		return fmt.Errorf("Package %s Contains Branch Named pak that can't be recognized by pak.\nPlease use pak with -f flag to allow pak to remove the branch or you can manually remove/rename the branch in the package.", this.Name)
+	// if this.ContainsBranchNamedPak && !this.OwnPakbranch && !force {
+	if !this.HasPakBranch {
+		return
 	}
+	// if !force {
+	// 	return fmt.Errorf("Package %s Contains Branch Named pak that can't be recognized by pak.\nPlease use pak with -f flag to allow pak to remove the branch or you can manually remove/rename the branch in the package.", this.Name)
+	// }
 
 	return this.PkgProxy.Unpak()
 }
@@ -364,7 +388,7 @@ func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option
 	if len(paklockInfo) != 0 {
 		for key, val := range paklockInfo {
 			// pakPkg := NewPakPkg(key, "", "")
-			pakPkg := NewPakPkg(PkgCfg{Name: key})
+			pakPkg := NewPakPkg(PkgCfg{Name: key, PakName: Pakbranch})
 			pakPkg.Checksum = val
 			pakPkg.ActionType = "Remove"
 

@@ -27,7 +27,7 @@ func (s *GitPkgSuite) SetUpTest(c *C) {
 		panic(fmt.Errorf("GitPkgSuite.SetUpSuite: %s", err.Error()))
 	}
 
-	testGitPkg = NewGitPkg("github.com/theplant/gitpkg-test-package", "origin", "master").(*GitPkg)
+	testGitPkg = NewGitPkg("github.com/theplant/gitpkg-test-package", "origin", "master", Pakbranch).(*GitPkg)
 }
 
 func (s *GitPkgSuite) TearDownTest(c *C) {
@@ -108,7 +108,7 @@ func (s *GitPkgSuite) TestFetch(c *C) {
 	c.Check(err, Equals, nil)
 
 	headChecksum, err = testGitPkg.GetChecksum("refs/remotes/origin/master")
-	testPkg := NewGitPkg("github.com/theplant/package1-for-fetch", "origin", "master").(*GitPkg)
+	testPkg := NewGitPkg("github.com/theplant/package1-for-fetch", "origin", "master", Pakbranch).(*GitPkg)
 	testChecksum, err := testPkg.GetChecksum("refs/remotes/origin/master")
 	c.Check(err, Equals, nil)
 	c.Check(headChecksum, Equals, testChecksum)

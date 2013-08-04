@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-
-	// "strings"
 	"time"
 )
 
@@ -78,18 +76,9 @@ func Get(option PakOption) error {
 		pakPkgs = allPakPkgs
 	}
 
-	// defer func() {
-	// 	if r := recover(); r != nil {
-	// 		fmt.Printf("Error ", r)
-	// 	}
-	// }()
-
 	if option.Verbose {
 		color.Printf("Paking Packages.\n")
 	}
-	// if !option.UsePakfileLock {
-	// 	paklockInfo = nil
-	// }
 
 	CategorizePakPkgs(&pakPkgs, paklockInfo, option)
 

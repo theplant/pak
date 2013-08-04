@@ -22,7 +22,7 @@ var _ = Suite(&HgPkgSuite{})
 func (s *HgPkgSuite) SetUpTest(c *C) {
 	MustRun("sh", "-c", "hg clone fixtures/package1 ../../hgpkg-package1")
 
-	pkg := NewHgPkg("github.com/theplant/hgpkg-package1", "default", "default")
+	pkg := NewHgPkg("github.com/theplant/hgpkg-package1", "default", "default", Pakbranch)
 	s.pkg = pkg.(*HgPkg)
 }
 
@@ -42,17 +42,17 @@ func (s *HgPkgSuite) TestContainsPakbranch(c *C) {
 	c.Check(containing, Equals, true)
 }
 
-func (s *HgPkgSuite) TestContainsPaktag(c *C) {
-	containing, err := s.pkg.ContainsPaktag()
-	c.Check(err, Equals, nil)
-	c.Check(containing, Equals, false)
+// func (s *HgPkgSuite) TestContainsPaktag(c *C) {
+// 	containing, err := s.pkg.ContainsPaktag()
+// 	c.Check(err, Equals, nil)
+// 	c.Check(containing, Equals, false)
 
-	MustRun("sh", "-c", "cd ../../hgpkg-package1; hg tag _pak_latest_")
+// 	MustRun("sh", "-c", "cd ../../hgpkg-package1; hg tag _pak_latest_")
 
-	containing, err = s.pkg.ContainsPaktag()
-	c.Check(err, Equals, nil)
-	c.Check(containing, Equals, true)
-}
+// 	containing, err = s.pkg.ContainsPaktag()
+// 	c.Check(err, Equals, nil)
+// 	c.Check(containing, Equals, true)
+// }
 
 func (s *HgPkgSuite) TestIsClean(c *C) {
 	clean, err := s.pkg.IsClean()
@@ -128,9 +128,9 @@ func (s *HgPkgSuite) TestPak(c *C) {
 	c.Check(err, Equals, nil)
 	c.Check(containing, Equals, true)
 
-	containing, err = s.pkg.ContainsPaktag()
-	c.Check(err, Equals, nil)
-	c.Check(containing, Equals, true)
+	// containing, err = s.pkg.ContainsPaktag()
+	// c.Check(err, Equals, nil)
+	// c.Check(containing, Equals, true)
 }
 
 func (s *HgPkgSuite) TestUnpak(c *C) {
@@ -145,9 +145,9 @@ func (s *HgPkgSuite) TestUnpak(c *C) {
 	c.Check(err, Equals, nil)
 	c.Check(containing, Equals, false)
 
-	containing, err = s.pkg.ContainsPaktag()
-	c.Check(err, Equals, nil)
-	c.Check(containing, Equals, false)
+	// containing, err = s.pkg.ContainsPaktag()
+	// c.Check(err, Equals, nil)
+	// c.Check(containing, Equals, false)
 }
 
 //
