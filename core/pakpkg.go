@@ -409,7 +409,7 @@ func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option
  */
 // TODO: make it compartible with Pakfile-1.0 by adding a PakfileVersion configration
 func ParsePakfile() ([]PakPkg, error) {
-	pakInfo, err := GetPakInfo()
+	pakInfo, err := GetPakInfo("")
 
 	if err != nil {
 		return nil, err

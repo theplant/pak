@@ -7,7 +7,6 @@ import (
 	. "launchpad.net/gocheck"
 	"launchpad.net/goyaml"
 	"os"
-	"reflect"
 	"testing"
 )
 
@@ -38,15 +37,29 @@ var _ = Suite(&PakSuite{})
 // }
 
 var pakfilePaths = []struct {
-	path         string
-	msg          string
-	pakfileState bool
+	path           string
+	msg            string
+	checker        Checker
+	pakInfoChecker Checker
 }{
-	{Pakfile, "Can read Pakfile in curreint Folder", true},
-	{"../" + Pakfile, "Can read Pakfile in parent Folder", true},
-	{Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile", false},
+	{Pakfile, "Can read Pakfile in current Folder", Equals, DeepEquals},
+	// {"../" + Pakfile, "Can read Pakfile in parent Folder", Equals, DeepEquals},
+	// {Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile", Equals, Not(DeepEquals)},
 }
 
+func (s *PakSuite) SetUpSuite(c *C) {
+	MustRun("sh", "-c", "mkdir -p ../../../test")
+	MustRun("sh", "-c", "mkdir -p ../../../test2")
+	MustRun("sh", "-c", "cp fixtures/Pakfile-for-pakread ../../../test/Pakfile")
+	MustRun("sh", "-c", "cp fixtures/Pakfile-for-pakread2 ../../../test2/Pakfile")
+}
+
+func (s *PakSuite) TearDownSuite(c *C) {
+	MustRun("sh", "-c", "rm -rf ../../../test")
+	MustRun("sh", "-c", "rm -rf ../../../test2")
+}
+
+// TODO: to test sub package info
 func (s *PakSuite) TestReadPakfile(c *C) {
 	// pakInfo := PakInfo{Packages: []string{"github.com/test", "gihub.com/test2"}}
 	pakInfo := PakInfo{Packages: []PkgCfg{
@@ -57,36 +70,89 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 			AutoMatchingHostBranch: false,
 		},
 		{
-			Name:                   "gihub.com/test2",
+			Name:                   "github.com/test2",
 			PakName:                "pak",
 			TargetBranch:           "origin/master",
 			AutoMatchingHostBranch: false,
 		},
 	}}
 	pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
+
+	expectingPakInfo := PakInfo{Packages: []PkgCfg{
+		{
+			Name:                   "github.com/theplant/package1",
+			PakName:                "pak",
+			TargetBranch:           "origin/master",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/theplant/package2",
+			PakName:                "pak",
+			TargetBranch:           "origin/dev",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/theplant/package3",
+			PakName:                "pak",
+			TargetBranch:           "origin/master",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/theplant/package1-2",
+			PakName:                "pak",
+			TargetBranch:           "origin/master",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/theplant/package2-2",
+			PakName:                "pak",
+			TargetBranch:           "origin/dev",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/theplant/package3-2",
+			PakName:                "pak",
+			TargetBranch:           "origin/master",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/test",
+			PakName:                "pak",
+			TargetBranch:           "origin/master",
+			AutoMatchingHostBranch: false,
+		},
+		{
+			Name:                   "github.com/test2",
+			PakName:                "pak",
+			TargetBranch:           "origin/master",
+			AutoMatchingHostBranch: false,
+		},
+	}}
 	for _, pakfilePath := range pakfilePaths {
 		ioutil.WriteFile(pakfilePath.path, pakInfoBytes, os.FileMode(0644))
 
-		pakInfo2, err := GetPakInfo()
+		pakInfo2, err := GetPakInfo("")
 		c.Log(pakfilePath.msg)
-		c.Check(err == nil, Equals, pakfilePath.pakfileState)
-		c.Check(reflect.DeepEqual(pakInfo, pakInfo2), Equals, pakfilePath.pakfileState)
+		c.Check(err, pakfilePath.checker, nil)
+		c.Check(pakInfo2, pakfilePath.pakInfoChecker, expectingPakInfo)
 
 		os.Remove(pakfilePath.path)
 	}
 }
 
 var paklockPaths = []struct {
-	path         string
-	msg          string
-	paklockState bool
+	path        string
+	msg         string
+	errChecker  Checker
+	lockChecker Checker
+	// paklockState bool
 }{
-	{Paklock, "Can read Pakfile in curreint Folder", true},
-	{"../" + Paklock, "Can read Pakfile in parent Folder", true},
-	{Gopath + "/../" + Paklock, "Won't go beyond GOPATH to find Pakfile", false},
+	{Paklock, "Can read Pakfile.lock in current Folder", Equals, DeepEquals},
+	{"../" + Paklock, "Can read Pakfile.lock in parent Folder", Equals, DeepEquals},
+	{Gopath + "/../" + Paklock, "Won't go beyond GOPATH to find Pakfile.lock", Equals, Not(DeepEquals)},
 }
 
-func (s *PakSuite) TestReadPakfileLock(c *C) {
+func (s *PakSuite) TestReadPaklock(c *C) {
 	paklockInfo := PaklockInfo{
 		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
 		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
@@ -96,11 +162,16 @@ func (s *PakSuite) TestReadPakfileLock(c *C) {
 	for _, paklockPath := range paklockPaths {
 		ioutil.WriteFile(paklockPath.path, paklockInfoBytes, os.FileMode(0644))
 
-		paklockInfo2, err := GetPaklockInfo()
+		paklockInfo2, err := GetPaklockInfo("")
 		c.Log(paklockPath.msg)
-		c.Check(err == nil, Equals, paklockPath.paklockState)
-		c.Check(reflect.DeepEqual(paklockInfo2, paklockInfo), Equals, paklockPath.paklockState)
+		c.Check(err, paklockPath.errChecker, nil)
+		c.Check(paklockInfo, paklockPath.lockChecker, paklockInfo2)
 
 		os.Remove(paklockPath.path)
 	}
 }
+
+// func (s *PakSuite) TestPakRead(c *C) {
+// 	MustRun("sh", "-c", "cp fixtures/Pakfile-for-pakread ../Pakfile")
+// 	content, err := pakRead(Gopath + "/" + "github.com/theplant/pak/Pakfile")
+// }

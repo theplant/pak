@@ -44,23 +44,6 @@ type PakOption struct {
 	SkipUncleanPkgs bool
 }
 
-// TODO: 1. remove tag marking.
-// TODO: 2. new configuration interface, sample below:
-//
-//		# global default setting
-// 		Pak Branch Name: pak
-// 		Branch Auto Matching: true
-//
-// 		# specific packages and setting
-// 		Packages:
-// 			- Package:
-//	 			PakName:
-//	 			TargetBranch: [checksum | reference name]
-//	 			AutoMatchingHostBranch: bool
-// 			-
-// 			-
-//
-// TODO: 3. support PakName option
 type PkgProxy interface {
 	Fetch() error
 	NewBranch(string) error

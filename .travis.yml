@@ -7,4 +7,4 @@ install:
 notifications:
   email:
     - bom.d.van@gmail.com
-    - shaoshing@me.com
+    # - shaoshing@me.com

@@ -37,7 +37,7 @@ func Get(option PakOption) error {
 
 	// Retrieve PaklockInfo from Pakfile.lock
 	var paklockInfo PaklockInfo
-	paklockInfo, err = GetPaklockInfo()
+	paklockInfo, err = GetPaklockInfo("")
 	if err != nil {
 		if err == PakfileLockNotExist {
 			paklockInfo = nil

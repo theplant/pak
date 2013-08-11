@@ -7,33 +7,62 @@ import (
 	"launchpad.net/goyaml"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type PakInfo struct {
 	Packages []PkgCfg
 }
 
-func GetPakInfo() (pakInfo PakInfo, err error) {
+func GetPakInfo(path string) (pakInfo PakInfo, err error) {
 	var pakInfoBytes []byte
-	pakInfoBytes, err = pakRead(Pakfile)
+	if path == "" {
+		path = Pakfile
+	} else {
+		path += "/" + Pakfile
+	}
+	pakInfoBytes, err = pakRead(path)
 	if err != nil {
 		return
 	}
 
+	if pakInfoBytes == nil {
+		return PakInfo{}, nil
+	}
+
 	err = goyaml.Unmarshal(pakInfoBytes, &pakInfo)
 
+	subPakInfos := []PakInfo{}
 	for i, _ := range pakInfo.Packages {
 		if pakInfo.Packages[i].PakName == "" {
 			pakInfo.Packages[i].PakName = Pakbranch
 		}
+
+		subPakInfo, err := GetPakInfo(Gopath + "/src/" + pakInfo.Packages[i].Name)
+		if err != nil {
+			return pakInfo, err
+		}
+		if len(subPakInfo.Packages) > 0 {
+			subPakInfos = append(subPakInfos, subPakInfo)
+		}
+	}
+
+	subCount := len(subPakInfos)
+	for i, _ := range subPakInfos {
+		pakInfo.Packages = append(subPakInfos[subCount-i-1].Packages, pakInfo.Packages...)
 	}
 
 	return
 }
 
-func GetPaklockInfo() (paklockInfo PaklockInfo, err error) {
+func GetPaklockInfo(path string) (paklockInfo PaklockInfo, err error) {
 	var content []byte
-	content, err = pakRead(Paklock)
+	if path == "" {
+		path = Paklock
+	} else {
+		path += "/" + Paklock
+	}
+	content, err = pakRead(path)
 	if err != nil {
 		return
 	}
@@ -46,32 +75,38 @@ func GetPaklockInfo() (paklockInfo PaklockInfo, err error) {
 var PakfileNotExist = fmt.Errorf("Can't find %s", Pakfile)
 var PakfileLockNotExist = fmt.Errorf("Can't find %s", Paklock)
 
-func pakRead(file string) (fileContent []byte, err error) {
+func pakRead(path string) (fileContent []byte, err error) {
 	absPakfilePath := ""
-	originalFile := file
 	for true {
-		absPakfilePath, err = filepath.Abs(file)
+		absPakfilePath, err = filepath.Abs(path)
 		if err != nil {
 			return nil, err
 		}
-		if absPakfilePath == Gopath+"/"+originalFile {
-			if originalFile == Pakfile {
-				return nil, PakfileNotExist
+		if absPakfilePath == Gopath+"/"+Pakfile || absPakfilePath == Gopath+"/"+Paklock {
+			if strings.Contains(path, Pakfile) {
+				return nil, nil
 			} else {
-				return nil, PakfileLockNotExist
+				return nil, nil
 			}
 		}
 
-		_, err = os.Stat(file)
+		_, err = os.Stat(path)
 		if os.IsNotExist(err) {
-			file = "../" + file
+			index := strings.LastIndex(path, Pakfile)
+			if index == -1 {
+				index = strings.LastIndex(path, Paklock)
+				if index == -1 {
+					return nil, fmt.Errorf("Illegal path for pakRead")
+				}
+			}
+			path = path[:index] + "../" + path[index:]
 			continue
 		}
 
 		break
 	}
 
-	return ioutil.ReadFile(file)
+	return ioutil.ReadFile(path)
 }
 
 func writePaklockInfo(paklockInfo PaklockInfo) error {

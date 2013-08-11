@@ -24,7 +24,7 @@ func Check() {
 		os.Exit(1)
 	}
 
-	paklockInfo, err := GetPaklockInfo()
+	paklockInfo, err := GetPaklockInfo("")
 	if err != nil {
 		color.Printf("Force Exited by Pak: @r%s@w. Please run @bpak get@w.\n", err.Error())
 		os.Exit(1)
