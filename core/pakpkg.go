@@ -32,7 +32,6 @@ type PakPkg struct {
 	GetOption
 	PkgCfg
 
-	// Name              string // moved to PkgCfg
 	Remote            string
 	Branch            string
 	RemoteBranch      string
@@ -40,28 +39,16 @@ type PakPkg struct {
 	HeadRefName       string
 	HeadChecksum      string
 	PakbranchChecksum string
-	// PaktagChecksum    string
-	PakbranchRef string
-	// PaktagRef    string
+	PakbranchRef      string
 
-	// Note:
-	// Containing abranch named pak does not mean that pkg is managed by pak.
-	// However, containing a tag named _pak_latest_ means this pkg is managed by
-	// pak, but still can't make sure the pkg is on the pak branch or it's status
-	// is consistent with Pakfile.lock.
 	IsRemoteBranchExist bool
-	// ContainsBranchNamedPak bool
-	// ContainsPaktag         bool
-	HasPakBranch bool
-	OnPakbranch  bool
-	// OwnPakbranch           bool
-	IsClean bool
+	HasPakBranch        bool
+	OnPakbranch         bool
+	IsClean             bool
 }
 
-// func NewPakPkg(name, remote, branch string) PakPkg {
 func NewPakPkg(cfg PkgCfg) PakPkg {
 	pkg := PakPkg{PkgCfg: cfg}
-	// pkg.Name = cfg.Name
 
 	var remote, branch string
 	if strings.Contains(cfg.TargetBranch, "/") {
@@ -138,7 +125,6 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, err
 		}
 
-		// newPaklockInfo[newPakPkgs[i].Name] = checksum
 		nameAndChecksum[0] = this.Name
 		nameAndChecksum[1] = checksum
 	case "Update":
@@ -163,7 +149,6 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, err
 		}
 
-		// newPaklockInfo[toUpdatePakPkgs[i].Name] = checksum
 		nameAndChecksum[0] = this.Name
 		nameAndChecksum[1] = checksum
 	case "Remove":
@@ -266,27 +251,6 @@ func (this *PakPkg) Sync() (err error) {
 		}
 	}
 
-	// // Paktag _pak_latest_
-	// this.ContainsPaktag, err = this.PkgProxy.ContainsPaktag()
-	// if err != nil {
-	// 	return
-	// }
-	// if this.ContainsPaktag {
-	// 	this.PaktagChecksum, err = this.GetChecksum(this.PaktagRef)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// }
-
-	// this.OwnPakbranch = this.ContainsBranchNamedPak && this.ContainsPaktag &&
-	// 	this.PaktagChecksum == this.PakbranchChecksum
-
-	// // on Pakbranch
-	// // TODO: add OnPakbranch Test(same checksum but different refs)
-	// this.OnPakbranch = this.ContainsBranchNamedPak && this.ContainsPaktag &&
-	// 	this.PaktagChecksum == this.PakbranchChecksum &&
-	// 	this.PakbranchChecksum == this.HeadChecksum &&
-	// 	this.PakbranchRef == this.HeadRefName
 	this.OnPakbranch = this.HasPakBranch && this.PakbranchChecksum == this.HeadChecksum && this.PakbranchRef == this.HeadRefName
 
 	this.IsClean, err = this.PkgProxy.IsClean()
@@ -350,13 +314,9 @@ func (this *PakPkg) Pak() (string, error) {
 }
 
 func (this *PakPkg) Unpak(force bool) (err error) {
-	// if this.ContainsBranchNamedPak && !this.OwnPakbranch && !force {
 	if !this.HasPakBranch {
 		return
 	}
-	// if !force {
-	// 	return fmt.Errorf("Package %s Contains Branch Named pak that can't be recognized by pak.\nPlease use pak with -f flag to allow pak to remove the branch or you can manually remove/rename the branch in the package.", this.Name)
-	// }
 
 	return this.PkgProxy.Unpak()
 }
@@ -400,48 +360,47 @@ func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option
 	return
 }
 
-/**
- * This format is ONLY supported in Pakfile-1.0
- * Supported Pkg Description Formats:
- * 		"github.com/theplant/package2"
- * 		"github.com/theplant/package2@dev"
- * 		"github.com/theplant/package2@origin/dev"
- */
-// TODO: make it compartible with Pakfile-1.0 by adding a PakfileVersion configration
-func ParsePakfile() ([]PakPkg, error) {
-	pakInfo, err := GetPakInfo("")
+// /**
+//  * This format is ONLY supported in Pakfile-1.0
+//  * Supported Pkg Description Formats:
+//  * 		"github.com/theplant/package2"
+//  * 		"github.com/theplant/package2@dev"
+//  * 		"github.com/theplant/package2@origin/dev"
+//  */
+// // TODO: make it compartible with Pakfile-1.0 by adding a PakfileVersion configration
+// func ParsePakfile() ([]PakPkg, PaklockInfo, error) {
+// 	// pakInfo, err := GetPakInfo("")
+// 	// if err != nil {
+// 	// 	return nil, err
+// 	// }
 
-	if err != nil {
-		return nil, err
-	}
+// 	pakPkgs := []PakPkg{}
+// 	for _, pkgCfg := range pakInfo.Packages {
+// 		// atIndex := strings.LastIndex(pkg, "@")
+// 		// var name, remote, branch string
+// 		// if atIndex != -1 {
+// 		// 	name = pkg[:atIndex]
+// 		// 	branchInfo := pkg[atIndex+1:]
+// 		// 	if strings.Contains(branchInfo, "/") {
+// 		// 		slashIndex := strings.Index(branchInfo, "/")
+// 		// 		remote = branchInfo[:slashIndex]
+// 		// 		branch = branchInfo[slashIndex+1:]
+// 		// 	} else {
+// 		// 		remote = "origin"
+// 		// 		branch = branchInfo
+// 		// 	}
+// 		// } else {
+// 		// 	name = pkg
+// 		// 	remote = "origin"
+// 		// 	branch = "master"
+// 		// }
 
-	pakPkgs := []PakPkg{}
-	for _, pkgCfg := range pakInfo.Packages {
-		// atIndex := strings.LastIndex(pkg, "@")
-		// var name, remote, branch string
-		// if atIndex != -1 {
-		// 	name = pkg[:atIndex]
-		// 	branchInfo := pkg[atIndex+1:]
-		// 	if strings.Contains(branchInfo, "/") {
-		// 		slashIndex := strings.Index(branchInfo, "/")
-		// 		remote = branchInfo[:slashIndex]
-		// 		branch = branchInfo[slashIndex+1:]
-		// 	} else {
-		// 		remote = "origin"
-		// 		branch = branchInfo
-		// 	}
-		// } else {
-		// 	name = pkg
-		// 	remote = "origin"
-		// 	branch = "master"
-		// }
+// 		// pakPkg := NewPakPkg(name, remote, branch)
 
-		// pakPkg := NewPakPkg(name, remote, branch)
+// 		pakPkg := NewPakPkg(pkgCfg)
 
-		pakPkg := NewPakPkg(pkgCfg)
+// 		pakPkgs = append(pakPkgs, pakPkg)
+// 	}
 
-		pakPkgs = append(pakPkgs, pakPkg)
-	}
-
-	return pakPkgs, nil
-}
+// 	return pakPkgs, nil
+// }

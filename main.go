@@ -117,14 +117,14 @@ func openPkgWithPakEditor() {
 }
 
 func listPakfilePkgs() {
-	allPakPkgs, err := core.ParsePakfile()
-	if err != nil {
-		color.Printf("@r%s\n", err)
-		return
-	}
+	// allPakPkgs, err := core.ParsePakfile()
+	// if err != nil {
+	// 	color.Printf("@r%s\n", err)
+	// 	return
+	// }
 
-	color.Println("All Packages Depended In this Package:")
-	for _, pkg := range allPakPkgs {
-		color.Printf("@g    %s\n", pkg.Name)
-	}
+	// color.Println("All Packages Depended In this Package:")
+	// for _, pkg := range allPakPkgs {
+	// 	color.Printf("@g    %s\n", pkg.Name)
+	// }
 }

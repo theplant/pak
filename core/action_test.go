@@ -25,6 +25,9 @@ func (s *GetSuite) SetUpTest(c *C) {
 	MustRun("git", "clone", "fixtures/package1", "../../package1")
 	MustRun("git", "clone", "fixtures/package2", "../../package2")
 	MustRun("git", "clone", "fixtures/package3", "../../package3")
+	MustRun("git", "clone", "fixtures/package4", "../../package4")
+	MustRun("git", "clone", "fixtures/package5", "../../package5")
+	MustRun("git", "clone", "fixtures/package5", "../../package6")
 	MustRun("hg", "clone", "fixtures/package1-for-hg", "../../package1-for-hg-get-test")
 	MustRun("cp", "fixtures/Pakfile3", "Pakfile")
 
@@ -54,6 +57,9 @@ func (s *GetSuite) TearDownTest(c *C) {
 	MustRun("rm", "-rf", "../../package1")
 	MustRun("rm", "-rf", "../../package2")
 	MustRun("rm", "-rf", "../../package3")
+	MustRun("rm", "-rf", "../../package4")
+	MustRun("rm", "-rf", "../../package5")
+	MustRun("rm", "-rf", "../../package6")
 	MustRun("rm", "-rf", "../../package1-for-hg-get-test")
 	MustRun("rm", "-rf", "Pakfile")
 	MustRun("rm", "-rf", "Pakfile.lock")
@@ -78,6 +84,88 @@ func (s *GetSuite) TestSimpleGet(c *C) {
 	// c.Log("Hg Packages")
 	s.pakPkgs[3].Sync()
 	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
+}
+
+func (s *GetSuite) TestSimpleCrossPkgsGet(c *C) {
+	MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get", "Pakfile")
+	err := Get(PakOption{
+		PakMeter:       []string{},
+		UsePakfileLock: true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	c.Log("Git Packages")
+	s.pakPkgs[0].Sync()
+	s.pakPkgs[1].Sync()
+	s.pakPkgs[2].Sync()
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
+
+	// c.Log("Hg Packages")
+	s.pakPkgs[3].Sync()
+	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
+
+	pkg4 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package4", PakName: "pak", TargetBranch: "origin/master"})
+	pkg5 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package5", PakName: "pak", TargetBranch: "origin/master"})
+	pkg4.Dial()
+	pkg5.Dial()
+	pkg4.Sync()
+	pkg5.Sync()
+	c.Check(pkg4.HeadRefName, Equals, "refs/heads/pak")
+	c.Check(pkg5.HeadRefName, Equals, "refs/heads/pak")
+
+	_, paklockInfo, err := GetPakInfo(GpiParams{
+		Type:      "11",
+		Path:      "",
+		DeepParse: false,
+	})
+	c.Check(err, Equals, nil)
+	c.Check(len(paklockInfo), Equals, 5)
+	c.Check(paklockInfo["github.com/theplant/package5"], Equals, "")
+}
+
+// TODO: package4 is not clean, need to make some new fixture to get this test done.
+func (s *GetSuite) TestSimpleCrossPkgsGetWithPakfileLock(c *C) {
+	MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get", "Pakfile")
+	MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get2", "../../package4/Pakfile")
+	MustRun("sh", "-c", "cp fixtures/cross-pkgs-Pakfile.lock ../../package4/Pakfile.lock")
+
+	err := Get(PakOption{
+		PakMeter:       []string{},
+		UsePakfileLock: true,
+		Force:          false,
+	})
+	c.Check(err, Equals, nil)
+
+	c.Log("Git Packages")
+	s.pakPkgs[0].Sync()
+	s.pakPkgs[1].Sync()
+	s.pakPkgs[2].Sync()
+	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
+	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
+
+	s.pakPkgs[3].Sync()
+	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
+
+	pkg4 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package4", PakName: "pak", TargetBranch: "origin/master"})
+	pkg4.Dial()
+	pkg4.Sync()
+	c.Check(pkg4.HeadRefName, Equals, "refs/heads/pak")
+
+	pkg5 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package5", PakName: "pak", TargetBranch: "origin/master"})
+	pkg5.Dial()
+	pkg5.Sync()
+	c.Check(pkg5.HeadRefName, Equals, "refs/heads/pak")
+	c.Check(pkg5.HeadChecksum, Equals, "19d82466c490d6fd09b5a000d00c84d7e5261126")
+
+	pkg6 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package6", PakName: "pak", TargetBranch: "origin/master"})
+	pkg6.Dial()
+	pkg6.Sync()
+	c.Check(pkg6.HeadRefName, Equals, "refs/heads/pak")
+	c.Check(pkg6.HeadChecksum, Equals, "a86f8e88ee813dea53403af0ac3c3440d3f75390")
 }
 
 func (s *GetSuite) TestCanGetPackageWithoutRemoteBranch(c *C) {
@@ -145,7 +233,12 @@ func (s *GetSuite) TestPaklockInfoShouldBeUpdatedAfterGet(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
-	paklockInfo, _ := GetPaklockInfo("")
+	_, paklockInfo, _ := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo, DeepEquals, expectedPaklockInfo)
 
@@ -156,7 +249,12 @@ func (s *GetSuite) TestPaklockInfoShouldBeUpdatedAfterGet(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
-	paklockInfo, _ = GetPaklockInfo("")
+	_, paklockInfo, _ = GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo, DeepEquals, expectedPaklockInfo)
 }
@@ -299,7 +397,12 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "941af3b182a1d0a5859fd451a8b5a633f479d7bc")
 
-	paklockInfo, _ := GetPaklockInfo("")
+	_, paklockInfo, _ := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 
 	MustRun("rm", "-rf", "Pakfile")
@@ -328,7 +431,12 @@ func (s *GetSuite) TestGetWithUpdatedPakfile(c *C) {
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 	c.Check(s.pakPkgs[1].PakbranchChecksum, Equals, "e373579a64e367338ff09b5143e312c81204c074")
 
-	paklockInfo, _ = GetPaklockInfo("")
+	_, paklockInfo, _ = GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 2)
 }
 
@@ -457,7 +565,12 @@ func (s *GetSuite) TestGetWithSkipUncleanPkgsOptionAfterUntrackingUncleanPkgs(c 
 	c.Check(s.pakPkgs[1].HasPakBranch, Equals, true)
 	// c.Check(s.pakPkgs[1].ContainsPaktag, Equals, true)
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
-	paklockInfo, _ := GetPaklockInfo("")
+	_, paklockInfo, _ := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 
 	c.Check(len(paklockInfo), Equals, 2)
 	c.Check(paklockInfo["github.com/theplant/package1"], Not(Equals), "")
@@ -472,7 +585,12 @@ func (s *GetSuite) TestShouldNotRemoveUncleanPkgChecksumInPakfileLockWithSkipOpt
 	})
 	c.Check(err, Equals, nil)
 
-	paklockInfo, _ := GetPaklockInfo("")
+	_, paklockInfo, _ := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 
 	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
@@ -488,7 +606,12 @@ func (s *GetSuite) TestShouldNotRemoveUncleanPkgChecksumInPakfileLockWithSkipOpt
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
 
-	paklockInfo, _ = GetPaklockInfo("")
+	_, paklockInfo, _ = GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo["github.com/theplant/package1"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package2"], Not(Equals), "")
@@ -503,7 +626,12 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 	})
 	c.Check(err, Equals, nil)
 
-	paklockInfo, _ := GetPaklockInfo("")
+	_, paklockInfo, _ := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 
 	MustRun("sh", "-c", "mv ../../package2/file1 ../../package2/file1-1")
@@ -519,7 +647,12 @@ func (s *GetSuite) TestShouldNotModifyPakfileLockWhenGetUncleanPkgWithSkipOption
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[1].IsClean, Equals, false)
 
-	paklockInfo, _ = GetPaklockInfo("")
+	_, paklockInfo, _ = GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 4)
 	c.Check(paklockInfo["github.com/theplant/package1"], Not(Equals), "")
 	c.Check(paklockInfo["github.com/theplant/package2"], Not(Equals), "")
@@ -536,7 +669,12 @@ func (s *GetSuite) TestGetWithPakMeterForGetting(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
-	paklockInfo, _ := GetPaklockInfo("")
+	_, paklockInfo, _ := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 1)
 
 	MustRun("sh", "-c", "cp fixtures/Pakfile3 Pakfile")
@@ -550,13 +688,14 @@ func (s *GetSuite) TestGetWithPakMeterForGetting(c *C) {
 	})
 	c.Check(err, Equals, nil)
 
-	paklockInfo, _ = GetPaklockInfo("")
+	_, paklockInfo, _ = GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: false,
+	})
 	c.Check(len(paklockInfo), Equals, 2)
 
 	s.pakPkgs[0].Sync()
-	// s.pakPkgs[1].Sync()
-	// s.pakPkgs[2].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/pak")
-	// c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
-	// c.Check(s.pakPkgs[2].HeadRefName, Equals, "refs/heads/pak")
 }

@@ -43,8 +43,8 @@ var pakfilePaths = []struct {
 	pakInfoChecker Checker
 }{
 	{Pakfile, "Can read Pakfile in current Folder", Equals, DeepEquals},
-	// {"../" + Pakfile, "Can read Pakfile in parent Folder", Equals, DeepEquals},
-	// {Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile", Equals, Not(DeepEquals)},
+	{"../" + Pakfile, "Can read Pakfile in parent Folder", Equals, DeepEquals},
+	{Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile", Equals, Not(DeepEquals)},
 }
 
 func (s *PakSuite) SetUpSuite(c *C) {
@@ -52,6 +52,8 @@ func (s *PakSuite) SetUpSuite(c *C) {
 	MustRun("sh", "-c", "mkdir -p ../../../test2")
 	MustRun("sh", "-c", "cp fixtures/Pakfile-for-pakread ../../../test/Pakfile")
 	MustRun("sh", "-c", "cp fixtures/Pakfile-for-pakread2 ../../../test2/Pakfile")
+	MustRun("sh", "-c", "cp fixtures/TestReadPaklock-pakfile.lock ../../../test/Pakfile.lock")
+	MustRun("sh", "-c", "cp fixtures/TestReadPaklock2-pakfile.lock ../../../test2/Pakfile.lock")
 }
 
 func (s *PakSuite) TearDownSuite(c *C) {
@@ -61,7 +63,6 @@ func (s *PakSuite) TearDownSuite(c *C) {
 
 // TODO: to test sub package info
 func (s *PakSuite) TestReadPakfile(c *C) {
-	// pakInfo := PakInfo{Packages: []string{"github.com/test", "gihub.com/test2"}}
 	pakInfo := PakInfo{Packages: []PkgCfg{
 		{
 			Name:                   "github.com/test",
@@ -78,43 +79,90 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 	}}
 	pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
 
-	expectingPakInfo := PakInfo{Packages: []PkgCfg{
-		{
-			Name:                   "github.com/theplant/package1",
-			PakName:                "pak",
-			TargetBranch:           "origin/master",
-			AutoMatchingHostBranch: false,
+	expectingPakInfo := PakInfo{
+		Packages: []PkgCfg{
+			{
+				Name:                   "github.com/theplant/package1",
+				PakName:                "pak",
+				TargetBranch:           "origin/master",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/theplant/package2",
+				PakName:                "pak",
+				TargetBranch:           "origin/dev",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/theplant/package3",
+				PakName:                "pak",
+				TargetBranch:           "origin/master",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/theplant/package1-2",
+				PakName:                "pak",
+				TargetBranch:           "origin/master",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/theplant/package2-2",
+				PakName:                "pak",
+				TargetBranch:           "origin/dev",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/theplant/package3-2",
+				PakName:                "pak",
+				TargetBranch:           "origin/master",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/test",
+				PakName:                "pak",
+				TargetBranch:           "origin/master",
+				AutoMatchingHostBranch: false,
+			},
+			{
+				Name:                   "github.com/test2",
+				PakName:                "pak",
+				TargetBranch:           "origin/master",
+				AutoMatchingHostBranch: false,
+			},
 		},
-		{
-			Name:                   "github.com/theplant/package2",
-			PakName:                "pak",
-			TargetBranch:           "origin/dev",
-			AutoMatchingHostBranch: false,
-		},
-		{
-			Name:                   "github.com/theplant/package3",
-			PakName:                "pak",
-			TargetBranch:           "origin/master",
-			AutoMatchingHostBranch: false,
-		},
-		{
-			Name:                   "github.com/theplant/package1-2",
-			PakName:                "pak",
-			TargetBranch:           "origin/master",
-			AutoMatchingHostBranch: false,
-		},
-		{
-			Name:                   "github.com/theplant/package2-2",
-			PakName:                "pak",
-			TargetBranch:           "origin/dev",
-			AutoMatchingHostBranch: false,
-		},
-		{
-			Name:                   "github.com/theplant/package3-2",
-			PakName:                "pak",
-			TargetBranch:           "origin/master",
-			AutoMatchingHostBranch: false,
-		},
+		BasicDependences: []string{"github.com/test", "github.com/test2"},
+	}
+	for _, pakfilePath := range pakfilePaths {
+		ioutil.WriteFile(pakfilePath.path, pakInfoBytes, os.FileMode(0644))
+
+		pakInfo2, _, err := GetPakInfo(GpiParams{
+			Type:                 "10",
+			Path:                 "",
+			DeepParse:            true,
+			WithBasicDependences: true,
+		})
+		c.Log(pakfilePath.msg)
+		c.Check(err, pakfilePath.checker, nil)
+		c.Check(pakInfo2, pakfilePath.pakInfoChecker, expectingPakInfo)
+
+		os.Remove(pakfilePath.path)
+	}
+}
+
+var paklockPaths = []struct {
+	path        string
+	pakfilePath string
+	msg         string
+	errChecker  Checker
+	lockChecker Checker
+}{
+	{Paklock, Pakfile, "Can read Pakfile.lock in current Folder", Equals, DeepEquals},
+	{"../" + Paklock, "../" + Pakfile, "Can read Pakfile.lock in parent Folder", Equals, DeepEquals},
+	{Gopath + "/../" + Paklock, Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile.lock", Equals, Not(DeepEquals)},
+}
+
+func (s *PakSuite) TestReadPaklock(c *C) {
+	pakInfo := PakInfo{Packages: []PkgCfg{
 		{
 			Name:                   "github.com/test",
 			PakName:                "pak",
@@ -128,50 +176,35 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 			AutoMatchingHostBranch: false,
 		},
 	}}
-	for _, pakfilePath := range pakfilePaths {
-		ioutil.WriteFile(pakfilePath.path, pakInfoBytes, os.FileMode(0644))
+	pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
 
-		pakInfo2, err := GetPakInfo("")
-		c.Log(pakfilePath.msg)
-		c.Check(err, pakfilePath.checker, nil)
-		c.Check(pakInfo2, pakfilePath.pakInfoChecker, expectingPakInfo)
-
-		os.Remove(pakfilePath.path)
-	}
-}
-
-var paklockPaths = []struct {
-	path        string
-	msg         string
-	errChecker  Checker
-	lockChecker Checker
-	// paklockState bool
-}{
-	{Paklock, "Can read Pakfile.lock in current Folder", Equals, DeepEquals},
-	{"../" + Paklock, "Can read Pakfile.lock in parent Folder", Equals, DeepEquals},
-	{Gopath + "/../" + Paklock, "Won't go beyond GOPATH to find Pakfile.lock", Equals, Not(DeepEquals)},
-}
-
-func (s *PakSuite) TestReadPaklock(c *C) {
 	paklockInfo := PaklockInfo{
+		"github.com/theplant/package5": "11b174bd5acbf990687e6b068c97378d3219de04",
+		"github.com/theplant/package4": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
+		"github.com/theplant/package6": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
+		"github.com/theplant/package7": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
+		"github.com/theplant/package8": "11b174bd5acbf990687e6b068c97378d3219de04",
+		"github.com/theplant/package9": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
 		"github.com/theplant/package3": "d5f51ca77f5d4f37a8105a74b67d2f1aefea939c",
 		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
 		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
 	}
 	paklockInfoBytes, _ := goyaml.Marshal(&paklockInfo)
 	for _, paklockPath := range paklockPaths {
+		ioutil.WriteFile(paklockPath.pakfilePath, pakInfoBytes, os.FileMode(0644))
 		ioutil.WriteFile(paklockPath.path, paklockInfoBytes, os.FileMode(0644))
 
-		paklockInfo2, err := GetPaklockInfo("")
+		_, paklockInfo2, err := GetPakInfo(GpiParams{
+			Type:                 "11",
+			Path:                 "",
+			DeepParse:            true,
+			WithBasicDependences: false,
+		})
 		c.Log(paklockPath.msg)
 		c.Check(err, paklockPath.errChecker, nil)
-		c.Check(paklockInfo, paklockPath.lockChecker, paklockInfo2)
+		c.Check(paklockInfo2, paklockPath.lockChecker, paklockInfo)
 
 		os.Remove(paklockPath.path)
+		os.Remove(paklockPath.pakfilePath)
 	}
 }
-
-// func (s *PakSuite) TestPakRead(c *C) {
-// 	MustRun("sh", "-c", "cp fixtures/Pakfile-for-pakread ../Pakfile")
-// 	content, err := pakRead(Gopath + "/" + "github.com/theplant/pak/Pakfile")
-// }

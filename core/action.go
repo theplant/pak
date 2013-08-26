@@ -29,25 +29,29 @@ func Get(option PakOption) error {
 		start = time.Now()
 	}
 
-	// Retrieve PakPkgs from Pakfile
-	allPakPkgs, err := ParsePakfile()
+	pakInfo, paklockInfo, err := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: true,
+	})
 	if err != nil {
 		return err
 	}
+	fmt.Printf("=====pakInfo=====\n%+v\n=====pakInfo=====\n", pakInfo)
+	fmt.Printf("=====paklockInfo=====\n%+v\n=====paklockInfo=====\n", paklockInfo)
 
-	// Retrieve PaklockInfo from Pakfile.lock
-	var paklockInfo PaklockInfo
-	paklockInfo, err = GetPaklockInfo("")
-	if err != nil {
-		if err == PakfileLockNotExist {
-			paklockInfo = nil
-
-			if option.SkipUncleanPkgs {
-				return fmt.Errorf("Can't skip unclean packages because this project has not yet been locked.\nPlease run pak get.")
-			}
-		} else {
-			return err
+	if len(paklockInfo) == 0 {
+		if option.SkipUncleanPkgs {
+			return fmt.Errorf("Can't skip unclean packages because this project has not yet been locked.\nPlease run pak get.")
 		}
+	}
+
+	var allPakPkgs []PakPkg
+	for _, pkgCfg := range pakInfo.Packages {
+		pakPkg := NewPakPkg(pkgCfg)
+
+		allPakPkgs = append(allPakPkgs, pakPkg)
 	}
 
 	// For: pak [update|get] <package, ...>
@@ -121,7 +125,15 @@ func Get(option PakOption) error {
 	if option.Verbose {
 		color.Printf("Writing Pakfile.lock.\n")
 	}
-	err = writePaklockInfo(newPaklockInfo)
+
+	lockInfo := PaklockInfo{}
+	for _, pkgName := range pakInfo.BasicDependences {
+		if newPaklockInfo[pkgName] != "" {
+			lockInfo[pkgName] = newPaklockInfo[pkgName]
+		}
+	}
+
+	err = writePaklockInfo(lockInfo)
 	if err != nil {
 		return err
 	}
@@ -147,21 +159,20 @@ func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan
 			}
 
 			(*newPaklockInfo)[nameAndChecksum[0]] = nameAndChecksum[1]
-		case errI := <-errChan:
+		case newError := <-errChan:
 			// TODO: make a public error chanle to inform other working gorutine to stop running before panic this error
-			// debug.PrintStack()
-			// panic(err)
 			if err == nil {
-				err = fmt.Errorf("", "")
+				err = fmt.Errorf("Error: %+v", newError)
+			} else {
+				err = fmt.Errorf("%+v\nError: %+v", err, newError)
 			}
-			err = fmt.Errorf("%s\nError %d\n%s", err.Error(), errI.Error())
 			count += 1
-			if pkgLen == count {
+			if count == pkgLen {
 				return
 			}
 		case <-doneChan:
 			count += 1
-			if pkgLen == count {
+			if count == pkgLen {
 				return
 			}
 		}
@@ -216,9 +227,21 @@ func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) 
 }
 
 func FindPackage(name string) (bool, PakPkg, error) {
-	allPakPkgs, err := ParsePakfile()
+	pakInfo, _, err := GetPakInfo(GpiParams{
+		Type:                 "10",
+		Path:                 "",
+		DeepParse:            false,
+		WithBasicDependences: false,
+	})
 	if err != nil {
 		return false, PakPkg{}, err
+	}
+
+	var allPakPkgs []PakPkg
+	for _, pkgCfg := range pakInfo.Packages {
+		pakPkg := NewPakPkg(pkgCfg)
+
+		allPakPkgs = append(allPakPkgs, pakPkg)
 	}
 
 	return isPkgMatched(allPakPkgs, name)

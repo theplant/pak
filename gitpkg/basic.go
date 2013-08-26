@@ -65,7 +65,7 @@ func (this *GitPkg) Git(params ...string) (*exec.Cmd, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("Error\n%s: git %s => %s", this.Name, strings.Join(params, " "), stderr.String())
+		err = fmt.Errorf("%s: git %s => %s", this.Name, strings.Join(params, " "), stderr.String())
 		return cmd, err
 	}
 

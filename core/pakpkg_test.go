@@ -55,38 +55,38 @@ func (s *PakPkgStateSuite) TestDial(c *C) {
 	c.Check(s.pkg.Dial(), Equals, nil)
 }
 
-func (s *PakPkgStateSuite) TestParsePakfile(c *C) {
-	pakPkgs, err := ParsePakfile()
-	expectedGitPkgs := []PakPkg{
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package1",
-			PakName:                "pak",
-			TargetBranch:           "origin/master",
-			AutoMatchingHostBranch: false,
-		}),
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package2",
-			PakName:                "pak",
-			TargetBranch:           "origin/dev",
-			AutoMatchingHostBranch: false,
-		}),
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package3",
-			PakName:                "pak",
-			TargetBranch:           "origin/dev",
-			AutoMatchingHostBranch: false,
-		}),
-		NewPakPkg(PkgCfg{
-			Name:                   "github.com/theplant/package4",
-			PakName:                "pak",
-			TargetBranch:           "nonorigin/dev",
-			AutoMatchingHostBranch: false,
-		}),
-	}
+// func (s *PakPkgStateSuite) TestParsePakfile(c *C) {
+// 	pakPkgs, err := ParsePakfile()
+// 	expectedGitPkgs := []PakPkg{
+// 		NewPakPkg(PkgCfg{
+// 			Name:                   "github.com/theplant/package1",
+// 			PakName:                "pak",
+// 			TargetBranch:           "origin/master",
+// 			AutoMatchingHostBranch: false,
+// 		}),
+// 		NewPakPkg(PkgCfg{
+// 			Name:                   "github.com/theplant/package2",
+// 			PakName:                "pak",
+// 			TargetBranch:           "origin/dev",
+// 			AutoMatchingHostBranch: false,
+// 		}),
+// 		NewPakPkg(PkgCfg{
+// 			Name:                   "github.com/theplant/package3",
+// 			PakName:                "pak",
+// 			TargetBranch:           "origin/dev",
+// 			AutoMatchingHostBranch: false,
+// 		}),
+// 		NewPakPkg(PkgCfg{
+// 			Name:                   "github.com/theplant/package4",
+// 			PakName:                "pak",
+// 			TargetBranch:           "nonorigin/dev",
+// 			AutoMatchingHostBranch: false,
+// 		}),
+// 	}
 
-	c.Check(err, Equals, nil)
-	c.Check(pakPkgs, DeepEquals, expectedGitPkgs)
-}
+// 	c.Check(err, Equals, nil)
+// 	c.Check(pakPkgs, DeepEquals, expectedGitPkgs)
+// }
 
 // TODO: fix it
 // func (s *PakPkgStateSuite) TestEqualPakfileNPakfileLock(c *C) {

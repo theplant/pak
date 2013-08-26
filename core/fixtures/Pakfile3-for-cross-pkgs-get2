@@ -1,11 +1,7 @@
-package core
-
-const PakfileTemplate = `# Pakfile[.yaml]
+# Pakfile[.yaml]
 # Usage:
 #
-# Write down your packages dependences that you want pak to manage.
-# You can specify repository and branches which also has some default
-# value, according to different version control tool.
+# Write down your package name to be checked out. You can specify branch.
 # The option comes with a preceding '@' and follows after the package name.
 # Master branch is the default branch to be checked out if no branch is
 # specified.
@@ -17,5 +13,10 @@ const PakfileTemplate = `# Pakfile[.yaml]
 # - github.com/user/project1@dev
 #
 
+version: 2.0
 packages:
-# - package@dev`
+# Git Packages
+- name: github.com/theplant/package5
+  targetbranch: origin/master
+- name: github.com/theplant/package6
+  targetbranch: origin/master

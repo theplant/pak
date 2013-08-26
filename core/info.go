@@ -11,63 +11,106 @@ import (
 )
 
 type PakInfo struct {
-	Packages []PkgCfg
+	Packages         []PkgCfg
+	BasicDependences []string
 }
 
-func GetPakInfo(path string) (pakInfo PakInfo, err error) {
-	var pakInfoBytes []byte
-	if path == "" {
-		path = Pakfile
+type GpiParams struct {
+	Type                 string // 11 => both Pakfile and Pakfile.lock, 10 => Pkafile only
+	Path                 string
+	DeepParse            bool
+	WithBasicDependences bool
+}
+
+func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err error) {
+	var pakInfoBytes, paklockInfoBytes []byte
+	var pakfilePath, pakfileLockPath string
+	if params.Path == "" {
+		pakfilePath = Pakfile
+		pakfileLockPath = Paklock
 	} else {
-		path += "/" + Pakfile
+		pakfilePath = params.Path + "/" + Pakfile
+		pakfileLockPath = params.Path + "/" + Paklock
 	}
-	pakInfoBytes, err = pakRead(path)
+
+	pakInfoBytes, err = pakRead(pakfilePath)
 	if err != nil {
 		return
 	}
 
+	if params.Type[1] == '1' {
+		paklockInfoBytes, err = pakRead(pakfileLockPath)
+		if err != nil {
+			return
+		}
+	}
+
+	// Pakfile must exist
 	if pakInfoBytes == nil {
-		return PakInfo{}, nil
+		return PakInfo{}, PaklockInfo{}, nil
 	}
 
 	err = goyaml.Unmarshal(pakInfoBytes, &pakInfo)
+	if err != nil {
+		return PakInfo{}, PaklockInfo{}, nil
+	}
+
+	paklockInfo = PaklockInfo{}
+	err = goyaml.Unmarshal(paklockInfoBytes, &paklockInfo)
+	if err != nil {
+		return PakInfo{}, PaklockInfo{}, nil
+	}
+
+	if params.WithBasicDependences {
+		for _, pkg := range pakInfo.Packages {
+			pakInfo.BasicDependences = append(pakInfo.BasicDependences, pkg.Name)
+		}
+	}
+
+	if !params.DeepParse {
+		for i, _ := range pakInfo.Packages {
+			if pakInfo.Packages[i].PakName == "" {
+				pakInfo.Packages[i].PakName = Pakbranch
+			}
+		}
+		return
+	}
 
 	subPakInfos := []PakInfo{}
+	subPaklockInfos := []PaklockInfo{}
 	for i, _ := range pakInfo.Packages {
 		if pakInfo.Packages[i].PakName == "" {
 			pakInfo.Packages[i].PakName = Pakbranch
 		}
 
-		subPakInfo, err := GetPakInfo(Gopath + "/src/" + pakInfo.Packages[i].Name)
+		subPakInfo, subPaklockInfo, err := GetPakInfo(GpiParams{
+			Path:      Gopath + "/src/" + pakInfo.Packages[i].Name,
+			Type:      params.Type,
+			DeepParse: params.DeepParse,
+		})
 		if err != nil {
-			return pakInfo, err
+			return pakInfo, paklockInfo, err
 		}
 		if len(subPakInfo.Packages) > 0 {
 			subPakInfos = append(subPakInfos, subPakInfo)
 		}
+		if len(subPaklockInfo) > 0 {
+			subPaklockInfos = append(subPaklockInfos, subPaklockInfo)
+		}
 	}
 
+	// to detect package dependence conflicts.
 	subCount := len(subPakInfos)
 	for i, _ := range subPakInfos {
 		pakInfo.Packages = append(subPakInfos[subCount-i-1].Packages, pakInfo.Packages...)
 	}
-
-	return
-}
-
-func GetPaklockInfo(path string) (paklockInfo PaklockInfo, err error) {
-	var content []byte
-	if path == "" {
-		path = Paklock
-	} else {
-		path += "/" + Paklock
+	if params.Type[1] == '1' {
+		for _, subPaklockInfo := range subPaklockInfos {
+			for k, v := range subPaklockInfo {
+				paklockInfo[k] = v
+			}
+		}
 	}
-	content, err = pakRead(path)
-	if err != nil {
-		return
-	}
-
-	err = goyaml.Unmarshal(content, &paklockInfo)
 
 	return
 }
