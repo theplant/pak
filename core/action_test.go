@@ -27,7 +27,8 @@ func (s *GetSuite) SetUpTest(c *C) {
 	MustRun("git", "clone", "fixtures/package3", "../../package3")
 	MustRun("git", "clone", "fixtures/package4", "../../package4")
 	MustRun("git", "clone", "fixtures/package5", "../../package5")
-	MustRun("git", "clone", "fixtures/package5", "../../package6")
+	MustRun("git", "clone", "fixtures/package6", "../../package6")
+	MustRun("git", "clone", "fixtures/package7", "../../package7")
 	MustRun("hg", "clone", "fixtures/package1-for-hg", "../../package1-for-hg-get-test")
 	MustRun("cp", "fixtures/Pakfile3", "Pakfile")
 
@@ -60,6 +61,7 @@ func (s *GetSuite) TearDownTest(c *C) {
 	MustRun("rm", "-rf", "../../package4")
 	MustRun("rm", "-rf", "../../package5")
 	MustRun("rm", "-rf", "../../package6")
+	MustRun("rm", "-rf", "../../package7")
 	MustRun("rm", "-rf", "../../package1-for-hg-get-test")
 	MustRun("rm", "-rf", "Pakfile")
 	MustRun("rm", "-rf", "Pakfile.lock")
@@ -128,9 +130,9 @@ func (s *GetSuite) TestSimpleCrossPkgsGet(c *C) {
 
 // TODO: package4 is not clean, need to make some new fixture to get this test done.
 func (s *GetSuite) TestSimpleCrossPkgsGetWithPakfileLock(c *C) {
-	MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get", "Pakfile")
-	MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get2", "../../package4/Pakfile")
-	MustRun("sh", "-c", "cp fixtures/cross-pkgs-Pakfile.lock ../../package4/Pakfile.lock")
+	MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get2", "Pakfile")
+	// MustRun("cp", "fixtures/Pakfile3-for-cross-pkgs-get2", "../../package4/Pakfile")
+	// MustRun("sh", "-c", "cp fixtures/cross-pkgs-Pakfile.lock ../../package4/Pakfile.lock")
 
 	err := Get(PakOption{
 		PakMeter:       []string{},
@@ -150,10 +152,10 @@ func (s *GetSuite) TestSimpleCrossPkgsGetWithPakfileLock(c *C) {
 	s.pakPkgs[3].Sync()
 	c.Check(s.pakPkgs[3].HeadRefName, Equals, "pak")
 
-	pkg4 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package4", PakName: "pak", TargetBranch: "origin/master"})
-	pkg4.Dial()
-	pkg4.Sync()
-	c.Check(pkg4.HeadRefName, Equals, "refs/heads/pak")
+	pkg7 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package7", PakName: "pak", TargetBranch: "origin/master"})
+	pkg7.Dial()
+	pkg7.Sync()
+	c.Check(pkg7.HeadRefName, Equals, "refs/heads/pak")
 
 	pkg5 := NewPakPkg(PkgCfg{Name: "github.com/theplant/package5", PakName: "pak", TargetBranch: "origin/master"})
 	pkg5.Dial()

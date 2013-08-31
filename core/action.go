@@ -38,8 +38,6 @@ func Get(option PakOption) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("=====pakInfo=====\n%+v\n=====pakInfo=====\n", pakInfo)
-	fmt.Printf("=====paklockInfo=====\n%+v\n=====paklockInfo=====\n", paklockInfo)
 
 	if len(paklockInfo) == 0 {
 		if option.SkipUncleanPkgs {
