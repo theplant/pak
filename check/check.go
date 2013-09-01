@@ -3,7 +3,7 @@ package check
 import (
 	"bufio"
 	"fmt"
-	. "github.com/theplant/pak/core"
+	"github.com/theplant/pak/core"
 	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"path/filepath"
@@ -18,16 +18,26 @@ import (
 // TODO: add tests
 func Check() {
 	// Parse
-	allPakPkgs, err := ParsePakfile()
+	pakInfo, paklockInfo, err := core.GetPakInfo(core.GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            false,
+		WithBasicDependences: true,
+	})
 	if err != nil {
 		color.Printf("Force Exited by Pak: @r%s@w.\n", err.Error())
 		os.Exit(1)
 	}
-
-	paklockInfo, err := GetPaklockInfo("")
-	if err != nil {
-		color.Printf("Force Exited by Pak: @r%s@w. Please run @bpak get@w.\n", err.Error())
+	if len(paklockInfo) == 0 {
+		color.Printf("Force Exited by Pak. Please run @bpak get@w.\n")
 		os.Exit(1)
+	}
+
+	var allPakPkgs []core.PakPkg
+	for _, pkgCfg := range pakInfo.Packages {
+		pakPkg := core.NewPakPkg(pkgCfg)
+
+		allPakPkgs = append(allPakPkgs, pakPkg)
 	}
 
 	errors := [][2]string{}

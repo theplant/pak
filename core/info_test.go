@@ -20,21 +20,21 @@ type PakSuite struct{}
 
 var _ = Suite(&PakSuite{})
 
-// func (s *PakSuite) TestInit(c *C) {
-// 	os.Remove(Pakfile)
-// 	Init()
-// 	_, err := os.Stat(Pakfile)
-// 	c.Check(err, Equals, nil)
+func (s *PakSuite) TestInit(c *C) {
+	os.Remove(Pakfile)
+	Init()
+	_, err := os.Stat(Pakfile)
+	c.Check(err, Equals, nil)
 
-// 	tmpPakfile, _ := os.Create(Pakfile)
-// 	tmpPakfileInfo, _ := tmpPakfile.Stat()
-// 	Init()
-// 	tmpPakfile2, _ := os.Create(Pakfile)
-// 	tmpPakfileInfo2, _ := tmpPakfile2.Stat()
-// 	c.Log("Should not create Pakfile if it already existed.")
-// 	c.Check(os.SameFile(tmpPakfileInfo, tmpPakfileInfo2), Equals, true)
-// 	os.Remove(Pakfile)
-// }
+	tmpPakfile, _ := os.Create(Pakfile)
+	tmpPakfileInfo, _ := tmpPakfile.Stat()
+	Init()
+	tmpPakfile2, _ := os.Create(Pakfile)
+	tmpPakfileInfo2, _ := tmpPakfile2.Stat()
+	c.Log("Should not create Pakfile if it already existed.")
+	c.Check(os.SameFile(tmpPakfileInfo, tmpPakfileInfo2), Equals, true)
+	os.Remove(Pakfile)
+}
 
 var pakfilePaths = []struct {
 	path           string
