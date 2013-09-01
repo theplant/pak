@@ -1,4 +1,4 @@
-# Pak
+# Pak [![Build Status](https://travis-ci.org/theplant/pak.png?branch=master)](https://travis-ci.org/theplant/pak)
 
 Whether Pak is useful or not depends on what kind of the development strategy that you and your team take. When you are developing a project, which is divided into few smaller projects, like bellow:
 
