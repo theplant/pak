@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 	switch flag.Arg(0) {
 	case "init":
-		core.Init()
+		initPak()
 		break
 	case "get":
 		getPakPkgs()
@@ -53,10 +53,17 @@ func main() {
 		listPakfilePkgs()
 		break
 	case "version":
-		color.Println("@g1.3.0")
+		color.Println("@g1.3.1")
 		break
 	default:
 		flag.Usage()
+	}
+}
+
+func initPak() {
+	err := core.Init()
+	if err != nil {
+		color.Printf("@r%+v@w\n", err)
 	}
 }
 
@@ -70,7 +77,8 @@ func getPakPkgs() {
 	})
 
 	if err != nil {
-		color.Printf("@r%s\n", err)
+		color.Printf("@r%s", err)
+		color.Println("Pak Failed.")
 	}
 }
 
@@ -117,14 +125,26 @@ func openPkgWithPakEditor() {
 }
 
 func listPakfilePkgs() {
-	// allPakPkgs, err := core.ParsePakfile()
-	// if err != nil {
-	// 	color.Printf("@r%s\n", err)
-	// 	return
-	// }
+	pakInfo, _, err := core.GetPakInfo(core.GpiParams{
+		Type:                 "10",
+		Path:                 "",
+		DeepParse:            false,
+		WithBasicDependences: true,
+	})
+	if err != nil {
+		color.Printf("@r%s\n", err)
+		return
+	}
 
-	// color.Println("All Packages Depended In this Package:")
-	// for _, pkg := range allPakPkgs {
-	// 	color.Printf("@g    %s\n", pkg.Name)
-	// }
+	var allPakPkgs []core.PakPkg
+	for _, pkgCfg := range pakInfo.Packages {
+		pakPkg := core.NewPakPkg(pkgCfg)
+
+		allPakPkgs = append(allPakPkgs, pakPkg)
+	}
+
+	color.Println("All Packages Depended In this Package:")
+	for _, pkg := range allPakPkgs {
+		color.Printf("@g    %s\n", pkg.Name)
+	}
 }

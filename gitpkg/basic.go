@@ -26,6 +26,13 @@ type GitPkg struct {
 
 // NewGitPkg now will panic, make sure to be invoked after IsTracking
 func NewGitPkg(name, remote, branch, pakName string) PkgProxy {
+	if branch == "" {
+		branch = "master"
+	}
+	if remote == "" {
+		remote = "origin"
+	}
+
 	gitPkg := GitPkg{}
 	gitPkg.Name = name
 	gitPkg.Remote = remote

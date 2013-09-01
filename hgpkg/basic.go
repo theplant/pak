@@ -23,6 +23,13 @@ type HgPkg struct {
 }
 
 func NewHgPkg(name, remote, branch, pakName string) PkgProxy {
+	if remote == "" {
+		remote = "default"
+	}
+	if branch == "" {
+		branch = "default"
+	}
+
 	hgPkg := HgPkg{}
 	hgPkg.Name = name
 	hgPkg.PakName = pakName

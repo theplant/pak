@@ -18,4 +18,7 @@ const PakfileTemplate = `# Pakfile[.yaml]
 #
 
 packages:
-# - package@dev`
+- name:
+  pakname: pak
+  targetbranch: origin/master
+`

@@ -117,7 +117,7 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		}
 
 		if !this.IsClean {
-			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.", this.Name)
+			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.\n", this.Name)
 		}
 
 		checksum, err := this.Pak()
@@ -135,7 +135,7 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		// Can't Update/Get(by PakMeter) specific packages which is not clean
 		if !this.IsClean {
 			if this.UsingPakMeter {
-				return nameAndChecksum, fmt.Errorf("Package %s is Not Clean.", this.Name)
+				return nameAndChecksum, fmt.Errorf("Package %s is Not Clean.\n", this.Name)
 			}
 
 			nameAndChecksum[0] = this.Name
@@ -153,7 +153,7 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		nameAndChecksum[1] = checksum
 	case "Remove":
 		if this.Verbose {
-			color.Printf("@rUnpaking @g%s@w.\n", this.Name)
+			color.Printf("@yUnpaking @g%s@w.\n", this.Name)
 		}
 
 		if this.OnPakbranch && this.IsClean {
@@ -199,7 +199,7 @@ func (this *PakPkg) Dial() error {
 		}
 	}
 
-	return fmt.Errorf("Package %s: Can't Find Out Type of Versino Control System.", this.Name)
+	return fmt.Errorf("Package %s: Can't Find Out Type of Versino Control System.\n", this.Name)
 }
 
 // GoGet invokes command `go get {package}`.
@@ -214,7 +214,7 @@ var GoGetImpl = func(name string) error {
 	err := cmd.Run()
 	if err != nil {
 		getErr := cmd.Stderr.(*bytes.Buffer).String() // for removing the end-of-line
-		err = fmt.Errorf("go get %s:\n%s", name, getErr[:len(getErr)-1])
+		err = fmt.Errorf("go get %s:\n%s\n", name, getErr[:len(getErr)-1])
 	}
 
 	return err
@@ -268,11 +268,11 @@ func (this *PakPkg) Sync() (err error) {
 
 func (this *PakPkg) Report() error {
 	if !this.IsClean && !this.SkipUncleanPkgs {
-		return fmt.Errorf("Package %s is not clean. Please clean it up before running pak.", this.Name)
+		return fmt.Errorf("Package %s is Not clean. Please clean it up before running pak.\n", this.Name)
 	}
 
 	if !this.IsRemoteBranchExist {
-		return fmt.Errorf("`%s` does not contain reference `%s`", this.Name, this.RemoteBranch)
+		return fmt.Errorf("`%s` does not contain reference `%s`\n", this.Name, this.RemoteBranch)
 	}
 
 	return nil

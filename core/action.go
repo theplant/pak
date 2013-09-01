@@ -160,9 +160,9 @@ func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan
 		case newError := <-errChan:
 			// TODO: make a public error chanle to inform other working gorutine to stop running before panic this error
 			if err == nil {
-				err = fmt.Errorf("Error: %+v", newError)
+				err = fmt.Errorf("%+v", newError)
 			} else {
-				err = fmt.Errorf("%+v\nError: %+v", err, newError)
+				err = fmt.Errorf("%+v%+v", err, newError)
 			}
 			count += 1
 			if count == pkgLen {
