@@ -164,6 +164,14 @@ Note: It's recommended to use pak.check in your development environemnt instead 
 
 ### Other Stuff
 
+Also, pak support cross package dependences parsing and other small interesting stuff. Go take it a try.
+
+Below is some [ASCII.IO](http://ascii.io/) videos, you could help you better understand what Pak could do for you.
+
+* [Common Usage](http://ascii.io/a/5454)
+* [Partial Matching](http://ascii.io/a/5455)
+* [Pak Don't Hurt Unclean Packages](http://ascii.io/a/5455)
+
 ## Status
 
 Supported Version Control System: Git, Mercurial.
