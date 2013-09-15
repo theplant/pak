@@ -57,6 +57,8 @@ github.com/theplant/req1: 931b60b175dcfd6afa02d34e13270b8aaa4d0ba2
 github.com/theplant/req2: 1d1416e1f8fce75311d2afe5fc391aac84927601
 ```
 
+When you go to package req1 or req2, you can see these two packages are on the status that you specify in `Pakfile` and `Pakfile.lock`.
+
 ## How Pak works
 
 The mechanism of `pak` is pretty simple: Checking out the most up-to-date commit from all the dependences according to the description of `Pakfile` and then store the checksum in `Pakfile.lock`. It's like taking a snapshot of the dependences of your project and no matter how many changes is undergoing in them, each time when you need to run your project, just run `pak get` again then you can cancel all those changes (not actually delete them, just checkout those dependences accroding to `Pakfile.lock`). When you need to update some dependences in the project, just use `pak update`, then `pak` will checkout the up-to-date commit for you.
