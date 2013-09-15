@@ -1,49 +1,78 @@
 # Pak
 
-Whether Pak is useful or not depends on what kind of the development strategy that you and your team take. When you are developing a project, which is divided into few smaller projects, like bellow:
+A go packages version control tool, inspired by Bunlder for Ruby.
 
-	github.com/team/project
-	github.com/team/sub-project2
-	github.com/team/sub-project3
+## What Pak Can Do
 
-And in each project, you use different branches or something to mark project state. For instance, you might define that in each project, a branch named master is used for production, and branch dev used for implementing new features. Sooner or later, you will find out that you have to switch branches between projects from time to time. And when you switch `github.com/team/project` from branch master to branch dev, you may also need to make sure `sub-project2` and `sub-project3` is also on the branch dev. When you update some of them, you may also need to remember to remind your teammates of the updates.
+Assume that you are working on two projects called pro1 and pro2, and they are both depending on two other projects working by your colleagues, req1 and req2.
 
-Experiences like this is nuisance. So Pak comes.
+Req1 has two branches, branch1 and branch2. Req2 also has two branches, branch1 and branch2.
 
-## Introduction
+One thing more, pro1 depends on branch1 in req1 and branch1 in req2, but pro2 depends on branch2 in req1 and branch2 in req2.
 
-Pak uses a Pakfile and Pakfile.lock for easy package version synchronisation and management. After specify packages in Pakfile, running `get` and `update` command to ask Pak get your dependencies on the right state.
+Make it simple, they are all using Git as their version control tool.
 
-For example, If you have a Pakfile like bellow:
+Sometimes you are working on pro1, sometimes pro2. How to make yourself efficient and productive. Using one GOPATH you have to checkout stuff from req1 and req2. Using two GOPATH you have to switch GOPATH from time to time (may be there are better solution, but that's all I know. :-P).
 
-```
+Use Pak.
+
+Make Pakfiles in pro1 and pro2 like bellow:
+
+In Pro1:
+
+```yaml
 packages:
-- github.com/theplant/package1				# custom branch master and default remote origin
-- github.com/theplant/package2@dev			# custom branch and default remote origin
-- github.com/theplant/package3@origin/dev	# custom remote and branch
+- name: github.com/theplant/req1
+  targetbranch: origin/branch1
+- name: github.com/theplant/req2
+  targetbranch: origin/branch1
+```
+In Pro2:
+
+```yaml
+packages:
+- name: github.com/theplant/req1
+  targetbranch: origin/branch2
+- name: github.com/theplant/req2
+  targetbranch: origin/branch2
 ```
 
-The first time you run `pak get`, Pak, under the instruction of `Pakfile`, will check out a branch named `pak` from branch `refs/remotes/origin/master` in `package1`, similar to package2 and package3.
-
-After that, it will generate a `Pakfile.lock` file, it is necessary to check it into your version control system, and when you teammates run `pak get`, Pak will not use `Pakfile` anymore, `Pakfile.lock` will be used to get those packages on the same state with you.
-
-If someone has submitted new changes into those decencies, you want to check those changes in, use `pak update`. It will fetches the latest changes from remote repo first, and then checks out the latest the changes and updates `Pakfile.lock`.
-
-Pak borrows a lot of concepts from [Bundler](http://gembundler.com/).
-
-## Installation & Usage
-
-Installation is simple.
+Then, when you are working on Pro1, I go to Pro1, I did this:
 
 ```
-go get -u github.com/theplant/pak
+pak get
 ```
 
-After installation, use `pak` to check the help messages out.
-
-Currently available commands are list bellow:
+This action will generates a file named `Pakfile.lock` in the first time that you use `pak`. The next time you use `pak get`, pak will try to checkout req1 and req2 using the checksum saved in `Pakfile.lock`
 
 ```
+github.com/theplant/req1: 6dd3a9a0e8349b0421c57c79b8f45d3565a96378
+github.com/theplant/req2: 5e1d544059ce1ff74d833da7f0d5a8ca02a82525
+```
+
+Just in pro2, you can do the same thing, it will generate a similar `Pakfile.lock`:
+
+```
+github.com/theplant/req1: 931b60b175dcfd6afa02d34e13270b8aaa4d0ba2
+github.com/theplant/req2: 1d1416e1f8fce75311d2afe5fc391aac84927601
+```
+
+## How Pak works
+
+The mechanism of `pak` is pretty simple: Checking out the most up-to-date commit from all the dependences according to the description of `Pakfile` and then store the checksum in `Pakfile.lock`. It's like taking a snapshot of the dependences of your project and no matter how many changes is undergoing in them, each time when you need to run your project, just run `pak get` again then you can cancel all those changes (not actually delete them, just checkout those dependences accroding to `Pakfile.lock`). When you need to update some dependences in the project, just use `pak update`, then `pak` will checkout the up-to-date commit for you.
+
+## Usage
+
+Installation is pretty simple:
+
+```
+go get github.com/theplant/pak
+```
+
+Then done. See avaliable actions:
+
+```
+$: pak
 Usage:
     pak init
     pak [-sf] get [package]
@@ -51,21 +80,77 @@ Usage:
     pak open [package]
     pak list
     pak version
-  -f=false: Force pak to remove pak branch.
-  -s=false: Left out unclean packages.
+  -f=false: Force pak to remove pak branch or pak unclean packages.
+  -s=false: Skip unclean packages.
 ```
 
-### Auto-Checking
+### Init and Configuration
 
-This feature is used to force your app dependencies to be up-to-date with Pakfile and Pakfile.lock.
+```
+pak init
+```
+
+This Command will generate a file named Pakfile in which you can write down packages that your current project depends on.
+
+Pakfile is using YAML syntax. Bellow is an example:
+
+```yaml
+packages:
+- name: github.com/theplant/package1
+  pakname: pak
+  targetbranch: origin/master
+- name: github.com/theplant/package1
+  pakname: pak
+  targetbranch: origin/master
+```
+
+All package requirements should be listed in packages section. Each package contains a few descriptions which are explained below:
+
+`name`: the package name.
+
+`pakname`: a name pak used to checkout a branch/bookmark in dependent packages, default value is pak.
+
+`targetbranch`: the branch which you need pak to monitor, default values in git is `origin/master` and `default/default` in mercurial. It must be a remote branch.
+
+Every dependences in Pakfile must have remote repository.
+
+### Pak Get
+
+After finishing a Pakfile, using `pak get` to take the first snapshot of your project's dependences. That will generate a Pakfile.lock.
+
+Without the exitstence of `Pakfile.lock`, `pak` will try to checkout the up-to-date commit according to descriptions of `Pakfile`. So after the first time that you use `pak get`, pak creates `Pakfile.lock`. With the existence of `Pakfile.lock`, `pak get` will checkout commits recorded in `Pakfile.lock` from your dependences.
+
+`pak get` supports you to get specific packages like this:
+
+```
+pak get some-package
+```
+
+BTW, pak support partial matching, you don't have to type the whole name of that packages.
+
+### Pak Update
+
+After paking some packages for a while, you might be to update some of the packages, here comes `pak update`.
+
+When running `pak update`, pak will retrieve the up-to-date commits from the remote repository and lock them in `Pakfile.lock`.
+
+Also if you don't want to update all dependences (which is slow and might not be unnecessary in some cases), you can specify need-to-update packages like this:
+
+```
+pak update some-package
+```
+
+### Pak Check
+
+A feature serve as a reminder in your application to help you detect whether the dependences is consistent with your Pakfile.lock. Save you from debugging problems caused by inconsistency in dependences. When
 
 In your package, use it as bellow:
 
 ```go
-import "github.com/theplant/pak/check"
+import pak "github.com/theplant/pak/check"
 
 func init() {
-    check.Check()
+    pak.Check()
 }
 ```
 
@@ -73,10 +158,19 @@ And each time you start your app, pak will auto check the dependencies of your a
 
 ![Check](https://raw.github.com/theplant/pak/master/imgs/check.png?login=bom-d-van&token=93b3b310df07f7163a3b57efe9fa0ada)
 
-## Others
+Note: It's recommended to use pak.check in your development environemnt instead of production environment. This's mainly a tool for developers.
 
-Currently, git and mercurial are supported.
+### Other Stuff
 
-<!--## License
+## Status
 
-Train is released under the [MIT License](http://www.opensource.org/licenses/MIT).-->
+Supported Version Control System: Git, Mercurial.
+
+Features:
+
+* Cross Package Dependences
+* Auto Detect Package Dependences (pak.Check)
+
+## License
+
+Train is released under the [MIT License](http://www.opensource.org/licenses/MIT).

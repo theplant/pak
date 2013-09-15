@@ -34,6 +34,7 @@ func Get(option PakOption) error {
 		Path:                 "",
 		DeepParse:            true,
 		WithBasicDependences: true,
+		Verbose:              option.Verbose,
 	})
 	if err != nil {
 		return err

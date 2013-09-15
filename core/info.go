@@ -20,6 +20,7 @@ type GpiParams struct {
 	Path                 string
 	DeepParse            bool
 	WithBasicDependences bool
+	Verbose              bool
 }
 
 func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err error) {
@@ -43,6 +44,11 @@ func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err
 		if err != nil {
 			return
 		}
+		// TODO: Report UnPak dependences which contains a Pakfile but without Pakfile.lock
+		// if len(paklockInfoBytes) == 0 && params.Path != "" && params.Verbose {
+		// 	name := params.Path[len(Gopath+"/src/"):]
+		// 	color.Printf("@g%s@ydoes not contains Pakfile.lock. It's recommended to also pak this package.", name)
+		// }
 	}
 
 	// Pakfile must exist
