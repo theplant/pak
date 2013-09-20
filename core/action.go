@@ -7,6 +7,7 @@ import (
 	"github.com/wsxiaoys/terminal/color"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"regexp"
 	"time"
 )
@@ -83,6 +84,10 @@ func Get(option PakOption) error {
 		color.Printf("Paking Packages.\n")
 	}
 
+	paklockInfoBackup := PaklockInfo{}
+	for k, v := range paklockInfo {
+		paklockInfoBackup[k] = v
+	}
 	CategorizePakPkgs(&pakPkgs, paklockInfo, option)
 
 	errChan := make(chan error)
@@ -110,31 +115,39 @@ func Get(option PakOption) error {
 		}()
 	}
 
+	// For Pak Meter
 	newPaklockInfo := PaklockInfo{}
 	if paklockInfo != nil {
 		for k, v := range paklockInfo {
 			newPaklockInfo[k] = v
 		}
 	}
+
 	err = waitForPkgsProcessing(&newPaklockInfo, len(pakPkgs), checksumChan, doneChan, errChan)
 	if err != nil {
 		return err
 	}
 
-	if option.Verbose {
-		color.Printf("Writing Pakfile.lock.\n")
-	}
-
-	lockInfo := PaklockInfo{}
-	for _, pkgName := range pakInfo.BasicDependences {
-		if newPaklockInfo[pkgName] != "" {
-			lockInfo[pkgName] = newPaklockInfo[pkgName]
+	if reflect.DeepEqual(paklockInfoBackup, newPaklockInfo) {
+		if option.Verbose {
+			color.Println("Nothing has been changed.")
 		}
-	}
+	} else {
+		if option.Verbose {
+			color.Printf("Writing Pakfile.lock.\n")
+		}
 
-	err = writePaklockInfo(lockInfo)
-	if err != nil {
-		return err
+		lockInfo := PaklockInfo{}
+		for _, pkgName := range pakInfo.BasicDependences {
+			if newPaklockInfo[pkgName] != "" {
+				lockInfo[pkgName] = newPaklockInfo[pkgName]
+			}
+		}
+
+		err = writePaklockInfo(lockInfo, option)
+		if err != nil {
+			return err
+		}
 	}
 
 	var end time.Time

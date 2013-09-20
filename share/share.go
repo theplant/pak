@@ -47,19 +47,17 @@ type PakOption struct {
 type PkgProxy interface {
 	Fetch() error
 	NewBranch(string) error
-	NewTag(string, string) error
-	RemoveTag(string) error
+	// NewTag(string, string) error
+	// RemoveTag(string) error
 	Pak(string) (string, error)
 	Unpak() error
 
 	IsClean() (bool, error)
 	ContainsRemoteBranch() (bool, error)
 	ContainsPakbranch() (bool, error)
-	// ContainsPaktag() (bool, error)
 	GetChecksum(string) (string, error)
 	GetHeadChecksum() (string, error)
 	GetHeadRefName() (string, error)
-	// GetPaktagRef() string
 	GetPakbranchRef() string
 	GetRemoteBranch() string
 }

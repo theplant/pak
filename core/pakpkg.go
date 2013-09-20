@@ -69,9 +69,9 @@ func NewPakPkg(cfg PkgCfg) PakPkg {
 
 // TODO: refactor to multiple small methods
 func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
-	if this.Verbose {
-		color.Printf("Checking @g%s@w.\n", this.Name)
-	}
+	// if this.Verbose {
+	// 	color.Printf("Checking @g%s@w.\n", this.Name)
+	// }
 
 	// Go Get Package when the Package is not existing
 	isPkgExist, err := this.IsPkgExist()
@@ -90,17 +90,23 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		return nameAndChecksum, err
 	}
 
-	// Fetch Before Hand can Make Sure That the Package Contains Up-To-Date Remote Branch
-	if this.ActionType != "Remove" {
-		err = this.Fetch()
-		if err != nil {
-			return nameAndChecksum, err
-		}
-	}
-
 	err = this.Sync()
 	if err != nil {
 		return nameAndChecksum, err
+	}
+
+	isFetched := false
+	if !this.IsRemoteBranchExist {
+		err := this.Fetch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+		isFetched = true
+
+		this.IsRemoteBranchExist, err = this.ContainsRemoteBranch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
 	}
 
 	if this.ActionType != "Remove" {
@@ -112,26 +118,31 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 
 	switch this.ActionType {
 	case "New":
-		if this.Verbose {
-			color.Printf("Getting @g%s@w.\n", this.Name)
-		}
-
 		if !this.IsClean {
 			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.\n", this.Name)
 		}
 
+		if !isFetched {
+			err = this.Fetch()
+			if err != nil {
+				return nameAndChecksum, err
+			}
+		}
+
+		originalChecksum := this.Checksum
+		this.Checksum = ""
 		checksum, err := this.Pak()
 		if err != nil {
 			return nameAndChecksum, err
 		}
 
+		if this.Verbose && originalChecksum != checksum {
+			color.Printf("Paked @g%s@w.\n", this.Name)
+		}
+
 		nameAndChecksum[0] = this.Name
 		nameAndChecksum[1] = checksum
 	case "Update":
-		if this.Verbose {
-			color.Printf("Updating @g%s@w.\n", this.Name)
-		}
-
 		// Can't Update/Get(by PakMeter) specific packages which is not clean
 		if !this.IsClean {
 			if this.UsingPakMeter {
@@ -144,23 +155,28 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, nil
 		}
 
+		originalChecksum := this.HeadChecksum
 		checksum, err := this.Pak()
 		if err != nil {
 			return nameAndChecksum, err
 		}
 
+		if this.Verbose && originalChecksum != checksum {
+			color.Printf("Synced @g%s@w.\n", this.Name)
+		}
+
 		nameAndChecksum[0] = this.Name
 		nameAndChecksum[1] = checksum
 	case "Remove":
-		if this.Verbose {
-			color.Printf("@yUnpaking @g%s@w.\n", this.Name)
-		}
-
 		if this.OnPakbranch && this.IsClean {
 			err = this.Unpak(this.Force)
 			if err != nil {
 				return nameAndChecksum, err
 			}
+		}
+
+		if this.Verbose {
+			color.Printf("@yUnPaked @g%s@w.\n", this.Name)
 		}
 
 		// TODO: Add tests for removing Pakfile.lock record
@@ -280,8 +296,7 @@ func (this *PakPkg) Report() error {
 
 func (this *PakPkg) Pak() (string, error) {
 	// TODO: add tests
-	option := this.GetOption
-	if this.OnPakbranch && this.PakbranchChecksum == option.Checksum && !option.Force {
+	if this.ShouldNotUpdate() {
 		err := this.GoGet()
 		if err != nil {
 			return "", err
@@ -290,6 +305,7 @@ func (this *PakPkg) Pak() (string, error) {
 		return this.PakbranchChecksum, nil
 	}
 
+	option := this.GetOption
 	err := this.Unpak(option.Force)
 	if err != nil {
 		return "", err
@@ -313,6 +329,10 @@ func (this *PakPkg) Pak() (string, error) {
 	return checksum, nil
 }
 
+func (this *PakPkg) ShouldNotUpdate() bool {
+	return this.OnPakbranch && this.PakbranchChecksum == this.GetOption.Checksum && !this.GetOption.Force
+}
+
 func (this *PakPkg) Unpak(force bool) (err error) {
 	if !this.HasPakBranch {
 		return
@@ -322,19 +342,20 @@ func (this *PakPkg) Unpak(force bool) (err error) {
 }
 
 func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option PakOption) {
-	// if paklockInfo == nil {
 	if !option.UsePakfileLock {
-		for i, _ := range *pakfilePakPkgs {
+		for i, pakPkg := range *pakfilePakPkgs {
+			(*pakfilePakPkgs)[i].Checksum = paklockInfo[pakPkg.Name]
 			(*pakfilePakPkgs)[i].ActionType = "New"
 		}
+
 		return
 	}
 
 	for i, pakPkg := range *pakfilePakPkgs {
+		(*pakfilePakPkgs)[i].Checksum = paklockInfo[pakPkg.Name]
 		if paklockInfo[pakPkg.Name] == "" {
 			(*pakfilePakPkgs)[i].ActionType = "New"
 		} else {
-			(*pakfilePakPkgs)[i].Checksum = paklockInfo[pakPkg.Name]
 			(*pakfilePakPkgs)[i].ActionType = "Update"
 
 			delete(paklockInfo, pakPkg.Name)
@@ -347,7 +368,6 @@ func CategorizePakPkgs(pakfilePakPkgs *[]PakPkg, paklockInfo PaklockInfo, option
 
 	if len(paklockInfo) != 0 {
 		for key, val := range paklockInfo {
-			// pakPkg := NewPakPkg(key, "", "")
 			pakPkg := NewPakPkg(PkgCfg{Name: key, PakName: Pakbranch})
 			pakPkg.Checksum = val
 			pakPkg.ActionType = "Remove"

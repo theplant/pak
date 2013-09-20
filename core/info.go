@@ -132,11 +132,7 @@ func pakRead(path string) (fileContent []byte, err error) {
 			return nil, err
 		}
 		if absPakfilePath == Gopath+"/"+Pakfile || absPakfilePath == Gopath+"/"+Paklock {
-			if strings.Contains(path, Pakfile) {
-				return nil, nil
-			} else {
-				return nil, nil
-			}
+			return nil, nil
 		}
 
 		_, err = os.Stat(path)
@@ -158,11 +154,51 @@ func pakRead(path string) (fileContent []byte, err error) {
 	return ioutil.ReadFile(path)
 }
 
-func writePaklockInfo(paklockInfo PaklockInfo) error {
+func writePaklockInfo(paklockInfo PaklockInfo, option PakOption) error {
 	content, err := goyaml.Marshal(&paklockInfo)
 	if err != nil {
 		return err
 	}
 
-	return ioutil.WriteFile(Paklock, content, os.FileMode(0644))
+	path := Pakfile
+	absPakfilePath := ""
+	for true {
+		absPakfilePath, err = filepath.Abs(path)
+		if err != nil {
+			return err
+		}
+		if absPakfilePath == Gopath+"/"+Pakfile || absPakfilePath == Gopath+"/"+Paklock {
+			return nil
+		}
+
+		_, err = os.Stat(path)
+		if os.IsNotExist(err) {
+			index := strings.LastIndex(path, Pakfile)
+			if index == -1 {
+				index = strings.LastIndex(path, Paklock)
+				if index == -1 {
+					return fmt.Errorf("Illegal path for pakRead")
+				}
+			}
+			path = path[:index] + "../" + path[index:]
+			continue
+		}
+
+		break
+	}
+	if path == Pakfile {
+		path = Paklock
+	} else {
+		path = path[:len(path)-len(Pakfile)] + Paklock
+	}
+
+	if option.Verbose {
+		path, err := filepath.Abs(path)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Saved in: ", path)
+	}
+
+	return ioutil.WriteFile(path, content, os.FileMode(0644))
 }

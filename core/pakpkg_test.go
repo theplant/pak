@@ -468,10 +468,10 @@ func (s *PakPkgActionSuite) TestForcefulUnpak(c *C) {
 // }
 
 func (s *PakPkgActionSuite) TestPakBranchOwnership(c *C) {
-	helpers := [][]string{
-		{"HEAD^", "refs/heads/pak"},
-		{"ca48dd9fbded", "pak"},
-	}
+	// helpers := [][]string{
+	// 	{"HEAD^", "refs/heads/pak"},
+	// 	{"ca48dd9fbded", "pak"},
+	// }
 	titles := []string{
 		"Git Package",
 		"Hg Package",
@@ -496,17 +496,17 @@ func (s *PakPkgActionSuite) TestPakBranchOwnership(c *C) {
 
 		// Although package has both pak branch and _pak_latest_ tag, but their commit hash are different, so
 		// Pak wouldn't consider that pak branch is owned by it.
-		p.pkg.NewTag("_pak_latest_", helpers[i][0])
+		// p.pkg.NewTag("_pak_latest_", helpers[i][0])
 		p.pkg.Sync()
 		c.Check(p.pkg.HasPakBranch, Equals, true)
 		// c.Check(p.pkg.ContainsBranchNamedPak, Equals, true)
 		// c.Check(p.pkg.ContainsPaktag, Equals, true)
 		// c.Check(p.pkg.OwnPakbranch, Equals, false)
 
-		err := p.pkg.RemoveTag("_pak_latest_")
-		c.Check(err, Equals, nil)
-		err = p.pkg.NewTag("_pak_latest_", helpers[i][1])
-		c.Check(err, Equals, nil)
+		// err := p.pkg.RemoveTag("_pak_latest_")
+		// c.Check(err, Equals, nil)
+		// err = p.pkg.NewTag("_pak_latest_", helpers[i][1])
+		// c.Check(err, Equals, nil)
 		p.pkg.Sync()
 		c.Check(p.pkg.HasPakBranch, Equals, true)
 		// c.Check(p.pkg.ContainsBranchNamedPak, Equals, true)
