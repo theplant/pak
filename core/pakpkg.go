@@ -90,24 +90,31 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		return nameAndChecksum, err
 	}
 
+	if this.ActionType != "Remove" {
+		err = this.Fetch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+	}
+
 	err = this.Sync()
 	if err != nil {
 		return nameAndChecksum, err
 	}
 
-	isFetched := false
-	if !this.IsRemoteBranchExist {
-		err := this.Fetch()
-		if err != nil {
-			return nameAndChecksum, err
-		}
-		isFetched = true
+	// isFetched := false
+	// if !this.IsRemoteBranchExist {
+	// 	err := this.Fetch()
+	// 	if err != nil {
+	// 		return nameAndChecksum, err
+	// 	}
+	// 	isFetched = true
 
-		this.IsRemoteBranchExist, err = this.ContainsRemoteBranch()
-		if err != nil {
-			return nameAndChecksum, err
-		}
-	}
+	// 	this.IsRemoteBranchExist, err = this.ContainsRemoteBranch()
+	// 	if err != nil {
+	// 		return nameAndChecksum, err
+	// 	}
+	// }
 
 	if this.ActionType != "Remove" {
 		err = this.Report()
@@ -122,12 +129,12 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.\n", this.Name)
 		}
 
-		if !isFetched {
-			err = this.Fetch()
-			if err != nil {
-				return nameAndChecksum, err
-			}
-		}
+		// if !isFetched {
+		// 	err = this.Fetch()
+		// 	if err != nil {
+		// 		return nameAndChecksum, err
+		// 	}
+		// }
 
 		originalChecksum := this.Checksum
 		this.Checksum = ""

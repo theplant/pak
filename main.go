@@ -53,7 +53,7 @@ func main() {
 		listPakfilePkgs()
 		break
 	case "version":
-		color.Println("@g1.3.3")
+		color.Println("@g1.3.4")
 		break
 	default:
 		flag.Usage()
