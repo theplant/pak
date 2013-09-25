@@ -1,6 +1,6 @@
 # Pak
 
-A go packages version control tool, inspired by Bunlder for Ruby.
+A go packages version control tool, inspired by Bundler for Ruby.
 
 ## What Pak Can Do
 
