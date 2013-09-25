@@ -137,13 +137,14 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		// }
 
 		originalChecksum := this.Checksum
+		originalHeadRef := this.HeadRefName
 		this.Checksum = ""
 		checksum, err := this.Pak()
 		if err != nil {
 			return nameAndChecksum, err
 		}
 
-		if this.Verbose && originalChecksum != checksum {
+		if this.Verbose && (originalChecksum != checksum || originalHeadRef != this.HeadRefName) {
 			color.Printf("Paked @g%s@w.\n", this.Name)
 		}
 
@@ -163,12 +164,13 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		}
 
 		originalChecksum := this.HeadChecksum
+		originalHeadRef := this.HeadRefName
 		checksum, err := this.Pak()
 		if err != nil {
 			return nameAndChecksum, err
 		}
 
-		if this.Verbose && originalChecksum != checksum {
+		if this.Verbose && (originalChecksum != checksum || originalHeadRef != this.HeadRefName) {
 			color.Printf("Synced @g%s@w.\n", this.Name)
 		}
 
@@ -332,6 +334,8 @@ func (this *PakPkg) Pak() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	this.HeadRefName = this.PakName
 
 	return checksum, nil
 }

@@ -26,7 +26,7 @@ func Init() error {
 func Get(option PakOption) error {
 	var start time.Time
 	if option.Verbose {
-		color.Printf("Start paking.\n")
+		color.Printf("Reading Pak Info.\n")
 		start = time.Now()
 	}
 
