@@ -44,7 +44,7 @@ var pakfilePaths = []struct {
 }{
 	{Pakfile, "Can read Pakfile in current Folder", Equals, DeepEquals},
 	{"../" + Pakfile, "Can read Pakfile in parent Folder", Equals, DeepEquals},
-	{Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile", Equals, Not(DeepEquals)},
+	{Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile", Not(Equals), Not(DeepEquals)},
 }
 
 func (s *PakSuite) SetUpSuite(c *C) {
@@ -158,7 +158,7 @@ var paklockPaths = []struct {
 }{
 	{Paklock, Pakfile, "Can read Pakfile.lock in current Folder", Equals, DeepEquals},
 	{"../" + Paklock, "../" + Pakfile, "Can read Pakfile.lock in parent Folder", Equals, DeepEquals},
-	{Gopath + "/../" + Paklock, Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile.lock", Equals, Not(DeepEquals)},
+	{Gopath + "/../" + Paklock, Gopath + "/../" + Pakfile, "Won't go beyond GOPATH to find Pakfile.lock", Not(Equals), Not(DeepEquals)},
 }
 
 func (s *PakSuite) TestReadPaklock(c *C) {

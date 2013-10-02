@@ -42,9 +42,12 @@ type PakPkg struct {
 	PakbranchRef      string
 
 	IsRemoteBranchExist bool
+	IsChecksumExist     bool // Checksum in GetOption
 	HasPakBranch        bool
 	OnPakbranch         bool
 	IsClean             bool
+
+	ShouldFetchBeforePak bool
 }
 
 func NewPakPkg(cfg PkgCfg) PakPkg {
@@ -90,31 +93,38 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 		return nameAndChecksum, err
 	}
 
-	if this.ActionType != "Remove" {
-		err = this.Fetch()
-		if err != nil {
-			return nameAndChecksum, err
-		}
-	}
+	// if this.ActionType != "Remove" {
+	// 	err = this.Fetch()
+	// 	if err != nil {
+	// 		return nameAndChecksum, err
+	// 	}
+	// }
 
 	err = this.Sync()
 	if err != nil {
 		return nameAndChecksum, err
 	}
 
-	// isFetched := false
-	// if !this.IsRemoteBranchExist {
-	// 	err := this.Fetch()
-	// 	if err != nil {
-	// 		return nameAndChecksum, err
-	// 	}
-	// 	isFetched = true
+	isFetched := false
+	if this.ShouldFetchBeforePak {
+		err := this.Fetch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+		isFetched = true
 
-	// 	this.IsRemoteBranchExist, err = this.ContainsRemoteBranch()
-	// 	if err != nil {
-	// 		return nameAndChecksum, err
-	// 	}
-	// }
+		this.IsRemoteBranchExist, err = this.ContainsRemoteBranch()
+		if err != nil {
+			return nameAndChecksum, err
+		}
+
+		if this.Checksum != "" {
+			this.IsChecksumExist, err = this.PkgProxy.IsChecksumExist(this.Checksum)
+			if err != nil {
+				return nameAndChecksum, err
+			}
+		}
+	}
 
 	if this.ActionType != "Remove" {
 		err = this.Report()
@@ -129,12 +139,12 @@ func (this *PakPkg) Get() (nameAndChecksum [2]string, err error) {
 			return nameAndChecksum, fmt.Errorf("Package %s is a New Package and is Not Clean.\n", this.Name)
 		}
 
-		// if !isFetched {
-		// 	err = this.Fetch()
-		// 	if err != nil {
-		// 		return nameAndChecksum, err
-		// 	}
-		// }
+		if !isFetched {
+			err = this.Fetch()
+			if err != nil {
+				return nameAndChecksum, err
+			}
+		}
 
 		originalChecksum := this.Checksum
 		originalHeadRef := this.HeadRefName
@@ -288,6 +298,15 @@ func (this *PakPkg) Sync() (err error) {
 		return
 	}
 
+	if this.Checksum != "" {
+		this.IsChecksumExist, err = this.PkgProxy.IsChecksumExist(this.Checksum)
+		if err != nil {
+			return
+		}
+	}
+
+	this.ShouldFetchBeforePak = !this.IsRemoteBranchExist || (this.Checksum != "" && !this.IsChecksumExist)
+
 	return
 }
 
@@ -298,6 +317,12 @@ func (this *PakPkg) Report() error {
 
 	if !this.IsRemoteBranchExist {
 		return fmt.Errorf("`%s` does not contain reference `%s`\n", this.Name, this.RemoteBranch)
+	}
+
+	if this.Checksum != "" {
+		if !this.IsChecksumExist {
+			return fmt.Errorf("`%s` does not contain commit `%s`\n", this.Name, this.Checksum)
+		}
 	}
 
 	return nil

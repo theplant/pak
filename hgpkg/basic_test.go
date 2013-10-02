@@ -150,6 +150,17 @@ func (s *HgPkgSuite) TestUnpak(c *C) {
 	// c.Check(containing, Equals, false)
 }
 
-//
-// func (s *HgPkgSuite) Test(c *C) {
-// }
+func (s *HgPkgSuite) TestIsChecksumExist(c *C) {
+	exist, err := s.pkg.IsChecksumExist("a8d6d716129a1bb5678e195828dfe4b53c078c2e")
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, true)
+
+	// Check The Last Checksum To See Whether The Line Break Affects The Detection
+	exist, err = s.pkg.IsChecksumExist("ca48dd9fbded6c8f9d435084e141c246c3e1979c")
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, true)
+
+	exist, err = s.pkg.IsChecksumExist("cs5972fdbda5abb3f8a96ace4a431484c78d924f")
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, false)
+}

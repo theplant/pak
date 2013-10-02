@@ -130,7 +130,7 @@ func Get(option PakOption) error {
 
 	if reflect.DeepEqual(paklockInfoBackup, newPaklockInfo) {
 		if option.Verbose {
-			color.Println("Nothing need to be changed in Pakfile.lock.")
+			color.Println("Nothing changes in Pakfile.lock.")
 		}
 	} else {
 		if option.Verbose {

@@ -254,3 +254,12 @@ func (this *HgPkg) RemoveTag(tag string) error {
 	_, err := this.Hg("tag", "--local", "--remove", tag)
 	return err
 }
+
+func (this *HgPkg) IsChecksumExist(checksum string) (bool, error) {
+	cmd, err := this.Hg("log", "--template", "{node}\n")
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(string(cmd.Stdout.(*bytes.Buffer).String()), checksum+"\n"), nil
+}

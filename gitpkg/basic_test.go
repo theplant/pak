@@ -192,3 +192,18 @@ func (s *GitPkgSuite) TestUnpak(c *C) {
 	c.Check(err, Equals, nil)
 	c.Check(contained, Equals, false)
 }
+
+func (s *GitPkgSuite) TestIsChecksumExist(c *C) {
+	exist, err := testGitPkg.IsChecksumExist("cb5972fdbda5abb3f8a96ace4a431484c78d924f")
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, true)
+
+	// Check The Last Checksum To See Whether The Line Break Affects The Detection
+	exist, err = testGitPkg.IsChecksumExist("80b8babce2f966023c61459ca00e4049281d1193")
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, true)
+
+	exist, err = testGitPkg.IsChecksumExist("cs5972fdbda5abb3f8a96ace4a431484c78d924f")
+	c.Check(err, Equals, nil)
+	c.Check(exist, Equals, false)
+}

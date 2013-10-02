@@ -483,15 +483,6 @@ func (s *GetSuite) TestNonLockedGetWithSkipUncleanPkgsOption(c *C) {
 
 func (s *GetSuite) TestLockedGetWithSkipUncleanPkgsOption(c *C) {
 	err := Get(PakOption{
-		PakMeter:        []string{},
-		UsePakfileLock:  true,
-		Force:           false,
-		SkipUncleanPkgs: true,
-	})
-	// c.Log("Should not succeed when running [pak -s get] without the existence of Pakfile.lock")
-	// c.Check(err, Not(Equals), nil)
-
-	err = Get(PakOption{
 		PakMeter:       []string{},
 		UsePakfileLock: true,
 		Force:          false,
@@ -517,7 +508,6 @@ func (s *GetSuite) TestLockedGetWithSkipUncleanPkgsOption(c *C) {
 	s.pakPkgs[0].Sync()
 	s.pakPkgs[1].Sync()
 	c.Check(s.pakPkgs[0].HeadRefName, Equals, "refs/heads/master")
-	// c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/master")
 	c.Check(s.pakPkgs[1].HeadRefName, Equals, "refs/heads/pak")
 
 	err = Get(PakOption{

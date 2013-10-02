@@ -53,6 +53,7 @@ type PkgProxy interface {
 	Unpak() error
 
 	IsClean() (bool, error)
+	IsChecksumExist(string) (bool, error)
 	ContainsRemoteBranch() (bool, error)
 	ContainsPakbranch() (bool, error)
 	GetChecksum(string) (string, error)

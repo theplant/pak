@@ -277,3 +277,12 @@ func (this *GitPkg) RemoveTag(tag string) error {
 	_, err := this.Git("tag", "-d", tag)
 	return err
 }
+
+func (this *GitPkg) IsChecksumExist(checksum string) (bool, error) {
+	cmd, err := this.Git("rev-list", "--all")
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(string(cmd.Stdout.(*bytes.Buffer).String()), checksum+"\n"), nil
+}

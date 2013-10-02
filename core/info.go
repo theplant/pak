@@ -39,6 +39,12 @@ func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err
 		return
 	}
 
+	// TODO: add test for Pakfile Inexistence
+	if params.Path == "" && len(pakInfoBytes) == 0 {
+		err = fmt.Errorf("Pakfile does not exist.\n")
+		return
+	}
+
 	if params.Type[1] == '1' {
 		paklockInfoBytes, err = pakRead(pakfileLockPath)
 		if err != nil {
