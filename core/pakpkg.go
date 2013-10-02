@@ -360,7 +360,7 @@ func (this *PakPkg) Pak() (string, error) {
 		return "", err
 	}
 
-	this.HeadRefName = this.PakName
+	this.HeadRefName = this.PakbranchRef
 
 	return checksum, nil
 }
