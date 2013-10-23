@@ -21,7 +21,7 @@ Assume that you are working on two projects called pro1 and pro2, and they are b
 3. Make it simple, supposed they are all using Git as their version control tool.
 4. Sometimes you are working on pro1, sometimes pro2. How to make yourself efficient and productive. Using one GOPATH you have to checkout stuff from req1 and req2. Using two GOPATH you have to switch GOPATH from time to time (may be there are better solution, but that's all I know. :-P).
 
-If you use Pak. The workflow will be like this:
+If you use Pak, the workflow will be like this:
 
 Make Pakfiles in pro1 and pro2 like bellow:
 

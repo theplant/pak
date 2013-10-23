@@ -312,7 +312,7 @@ func (this *PakPkg) Sync() (err error) {
 
 func (this *PakPkg) Report() error {
 	if !this.IsClean && !this.SkipUncleanPkgs {
-		return fmt.Errorf("Package %s is Not clean. Please clean it up before running pak.\n", this.Name)
+		return fmt.Errorf("Package %s is Not Clean. Please clean it up before running pak.\n", this.Name)
 	}
 
 	if !this.IsRemoteBranchExist {
