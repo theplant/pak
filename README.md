@@ -43,7 +43,7 @@ Then, when you are working on Pro1, you can did this:
 pak get
 ```
 
-This action will generates a file named `Pakfile.lock` in the first time that you use `pak`. The next time you use `pak get`, pak will try to checkout req1 and req2 using the checksum saved in `Pakfile.lock`
+This action will generates a file named `Pakfile.lock` in the first time that you use `pak`. It will retrieve the up-to-date checksum of packages specified in `Pakfile`. The next time you use `pak get`, pak will try to checkout req1 and req2 using the checksum saved in `Pakfile.lock`
 
 ```
 github.com/theplant/req1: 6dd3a9a0e8349b0421c57c79b8f45d3565a96378
