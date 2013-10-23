@@ -2,19 +2,24 @@
 
 A go packages version control tool, inspired by Bundler for Ruby.
 
+## Quick Introduction
+
+* [Common Usage](http://ascii.io/a/5454)
+* [Partial Matching](http://ascii.io/a/5455)
+* [Pak Don't Hurt Unclean Packages](http://ascii.io/a/5456)
+
+Powerd by [ASCII.IO](http://ascii.io/).
+
 ## What Pak Can Do
 
 Assume that you are working on two projects called pro1 and pro2, and they are both depending on two other projects working by your colleagues, req1 and req2.
 
-Req1 has two branches, branch1 and branch2. Req2 also has two branches, branch1 and branch2.
+1. Req1 has two branches, branch1 and branch2. Req2 also has two branches, branch1 and branch2.
+2. Pro1 depends on branch1 in req1 and branch1 in req2, but pro2 depends on branch2 in req1 and branch2 in req2.
+3. Make it simple, supposed they are all using Git as their version control tool.
+4. Sometimes you are working on pro1, sometimes pro2. How to make yourself efficient and productive. Using one GOPATH you have to checkout stuff from req1 and req2. Using two GOPATH you have to switch GOPATH from time to time (may be there are better solution, but that's all I know. :-P).
 
-One thing more, pro1 depends on branch1 in req1 and branch1 in req2, but pro2 depends on branch2 in req1 and branch2 in req2.
-
-Make it simple, they are all using Git as their version control tool.
-
-Sometimes you are working on pro1, sometimes pro2. How to make yourself efficient and productive. Using one GOPATH you have to checkout stuff from req1 and req2. Using two GOPATH you have to switch GOPATH from time to time (may be there are better solution, but that's all I know. :-P).
-
-Use Pak.
+If you use Pak. The workflow will be like this:
 
 Make Pakfiles in pro1 and pro2 like bellow:
 
@@ -92,9 +97,11 @@ Usage:
 pak init
 ```
 
-This Command will generate a file named Pakfile in which you can write down packages that your current project depends on.
+This Command will generate a file named Pakfile in which you can write down dependences that your project needs.
 
-Pakfile is using YAML syntax. Bellow is an example:
+Pakfile is using YAML syntax.
+
+A sample:
 
 ```yaml
 packages:
@@ -106,7 +113,7 @@ packages:
   targetbranch: origin/master
 ```
 
-All package requirements should be listed in packages section. Each package contains a few descriptions which are explained below:
+All package requirements should be listed in packages section. Each package contains some descriptions which are explained below:
 
 `name`: the package name.
 
@@ -114,11 +121,11 @@ All package requirements should be listed in packages section. Each package cont
 
 `targetbranch`: the branch which you need pak to monitor, default values in git is `origin/master` and `default/default` in mercurial. It must be a remote branch.
 
-Every dependences in Pakfile must have remote repository.
+Every dependences in Pakfile must have a remote repository. Pak will only try to checkout them from that remote repository. The reason behind this is `pak` is designed to be an cooperating tool first then an package management tool. And a package without remote repository is difficult to share with your teammates and other nice guys on Internet.
 
 ### Pak Get
 
-After finishing a Pakfile, using `pak get` to take the first snapshot of your project's dependences. That will generate a Pakfile.lock.
+After finishing a Pakfile, using `pak get` to take the first snapshot of your project's dependences. That will generate a Pakfile.lock by retrieving the up-to-date checksum from the remote repositories of your dependences.
 
 Without the exitstence of `Pakfile.lock`, `pak` will try to checkout the up-to-date commit according to descriptions of `Pakfile`. So after the first time that you use `pak get`, pak creates `Pakfile.lock`. With the existence of `Pakfile.lock`, `pak get` will checkout commits recorded in `Pakfile.lock` from your dependences.
 
@@ -161,16 +168,6 @@ And each time you start your app, pak will auto check the dependencies of your a
 ![Check](https://raw.github.com/theplant/pak/master/imgs/check.png?login=bom-d-van&token=93b3b310df07f7163a3b57efe9fa0ada)
 
 Note: It's recommended to use pak.check in your development environemnt instead of production environment. This's mainly a tool for developers.
-
-### Other Stuff
-
-Also, pak support cross package dependences parsing and other small interesting stuff. Go take it a try.
-
-Below is some [ASCII.IO](http://ascii.io/) videos, you could help you better understand what Pak could do for you.
-
-* [Common Usage](http://ascii.io/a/5454)
-* [Partial Matching](http://ascii.io/a/5455)
-* [Pak Don't Hurt Unclean Packages](http://ascii.io/a/5456)
 
 ## Status
 
