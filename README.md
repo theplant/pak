@@ -37,7 +37,7 @@ packages:
   targetbranch: origin/branch2
 ```
 
-Then, when you are working on Pro1, I go to Pro1, I did this:
+Then, when you are working on Pro1, you can did this:
 
 ```
 pak get
@@ -57,7 +57,7 @@ github.com/theplant/req1: 931b60b175dcfd6afa02d34e13270b8aaa4d0ba2
 github.com/theplant/req2: 1d1416e1f8fce75311d2afe5fc391aac84927601
 ```
 
-When you go to package req1 or req2, you can see these two packages are on the status that you specify in `Pakfile` and `Pakfile.lock`.
+When you go to package req1 or req2, you can see these two packages are on status that you specified in `Pakfile` and `Pakfile.lock`.
 
 ## How Pak works
 
