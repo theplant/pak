@@ -1,0 +1,225 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Pak by theplant</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Pak</h1>
+        <p>Simple package management tool for Go.</p>
+
+        <p class="view"><a href="https://github.com/theplant/pak">View the Project on GitHub <small>theplant/pak</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/theplant/pak/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/theplant/pak/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/theplant/pak">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="pak" class="anchor" href="#pak"><span class="octicon octicon-link"></span></a>Pak</h1>
+
+<p>A go packages version control tool, inspired by Bundler for Ruby.</p>
+
+<h2>
+<a name="quick-introduction" class="anchor" href="#quick-introduction"><span class="octicon octicon-link"></span></a>Quick Introduction</h2>
+
+<ul>
+<li><a href="http://ascii.io/a/5454">Common Usage</a></li>
+<li><a href="http://ascii.io/a/5455">Partial Matching</a></li>
+<li><a href="http://ascii.io/a/5456">Pak Don't Hurt Unclean Packages</a></li>
+</ul><p>BTW, this screenshots is made weeks ago, and pak has been improving all the time. So the output might be a bit of different now, however, the way pak works is still the same.</p>
+
+<p>Powerd by <a href="http://ascii.io/">ASCII.IO</a>.</p>
+
+<h2>
+<a name="what-pak-can-do" class="anchor" href="#what-pak-can-do"><span class="octicon octicon-link"></span></a>What Pak Can Do</h2>
+
+<p>Assume that you are working on two projects called pro1 and pro2, and they are both depending on two other projects working by your colleagues, req1 and req2.</p>
+
+<ol>
+<li>Req1 has two branches, branch1 and branch2. Req2 also has two branches, branch1 and branch2.</li>
+<li>Pro1 depends on branch1 in req1 and branch1 in req2, but pro2 depends on branch2 in req1 and branch2 in req2.</li>
+<li>Make it simple, supposed they are all using Git as their version control tool.</li>
+<li>Sometimes you are working on pro1, sometimes pro2. How to make yourself efficient and productive. Using one GOPATH you have to checkout stuff from req1 and req2. Using two GOPATH you have to switch GOPATH from time to time (may be there are better solution, but that's all I know. :-P).</li>
+</ol><p>If you use Pak. The workflow will be like this:</p>
+
+<p>Make Pakfiles in pro1 and pro2 like bellow:</p>
+
+<p>In Pro1:</p>
+
+<div class="highlight highlight-yaml"><pre><span class="l-Scalar-Plain">packages</span><span class="p-Indicator">:</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">github.com/theplant/req1</span>
+  <span class="l-Scalar-Plain">targetbranch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">origin/branch1</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">github.com/theplant/req2</span>
+  <span class="l-Scalar-Plain">targetbranch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">origin/branch1</span>
+</pre></div>
+
+<p>In Pro2:</p>
+
+<div class="highlight highlight-yaml"><pre><span class="l-Scalar-Plain">packages</span><span class="p-Indicator">:</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">github.com/theplant/req1</span>
+  <span class="l-Scalar-Plain">targetbranch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">origin/branch2</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">github.com/theplant/req2</span>
+  <span class="l-Scalar-Plain">targetbranch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">origin/branch2</span>
+</pre></div>
+
+<p>Then, when you are working on Pro1, you can did this:</p>
+
+<pre><code>pak get
+</code></pre>
+
+<p>This action will generates a file named <code>Pakfile.lock</code> in the first time that you use <code>pak</code>. It will retrieve the up-to-date checksum of packages specified in <code>Pakfile</code>. The next time you use <code>pak get</code>, pak will try to checkout req1 and req2 using the checksum saved in <code>Pakfile.lock</code></p>
+
+<pre><code>github.com/theplant/req1: 6dd3a9a0e8349b0421c57c79b8f45d3565a96378
+github.com/theplant/req2: 5e1d544059ce1ff74d833da7f0d5a8ca02a82525
+</code></pre>
+
+<p>Just in pro2, you can do the same thing, it will generate a similar <code>Pakfile.lock</code>:</p>
+
+<pre><code>github.com/theplant/req1: 931b60b175dcfd6afa02d34e13270b8aaa4d0ba2
+github.com/theplant/req2: 1d1416e1f8fce75311d2afe5fc391aac84927601
+</code></pre>
+
+<p>When you go to package req1 or req2, you can see these two packages are on status that you specified in <code>Pakfile</code> and <code>Pakfile.lock</code>.</p>
+
+<h2>
+<a name="how-pak-works" class="anchor" href="#how-pak-works"><span class="octicon octicon-link"></span></a>How Pak works</h2>
+
+<p>The mechanism of <code>pak</code> is pretty simple: Checking out the most up-to-date commit from all the dependences according to the description of <code>Pakfile</code> and then store the checksum in <code>Pakfile.lock</code>. It's like taking a snapshot of the dependences of your project and no matter how many changes is undergoing in them, each time when you need to run your project, just run <code>pak get</code> again then you can cancel all those changes (not actually delete them, just checkout those dependences accroding to <code>Pakfile.lock</code>). When you need to update some dependences in the project, just use <code>pak update</code>, then <code>pak</code> will checkout the up-to-date commit for you.</p>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Installation is pretty simple:</p>
+
+<pre><code>go get github.com/theplant/pak
+</code></pre>
+
+<p>Then done. See avaliable actions:</p>
+
+<pre><code>$: pak
+Usage:
+    pak init
+    pak [-sf] get [package]
+    pak [-s] update [package]
+    pak open [package]
+    pak list
+    pak version
+  -f=false: Force pak to remove pak branch or pak unclean packages.
+  -s=false: Skip unclean packages.
+</code></pre>
+
+<h3>
+<a name="init-and-configuration" class="anchor" href="#init-and-configuration"><span class="octicon octicon-link"></span></a>Init and Configuration</h3>
+
+<pre><code>pak init
+</code></pre>
+
+<p>This Command will generate a file named Pakfile in which you can write down dependences that your project needs.</p>
+
+<p>Pakfile is using YAML syntax.</p>
+
+<p>A sample:</p>
+
+<div class="highlight highlight-yaml"><pre><span class="l-Scalar-Plain">packages</span><span class="p-Indicator">:</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">github.com/theplant/package1</span>
+  <span class="l-Scalar-Plain">pakname</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">pak</span>
+  <span class="l-Scalar-Plain">targetbranch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">origin/master</span>
+<span class="p-Indicator">-</span> <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">github.com/theplant/package1</span>
+  <span class="l-Scalar-Plain">pakname</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">pak</span>
+  <span class="l-Scalar-Plain">targetbranch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">origin/master</span>
+</pre></div>
+
+<p>All package requirements should be listed in packages section. Each package contains some descriptions which are explained below:</p>
+
+<p><code>name</code>: the package name.</p>
+
+<p><code>pakname</code>: a name pak used to checkout a branch/bookmark in dependent packages, default value is pak.</p>
+
+<p><code>targetbranch</code>: the branch which you need pak to monitor, default values in git is <code>origin/master</code> and <code>default/default</code> in mercurial. It must be a remote branch.</p>
+
+<p>Every dependences in Pakfile must have a remote repository. Pak will only try to checkout them from that remote repository. The reason behind this is <code>pak</code> is designed to be an cooperating tool first then an package management tool. And a package without remote repository is difficult to share with your teammates and other nice guys on Internet.</p>
+
+<h3>
+<a name="pak-get" class="anchor" href="#pak-get"><span class="octicon octicon-link"></span></a>Pak Get</h3>
+
+<p>After finishing a Pakfile, using <code>pak get</code> to take the first snapshot of your project's dependences. That will generate a Pakfile.lock by retrieving the up-to-date checksum from the remote repositories of your dependences.</p>
+
+<p>Without the exitstence of <code>Pakfile.lock</code>, <code>pak</code> will try to checkout the up-to-date commit according to descriptions of <code>Pakfile</code>. So after the first time that you use <code>pak get</code>, pak creates <code>Pakfile.lock</code>. With the existence of <code>Pakfile.lock</code>, <code>pak get</code> will checkout commits recorded in <code>Pakfile.lock</code> from your dependences.</p>
+
+<p><code>pak get</code> supports you to get specific packages like this:</p>
+
+<pre><code>pak get some-package
+</code></pre>
+
+<p>BTW, pak support partial matching, you don't have to type the whole name of that packages.</p>
+
+<h3>
+<a name="pak-update" class="anchor" href="#pak-update"><span class="octicon octicon-link"></span></a>Pak Update</h3>
+
+<p>After paking some packages for a while, you might be to update some of the packages, here comes <code>pak update</code>.</p>
+
+<p>When running <code>pak update</code>, pak will retrieve the up-to-date commits from the remote repository and lock them in <code>Pakfile.lock</code>.</p>
+
+<p>Also if you don't want to update all dependences (which is slow and might not be unnecessary in some cases), you can specify need-to-update packages like this:</p>
+
+<pre><code>pak update some-package
+</code></pre>
+
+<h3>
+<a name="pak-check" class="anchor" href="#pak-check"><span class="octicon octicon-link"></span></a>Pak Check</h3>
+
+<p>A feature serve as a reminder in your application to help you detect whether the dependences is consistent with your Pakfile.lock. Save you from debugging problems caused by inconsistency in dependences. When</p>
+
+<p>In your package, use it as bellow:</p>
+
+<div class="highlight highlight-go"><pre><span class="kn">import</span> <span class="nx">pak</span> <span class="s">"github.com/theplant/pak/check"</span>
+
+<span class="kd">func</span> <span class="nx">init</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">pak</span><span class="p">.</span><span class="nx">Check</span><span class="p">()</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>And each time you start your app, pak will auto check the dependencies of your app. if your app is not consistent with Pakfile and Pakfile.lock, it will force your app to exit. Like this:</p>
+
+<p><img src="https://raw.github.com/theplant/pak/master/imgs/check.png?login=bom-d-van&amp;token=93b3b310df07f7163a3b57efe9fa0ada" alt="Check"></p>
+
+<p>Note: It's recommended to use pak.check in your development environemnt instead of production environment. This's mainly a tool for developers.</p>
+
+<h2>
+<a name="status" class="anchor" href="#status"><span class="octicon octicon-link"></span></a>Status</h2>
+
+<p>Supported Version Control System: Git, Mercurial.</p>
+
+<p>Features:</p>
+
+<ul>
+<li>Cross Package Dependences</li>
+<li>Auto Detect Package Dependences (pak.Check)</li>
+</ul><h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Pak is released under the <a href="http://www.opensource.org/licenses/MIT">MIT License</a>.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/theplant">theplant</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
