@@ -8,6 +8,8 @@ A go packages version control tool, inspired by Bundler for Ruby.
 * [Partial Matching](http://ascii.io/a/5455)
 * [Pak Don't Hurt Unclean Packages](http://ascii.io/a/5456)
 
+BTW, this screenshots is made weeks ago, and pak has been improving all the time. So the output might be a bit of different now, however, the way pak works is still the same.
+
 Powerd by [ASCII.IO](http://ascii.io/).
 
 ## What Pak Can Do
