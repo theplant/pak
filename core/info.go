@@ -111,7 +111,7 @@ func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err
 		}
 	}
 
-	// to detect package dependence conflicts.
+	// TODO: detect package dependence conflicts.
 	subCount := len(subPakInfos)
 	for i, _ := range subPakInfos {
 		pakInfo.Packages = append(subPakInfos[subCount-i-1].Packages, pakInfo.Packages...)
@@ -123,6 +123,14 @@ func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err
 			}
 		}
 	}
+
+	// // TODO: add tests
+	// // Remove Duplicate Packages
+	// processedPakInfo := PakInfo{}
+	// processedPaklockInfo := PaklockInfo{}
+	// for _, item := range itmes {
+
+	// }
 
 	return
 }

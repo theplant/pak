@@ -26,7 +26,7 @@ func Init() error {
 func Get(option PakOption) error {
 	var start time.Time
 	if option.Verbose {
-		color.Printf("Reading Pak Info.\n")
+		// color.Printf("Reading Pak Info.\n")
 		start = time.Now()
 	}
 
@@ -80,9 +80,9 @@ func Get(option PakOption) error {
 		pakPkgs = allPakPkgs
 	}
 
-	if option.Verbose {
-		color.Printf("Paking Packages.\n")
-	}
+	// if option.Verbose {
+	// 	color.Printf("Paking Packages.\n")
+	// }
 
 	paklockInfoBackup := PaklockInfo{}
 	for k, v := range paklockInfo {
@@ -101,7 +101,6 @@ func Get(option PakOption) error {
 		pakPkgs[i].SkipUncleanPkgs = option.SkipUncleanPkgs
 
 		pkg := pakPkgs[i]
-
 		go func() {
 			pkgNameAndChecksum, err := pkg.Get()
 			if err != nil {
@@ -129,7 +128,7 @@ func Get(option PakOption) error {
 	}
 
 	if reflect.DeepEqual(paklockInfoBackup, newPaklockInfo) {
-		if option.Verbose {
+		if option.Verbose && !option.UsePakfileLock {
 			color.Println("Nothing changes in Pakfile.lock.")
 		}
 	} else {
@@ -153,7 +152,7 @@ func Get(option PakOption) error {
 	var end time.Time
 	if option.Verbose {
 		end = time.Now()
-		color.Printf("Pak Done.\nTook: %ds.\n", int(end.Sub(start).Seconds()))
+		color.Printf("Pak Done (Took: %ds).\n", int(end.Sub(start).Seconds()))
 	}
 
 	return nil
@@ -174,9 +173,10 @@ func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan
 		case newError := <-errChan:
 			// TODO: make a public error chanle to inform other working gorutine to stop running before panic this error
 			if err == nil {
-				err = fmt.Errorf("%+v", newError)
+				// err = fmt.Errorf("%+v", newError)
+				err = newError
 			} else {
-				err = fmt.Errorf("%+v%+v", err, newError)
+				err = fmt.Errorf("%+v\n%+v", err, newError)
 			}
 			count += 1
 			if count == pkgLen {

@@ -53,7 +53,7 @@ func main() {
 		listPakfilePkgs()
 		break
 	case "version":
-		color.Println("@g1.3.9")
+		color.Println("@g1.3.9.5")
 		break
 	default:
 		flag.Usage()
@@ -77,7 +77,7 @@ func getPakPkgs() {
 	})
 
 	if err != nil {
-		color.Printf("@r%s", err)
+		color.Printf("@r%s\n", err)
 		color.Println("Pak Failed.")
 	}
 }
