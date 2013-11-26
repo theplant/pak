@@ -60,7 +60,7 @@ func (this *HgPkg) Hg(params ...string) (*exec.Cmd, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("%s: hg %s => %s", this.Name, strings.Join(params, " "), stderr.String())
+		err = fmt.Errorf("%s: hg %s => %s; %s", this.Name, strings.Join(params, " "), stderr.String(), err.Error())
 		return cmd, err
 	}
 

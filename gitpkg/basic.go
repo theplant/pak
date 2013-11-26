@@ -72,7 +72,7 @@ func (this *GitPkg) Git(params ...string) (*exec.Cmd, error) {
 
 	err := cmd.Run()
 	if err != nil {
-		err = fmt.Errorf("%s: git %s => %s", this.Name, strings.Join(params, " "), stderr.String())
+		err = fmt.Errorf("%s: git %s => %s; %s", this.Name, strings.Join(params, " "), stderr.String(), err.Error())
 		return cmd, err
 	}
 
@@ -156,7 +156,7 @@ func (this *GitPkg) GetHeadRefName() (string, error) {
 	cmd.Stderr = &bytes.Buffer{}
 	err := cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("Package %s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+		return "", fmt.Errorf("%s: cat .git/HEAD => %s; %s", this.Name, cmd.Stderr.(*bytes.Buffer).String(), err.Error())
 	}
 
 	refline := cmd.Stdout.(*bytes.Buffer).String()
@@ -183,7 +183,7 @@ func (this *GitPkg) GetHeadChecksum() (string, error) {
 		cmd.Stderr = &bytes.Buffer{}
 		err := cmd.Run()
 		if err != nil {
-			return "", fmt.Errorf("Package %s: cat .git/HEAD => %s", this.Name, cmd.Stderr.(*bytes.Buffer).String())
+			return "", fmt.Errorf("%s: cat .git/HEAD => %s; %s", this.Name, cmd.Stderr.(*bytes.Buffer).String(), err.Error())
 		}
 
 		checksum := cmd.Stdout.(*bytes.Buffer).String()
