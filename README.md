@@ -167,7 +167,7 @@ func init() {
 
 And each time you start your app, pak will auto check the dependencies of your app. if your app is not consistent with Pakfile and Pakfile.lock, it will force your app to exit. Like this:
 
-![Check](https://raw.github.com/theplant/pak/master/imgs/check.png?login=bom-d-van&token=93b3b310df07f7163a3b57efe9fa0ada)
+![Check](https://raw.github.com/theplant/pak/master/imgs/check.png)
 
 Note: It's recommended to use pak.check in your development environemnt instead of production environment. This's mainly a tool for developers.
 
