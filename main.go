@@ -57,7 +57,7 @@ func main() {
 		listPakfilePkgs()
 		break
 	case "version":
-		color.Println("@g1.4.1")
+		color.Println("@g1.4.2")
 		break
 	default:
 		flag.Usage()
@@ -111,12 +111,12 @@ func openPkgWithPakEditor() {
 	}
 
 	name := flag.Args()[1]
-	matched, pkg, err := core.FindPackage(name)
+	pkg, err := core.FindPackage(name)
 	if err != nil {
 		color.Printf("@r%s\n", err)
 		return
 	}
-	if !matched {
+	if pkg.Name == "" {
 		color.Printf("@rPackage %s Not Exist.\n", name)
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 	. "github.com/theplant/pak/share"
 	"github.com/wsxiaoys/terminal/color"
@@ -26,7 +27,6 @@ func Init() error {
 func Get(option PakOption) (err error) {
 	var start time.Time
 	if option.Verbose {
-		// color.Printf("Reading Pak Info.\n")
 		start = time.Now()
 	}
 
@@ -43,7 +43,7 @@ func Get(option PakOption) (err error) {
 
 	if len(paklockInfo) == 0 {
 		if option.SkipUncleanPkgs {
-			return fmt.Errorf("Can't skip unclean packages because this project has not yet been locked.\nPlease run pak get.")
+			return fmt.Errorf("Can't skip unclean packages without Pakfile.lock. Please run pak get first.")
 		}
 	}
 
@@ -127,7 +127,7 @@ func Get(option PakOption) (err error) {
 	var end time.Time
 	if option.Verbose {
 		end = time.Now()
-		color.Printf("Pak Done (Took: %ds).\n", int(end.Sub(start).Seconds()))
+		color.Printf("Pak Done (Took: %ds).\n", end.Sub(start).Seconds())
 	}
 
 	return nil
@@ -168,85 +168,76 @@ func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan
 	return
 }
 
+// For: pak [update|get] <package1 package2 ...>
+// Pick up PakPkgs to be updated this time
 func getPackages(allPakPkgs []PakPkg, option PakOption, paklockInfo PaklockInfo) (pakPkgs []PakPkg, err error) {
-	// For: pak [update|get] <package, ...>
-	// Pick up PakPkgs to be updated this time
-	// pakPkgs := []PakPkg{}
 	if len(option.PakMeter) == 0 {
 		pakPkgs = allPakPkgs
 		return
 	}
 
 	if paklockInfo == nil {
-		err = fmt.Errorf("Can't pak specific packages because this project has not yet been locked.\nPlease run pak get before getting or updating specific packages.")
+		err = fmt.Errorf("Package not yet locked. Please run pak get before getting or updating specific packages.")
 		return
 	}
 
-	var matched bool
-	var pakPkg PakPkg
 	for _, pakPkgName := range option.PakMeter {
-		matched, pakPkg, err = isPkgMatched(allPakPkgs, pakPkgName)
-		if err != nil {
+		pakPkg, er := isPkgMatched(allPakPkgs, pakPkgName)
+		if er != nil {
+			err = er
 			return
 		}
 
-		if matched {
+		if pakPkg.Name != "" {
 			pakPkgs = append(pakPkgs, pakPkg)
-		} else {
-			err = fmt.Errorf("Package %s Is Not Included in Pakfile.", pakPkgName)
-			return
+		}
+	}
+
+	if len(pakPkgs) == 0 {
+		err = fmt.Errorf("Not packages matched.")
+		return
+	}
+
+	if option.Verbose {
+		info := "Matpached Package is:"
+		spaces := strings.Repeat(" ", len(info)+1)
+		for i, pkg := range pakPkgs {
+			if i == 0 {
+				fmt.Println(info, pkg.Name)
+			} else {
+				fmt.Printf("%s%s\n", spaces, pkg.Name)
+			}
 		}
 	}
 
 	return
 }
 
-func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (bool, PakPkg, error) {
-	matched := false
-	matchedPakPkg := PakPkg{}
-	// full-name matching
+func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (matchedPakPkg PakPkg, err error) {
 	for _, pakPkg := range allPakPkgs {
+		// full-name matching
 		if pakPkg.Name == pakPkgName {
-			// pakPkgs = append(pakPkgs, pakPkg)
 			matchedPakPkg = pakPkg
-			matched = true
+			break
+		}
+
+		// partial matching
+		pakPkgNameReg, er := regexp.Compile(pakPkgName)
+		if er != nil {
+			err = er
+			break
+		}
+
+		if pakPkgNameReg.MatchString(pakPkg.Name) {
+			matchedPakPkg = pakPkg
 			break
 		}
 	}
 
-	// partial matching
-	if !matched {
-		matchedResult := []string{}
-		for _, pakPkg := range allPakPkgs {
-			pakPkgNameReg, err := regexp.Compile(pakPkgName)
-			if err != nil {
-				return false, PakPkg{}, err
-			}
-
-			if pakPkgNameReg.MatchString(pakPkg.Name) {
-				// pakPkgs = append(pakPkgs, pakPkg)
-				matchedPakPkg = pakPkg
-				matched = true
-
-				matchedResult = append(matchedResult, pakPkg.Name)
-			}
-		}
-
-		if len(matchedResult) > 1 {
-			nameString := ""
-			for _, pkg := range matchedResult {
-				nameString = fmt.Sprintf("%s    %s\n", nameString, pkg)
-			}
-
-			err := fmt.Errorf("More than 1 matched packages:\n%sStop updating for ambiguous package matching.", nameString)
-			return false, matchedPakPkg, err
-		}
-	}
-
-	return matched, matchedPakPkg, nil
+	return
 }
 
-func FindPackage(name string) (bool, PakPkg, error) {
+func FindPackage(name string) (PakPkg, error) {
 	pakInfo, _, err := GetPakInfo(GpiParams{
 		Type:                 "10",
 		Path:                 "",
@@ -254,7 +245,7 @@ func FindPackage(name string) (bool, PakPkg, error) {
 		WithBasicDependences: false,
 	})
 	if err != nil {
-		return false, PakPkg{}, err
+		return PakPkg{}, err
 	}
 
 	var allPakPkgs []PakPkg
