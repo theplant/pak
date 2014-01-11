@@ -1,7 +1,7 @@
 package core
 
 func isStdLib(lib string) (ok bool) {
-	_, ok = stdLibs(ok)
+	_, ok = stdLibs[lib]
 	return
 }
 
@@ -86,12 +86,12 @@ var stdLibs = map[string]bool{
 	"index/suffixarray":   true,
 	"io":                  true,
 	"io/ioutil":           true,
-	"io/log":              true,
-	"io/syslog":           true,
-	"io/math":             true,
-	"io/big":              true,
-	"io/cmplx":            true,
-	"io/rand":             true,
+	"log":                 true,
+	"log/syslog":          true,
+	"math":                true,
+	"math/big":            true,
+	"math/cmplx":          true,
+	"math/rand":           true,
 	"mime":                true,
 	"mime/multipart":      true,
 	"net":                 true,
@@ -105,9 +105,9 @@ var stdLibs = map[string]bool{
 	"net/mail":            true,
 	"net/rpc":             true,
 	"net/rpc/jsonrpc":     true,
-	"net//smtp":           true,
-	"net//textproto":      true,
-	"net//url":            true,
+	"net/smtp":            true,
+	"net/textproto":       true,
+	"net/url":             true,
 	"os":                  true,
 	"os/exec":             true,
 	"os/signal":           true,
