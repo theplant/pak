@@ -3,13 +3,13 @@ package core
 import (
 	"errors"
 	"fmt"
-	. "github.com/theplant/pak/share"
-	"github.com/wsxiaoys/terminal/color"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"regexp"
 	"time"
+	. "github.com/theplant/pak/share"
+	"github.com/wsxiaoys/terminal/color"
 )
 
 func Init() error {
@@ -23,7 +23,7 @@ func Init() error {
 	return ioutil.WriteFile(Pakfile, []byte(PakfileTemplate), os.FileMode(0644))
 }
 
-func Get(option PakOption) error {
+func Get(option PakOption) (err error) {
 	var start time.Time
 	if option.Verbose {
 		// color.Printf("Reading Pak Info.\n")
@@ -54,35 +54,10 @@ func Get(option PakOption) error {
 		allPakPkgs = append(allPakPkgs, pakPkg)
 	}
 
-	// For: pak [update|get] <package, ...>
-	// Pick up PakPkgs to be updated this time
-	pakPkgs := []PakPkg{}
-	if len(option.PakMeter) != 0 {
-		if paklockInfo == nil {
-			return fmt.Errorf("Can't pak specific packages because this project has not yet been locked.\nPlease run pak get before getting or updating specific packages.")
-		}
-
-		var matched bool
-		var pakPkg PakPkg
-		for _, pakPkgName := range option.PakMeter {
-			matched, pakPkg, err = isPkgMatched(allPakPkgs, pakPkgName)
-			if err != nil {
-				return err
-			}
-
-			if matched {
-				pakPkgs = append(pakPkgs, pakPkg)
-			} else {
-				return fmt.Errorf("Package %s Is Not Included in Pakfile.", pakPkgName)
-			}
-		}
-	} else {
-		pakPkgs = allPakPkgs
+	pakPkgs, err := getPackages(allPakPkgs, option, paklockInfo)
+	if err != nil {
+		return
 	}
-
-	// if option.Verbose {
-	// 	color.Printf("Paking Packages.\n")
-	// }
 
 	paklockInfoBackup := PaklockInfo{}
 	for k, v := range paklockInfo {
@@ -187,6 +162,39 @@ func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan
 			if count == pkgLen {
 				return
 			}
+		}
+	}
+
+	return
+}
+
+func getPackages(allPakPkgs []PakPkg, option PakOption, paklockInfo PaklockInfo) (pakPkgs []PakPkg, err error) {
+	// For: pak [update|get] <package, ...>
+	// Pick up PakPkgs to be updated this time
+	// pakPkgs := []PakPkg{}
+	if len(option.PakMeter) == 0 {
+		pakPkgs = allPakPkgs
+		return
+	}
+
+	if paklockInfo == nil {
+		err = fmt.Errorf("Can't pak specific packages because this project has not yet been locked.\nPlease run pak get before getting or updating specific packages.")
+		return
+	}
+
+	var matched bool
+	var pakPkg PakPkg
+	for _, pakPkgName := range option.PakMeter {
+		matched, pakPkg, err = isPkgMatched(allPakPkgs, pakPkgName)
+		if err != nil {
+			return
+		}
+
+		if matched {
+			pakPkgs = append(pakPkgs, pakPkg)
+		} else {
+			err = fmt.Errorf("Package %s Is Not Included in Pakfile.", pakPkgName)
+			return
 		}
 	}
 
