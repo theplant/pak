@@ -17,6 +17,12 @@ const (
 
 var Gopath = os.Getenv("GOPATH")
 
+func init() {
+	if Gopath[len(Gopath)-1] == '/' {
+		Gopath = Gopath[0 : len(Gopath)-1]
+	}
+}
+
 type PaklockInfo map[string]string
 
 // For core function #Get
