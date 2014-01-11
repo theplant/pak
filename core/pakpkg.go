@@ -3,11 +3,11 @@ package core
 import (
 	"bytes"
 	"fmt"
-	. "github.com/theplant/pak/share"
-	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"os/exec"
 	"strings"
+	. "github.com/theplant/pak/share"
+	"github.com/wsxiaoys/terminal/color"
 )
 
 // For PakPkg#Get

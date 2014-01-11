@@ -1,10 +1,14 @@
 package core
 
 const PakfileTemplate = `# Pakfile[.yaml]
-packages:
-- name:
-  pakname: pak
-  targetbranch: origin/master
+packages:{{range .}}
+- name: {{.}}{{end}}
+
+#
+# Configuration Options:
+# - name:
+#   pakname: pak
+#   targetbranch: origin/master
 
 #
 # Examples:

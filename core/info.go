@@ -2,12 +2,12 @@ package core
 
 import (
 	"fmt"
-	. "github.com/theplant/pak/share"
 	"io/ioutil"
-	"launchpad.net/goyaml"
 	"os"
 	"path/filepath"
 	"strings"
+	. "github.com/theplant/pak/share"
+	"launchpad.net/goyaml"
 )
 
 type PakInfo struct {
@@ -129,7 +129,6 @@ func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err
 	// processedPakInfo := PakInfo{}
 	// processedPaklockInfo := PaklockInfo{}
 	// for _, item := range itmes {
-
 	// }
 
 	return

@@ -1,27 +1,86 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
+	"text/template"
 	"time"
 	. "github.com/theplant/pak/share"
 	"github.com/wsxiaoys/terminal/color"
 )
 
-func Init() error {
-	_, err := os.Stat(Pakfile)
+func Init() (err error) {
+	_, err = os.Stat(Pakfile)
 	if err == nil {
-		return errors.New("Pakfile already existed.")
+		err = errors.New("Pakfile already existed.")
+		return
 	} else if !os.IsNotExist(err) {
-		return err
+		return
 	}
 
-	return ioutil.WriteFile(Pakfile, []byte(PakfileTemplate), os.FileMode(0644))
+	absProjRoot, err := filepath.Abs(".")
+	if err != nil {
+		return
+	}
+	pkg, err := build.ImportDir(".", 0)
+	if err != nil {
+		return
+	}
+	importsMap := map[string]bool{}
+	projRoot := strings.Replace(absProjRoot, Gopath+"/src/", "", 1)
+	for _, lib := range pkg.Imports {
+		if isStdLib(lib) || strings.Contains(lib, projRoot) {
+			continue
+		}
+		importsMap[lib] = true
+	}
+
+	err = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() || strings.HasPrefix(path, ".") {
+			return err
+		}
+
+		// ignoring errors here for sometimes the sub packages may not be able be compiled.
+		pkg, _ := build.ImportDir(path, 0)
+		if len(pkg.Imports) == 0 {
+			return err
+		}
+
+		for _, lib := range pkg.Imports {
+			if isStdLib(lib) || strings.Contains(lib, projRoot) {
+				continue
+			}
+			importsMap[lib] = true
+		}
+
+		return err
+	})
+	if err != nil {
+		return
+	}
+
+	imports := sort.StringSlice{}
+	for lib, _ := range importsMap {
+		imports = append(imports, lib)
+	}
+	imports.Sort()
+
+	tmpl := template.Must(template.New("").Parse(PakfileTemplate))
+	wr := bytes.NewBuffer([]byte{})
+	if err = tmpl.Execute(wr, imports); err != nil {
+		return
+	}
+
+	return ioutil.WriteFile(Pakfile, wr.Bytes(), os.FileMode(0644))
 }
 
 func Get(option PakOption) (err error) {
