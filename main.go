@@ -3,11 +3,13 @@ package main
 import (
 	// "bytes"
 	"flag"
+	"os"
+	"os/exec"
+	"runtime"
+
 	"github.com/theplant/pak/core"
 	. "github.com/theplant/pak/share"
 	"github.com/wsxiaoys/terminal/color"
-	"os"
-	"os/exec"
 )
 
 var (
@@ -35,6 +37,8 @@ func init() {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	flag.Parse()
 	switch flag.Arg(0) {
 	case "init":
