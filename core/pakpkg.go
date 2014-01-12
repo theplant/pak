@@ -355,10 +355,14 @@ func (this *PakPkg) Pak() (string, error) {
 		return "", err
 	}
 
-	err = this.GoGet()
-	if err != nil {
-		return "", err
-	}
+	// Ignore error handling for go get action for concurrent paking sometimes
+	// will affect compilation if some packages are dependening on other packages
+	// which are still under updating. That would leads to compile error.
+	this.GoGet()
+	// err = this.GoGet()
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	this.HeadRefName = this.PakbranchRef
 
