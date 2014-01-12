@@ -186,7 +186,7 @@ func Get(option PakOption) (err error) {
 	var end time.Time
 	if option.Verbose {
 		end = time.Now()
-		color.Printf("Pak Done (Took: %ds).\n", end.Sub(start).Seconds())
+		color.Printf("Pak Done (Took: %fs).\n", end.Sub(start).Seconds())
 	}
 
 	return nil
