@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -186,7 +185,7 @@ func Get(option PakOption) (err error) {
 	var end time.Time
 	if option.Verbose {
 		end = time.Now()
-		color.Printf("Pak Done (Took: %fs).\n", end.Sub(start).Seconds())
+		color.Printf("Pak Done (Took: %.2fs).\n", end.Sub(start).Seconds())
 	}
 
 	return nil
@@ -240,25 +239,27 @@ func getPackages(allPakPkgs []PakPkg, option PakOption, paklockInfo PaklockInfo)
 		return
 	}
 
+	pkgMap := map[string]PakPkg{}
 	for _, pakPkgName := range option.PakMeter {
-		pakPkg, er := isPkgMatched(allPakPkgs, pakPkgName)
-		if er != nil {
-			err = er
-			return
+		for _, pkg := range allPakPkgs {
+			if strings.Contains(pkg.Name, pakPkgName) {
+				pkgMap[pkg.Name] = pkg
+			}
 		}
-
-		if pakPkg.Name != "" {
-			pakPkgs = append(pakPkgs, pakPkg)
-		}
+	}
+	for _, pkg := range pkgMap {
+		pakPkgs = append(pakPkgs, pkg)
 	}
 
 	if len(pakPkgs) == 0 {
 		err = fmt.Errorf("Not packages matched.")
 		return
 	}
-
 	if option.Verbose {
-		info := "Matpached Package is:"
+		info := "Matched Packages:"
+		if len(pakPkgs) == 1 {
+			info = "Matched Package:"
+		}
 		spaces := strings.Repeat(" ", len(info)+1)
 		for i, pkg := range pakPkgs {
 			if i == 0 {
@@ -272,31 +273,7 @@ func getPackages(allPakPkgs []PakPkg, option PakOption, paklockInfo PaklockInfo)
 	return
 }
 
-func isPkgMatched(allPakPkgs []PakPkg, pakPkgName string) (matchedPakPkg PakPkg, err error) {
-	for _, pakPkg := range allPakPkgs {
-		// full-name matching
-		if pakPkg.Name == pakPkgName {
-			matchedPakPkg = pakPkg
-			break
-		}
-
-		// partial matching
-		pakPkgNameReg, er := regexp.Compile(pakPkgName)
-		if er != nil {
-			err = er
-			break
-		}
-
-		if pakPkgNameReg.MatchString(pakPkg.Name) {
-			matchedPakPkg = pakPkg
-			break
-		}
-	}
-
-	return
-}
-
-func FindPackage(name string) (PakPkg, error) {
+func FindPackage(name string) (pakPkg PakPkg, err error) {
 	pakInfo, _, err := GetPakInfo(GpiParams{
 		Type:                 "10",
 		Path:                 "",
@@ -314,5 +291,12 @@ func FindPackage(name string) (PakPkg, error) {
 		allPakPkgs = append(allPakPkgs, pakPkg)
 	}
 
-	return isPkgMatched(allPakPkgs, name)
+	for _, pkg := range allPakPkgs {
+		if strings.Contains(pkg.Name, name) {
+			pakPkg = pkg
+			break
+		}
+	}
+
+	return
 }
