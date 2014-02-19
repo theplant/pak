@@ -205,13 +205,13 @@ func writePaklockInfo(paklockInfo PaklockInfo, option PakOption) error {
 		path = path[:len(path)-len(Pakfile)] + Paklock
 	}
 
-	if option.Verbose {
-		path, err := filepath.Abs(path)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Saved in: ", path)
-	}
+	// if option.Verbose {
+	// 	path, err := filepath.Abs(path)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	fmt.Println("Saved in: ", path)
+	// }
 
 	return ioutil.WriteFile(path, content, os.FileMode(0644))
 }
