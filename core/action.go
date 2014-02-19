@@ -166,7 +166,7 @@ func Get(option PakOption) (err error) {
 		}
 	} else {
 		if option.Verbose {
-			color.Printf("Writing Pakfile.lock.\n")
+			color.Printf("Writing to Pakfile.lock.\n")
 		}
 
 		lockInfo := PaklockInfo{}
