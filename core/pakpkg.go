@@ -246,10 +246,14 @@ func (this *PakPkg) GoGet() error {
 var GoGetImpl = func(name string) error {
 	cmd := exec.Command("go", "get", name)
 	cmd.Stderr = &bytes.Buffer{}
+	cmd.Stdout = &bytes.Buffer{}
 	err := cmd.Run()
 	if err != nil {
-		getErr := cmd.Stderr.(*bytes.Buffer).String() // for removing the end-of-line
-		err = fmt.Errorf("go get %s:\n%s\n", name, getErr[:len(getErr)-1])
+		getErr := cmd.Stderr.(*bytes.Buffer).String()
+		if getErr == "" {
+			getErr = cmd.Stdout.(*bytes.Buffer).String()
+		}
+		err = fmt.Errorf("go get %s:\n%s", name, getErr)
 	}
 
 	return err
