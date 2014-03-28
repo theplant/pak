@@ -256,7 +256,8 @@ var GoGetImpl = func(name string) error {
 		err = fmt.Errorf("go get %s:\n%s", name, getErr)
 	}
 
-	return err
+	// GO GET error should not get in the way of paking
+	return nil
 }
 
 func (this *PakPkg) Sync() (err error) {
