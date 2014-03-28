@@ -254,6 +254,7 @@ var GoGetImpl = func(name string) error {
 			getErr = cmd.Stdout.(*bytes.Buffer).String()
 		}
 		err = fmt.Errorf("go get %s:\n%s", name, getErr)
+		color.Println("@r%s\n", err)
 	}
 
 	// GO GET error should not get in the way of paking
