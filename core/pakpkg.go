@@ -243,12 +243,14 @@ func (this *PakPkg) GoGet() error {
 	return GoGetImpl(this.Name)
 }
 
+var PrintGoGetError = false
+
 var GoGetImpl = func(name string) error {
 	cmd := exec.Command("go", "get", name)
 	cmd.Stderr = &bytes.Buffer{}
 	cmd.Stdout = &bytes.Buffer{}
 	err := cmd.Run()
-	if err != nil {
+	if err != nil && PrintGoGetError {
 		getErr := cmd.Stderr.(*bytes.Buffer).String()
 		if getErr == "" {
 			getErr = cmd.Stdout.(*bytes.Buffer).String()

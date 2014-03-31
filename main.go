@@ -16,6 +16,7 @@ var (
 	// getLatest       bool
 	force           bool
 	skipUncleanPkgs bool
+	gogeterror      bool
 )
 
 func init() {
@@ -23,8 +24,8 @@ func init() {
 		spaces := "    "
 		color.Printf("@gPackages Management Tool Pak.\n@wUsage:\n")
 		color.Printf("%spak init\n", spaces)
-		color.Printf("%spak [-sf] get [package]\n", spaces)
-		color.Printf("%spak [-s] update [package]\n", spaces)
+		color.Printf("%spak [-sfe] get [package]\n", spaces)
+		color.Printf("%spak [-se] update [package]\n", spaces)
 		color.Printf("%spak open [package]\n", spaces)
 		color.Printf("%spak list\n", spaces)
 		color.Printf("%spak version\n", spaces)
@@ -34,12 +35,14 @@ func init() {
 	// flag.BoolVar(&getLatest, "u", false, "Download the lastest revisions from remote repo before checkout.")
 	flag.BoolVar(&force, "f", false, "Force pak to remove pak branch.")
 	flag.BoolVar(&skipUncleanPkgs, "s", false, "Left out unclean packages.")
+	flag.BoolVar(&gogeterror, "e", false, "Print out go get error")
 }
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	flag.Parse()
+	core.PrintGoGetError = gogeterror
 	switch flag.Arg(0) {
 	case "init":
 		initPak()
@@ -52,7 +55,7 @@ func main() {
 	case "list":
 		listPakfilePkgs()
 	case "version":
-		color.Println("@g1.4.4")
+		color.Println("@g1.4.5")
 	default:
 		flag.Usage()
 	}
