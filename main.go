@@ -55,7 +55,7 @@ func main() {
 	case "list":
 		listPakfilePkgs()
 	case "version":
-		color.Println("@g1.4.5")
+		color.Println("@g1.4.6")
 	default:
 		flag.Usage()
 	}

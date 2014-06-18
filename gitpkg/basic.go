@@ -3,10 +3,10 @@ package gitpkg
 import (
 	"bytes"
 	"fmt"
-	. "github.com/theplant/pak/share"
 	"os/exec"
 	"regexp"
 	"strings"
+	. "github.com/theplant/pak/share"
 )
 
 type GitPkg struct {
@@ -133,7 +133,8 @@ func (this *GitPkg) GetChecksum(ref string) (string, error) {
 
 func (this *GitPkg) Fetch() error {
 	// TODO: add tests for => 1. remote is changed; 2. remote is no exist
-	_, err := this.Git("fetch", this.Remote, this.Branch+":"+this.RemoteBranch)
+	// _, err := this.Git("fetch", this.Remote, this.Branch+":"+this.RemoteBranch)
+	_, err := this.Git("fetch")
 
 	return err
 }
