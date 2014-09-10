@@ -26,14 +26,22 @@ func Init() (err error) {
 		return
 	}
 
+	tmpl := template.Must(template.New("").Parse(PakfileTemplate))
+	wr := bytes.NewBuffer([]byte{})
+
 	absProjRoot, err := filepath.Abs(".")
 	if err != nil {
 		return
 	}
 	pkg, err := build.ImportDir(".", 0)
 	if err != nil {
-		return
+		if err = tmpl.Execute(wr, nil); err != nil {
+			return
+		}
+
+		return ioutil.WriteFile(Pakfile, wr.Bytes(), os.FileMode(0644))
 	}
+
 	importsMap := map[string]bool{}
 	projRoot := strings.Replace(absProjRoot, Gopath+"/src/", "", 1)
 	for _, lib := range pkg.Imports {
@@ -73,14 +81,34 @@ func Init() (err error) {
 	}
 	imports.Sort()
 
-	tmpl := template.Must(template.New("").Parse(PakfileTemplate))
-	wr := bytes.NewBuffer([]byte{})
 	if err = tmpl.Execute(wr, imports); err != nil {
 		return
 	}
 
 	return ioutil.WriteFile(Pakfile, wr.Bytes(), os.FileMode(0644))
 }
+
+const PakfileTemplate = `# Pakfile[.yaml]
+{{if .}}packages:{{range .}}
+- name: {{.}}{{end}}
+{{end}}
+#
+# Configuration Options:
+# - name:
+#   pakname: pak
+#   targetbranch: origin/master
+#
+# Examples:
+#
+# packages:
+# - name: github.com/theplant/req1
+#   pakname: pak
+#   targetbranch: origin/branch1
+# - name: github.com/theplant/req2
+#   pakname: pak
+#   targetbranch: origin/master
+#
+`
 
 func Get(option PakOption) (err error) {
 	var start time.Time
