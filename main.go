@@ -55,7 +55,7 @@ func main() {
 	case "list":
 		listPakfilePkgs()
 	case "version":
-		color.Println("@g1.4.7")
+		color.Println("@g1.4.8")
 	default:
 		flag.Usage()
 	}
@@ -65,6 +65,7 @@ func initPak() {
 	err := core.Init()
 	if err != nil {
 		color.Printf("@r%+v@w\n", err)
+		os.Exit(1)
 	}
 }
 
@@ -80,6 +81,7 @@ func getPakPkgs() {
 	if err != nil {
 		color.Printf("@r%s\n", err)
 		color.Println("Pak Failed.")
+		os.Exit(1)
 	}
 }
 
@@ -94,7 +96,7 @@ func updatePakPkgs() {
 
 	if err != nil {
 		color.Printf("@r%s\n", err)
-		return
+		os.Exit(1)
 	}
 }
 
@@ -122,6 +124,7 @@ func openPkgWithPakEditor() {
 	err = cmd.Run()
 	if err != nil {
 		color.Printf("@r%s@w\n", err)
+		os.Exit(1)
 	}
 }
 
