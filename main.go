@@ -1,12 +1,14 @@
 package main
 
 import (
+
 	// "bytes"
 	"flag"
 	"os"
 	"os/exec"
 	"runtime"
 
+	"github.com/theplant/pak/check"
 	"github.com/theplant/pak/core"
 	. "github.com/theplant/pak/share"
 	"github.com/wsxiaoys/terminal/color"
@@ -54,8 +56,10 @@ func main() {
 		openPkgWithPakEditor()
 	case "list":
 		listPakfilePkgs()
+	case "check":
+		docheck()
 	case "version":
-		color.Println("@g1.4.8")
+		color.Println("@g1.4.9")
 	default:
 		flag.Usage()
 	}
@@ -151,4 +155,8 @@ func listPakfilePkgs() {
 	for _, pkg := range allPakPkgs {
 		color.Printf("@g    %s\n", pkg.Name)
 	}
+}
+
+func docheck() {
+	check.Check()
 }

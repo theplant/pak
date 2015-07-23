@@ -3,11 +3,12 @@ package check
 import (
 	"bufio"
 	"fmt"
-	"github.com/theplant/pak/core"
-	"github.com/wsxiaoys/terminal/color"
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/theplant/pak/core"
+	"github.com/wsxiaoys/terminal/color"
 )
 
 // Check should be invoked in the init function.
@@ -85,7 +86,7 @@ func Check() {
 			}
 		}
 
-		color.Println("Warning: Packages below are out of the control of Pak:")
+		color.Println("Warning: found version inconsistent packages")
 		paddingStr := fmt.Sprintf(`@g%%-%d`, paddingLen)
 		for _, warning := range warnings {
 			color.Printf(paddingStr+`s @w-> @r%s`, warning[0], warning[1])
