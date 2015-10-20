@@ -59,7 +59,7 @@ func main() {
 	case "check":
 		docheck()
 	case "version":
-		color.Println("@g1.4.9")
+		color.Println("@g1.5.0")
 	default:
 		flag.Usage()
 	}
