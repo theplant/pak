@@ -6,8 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
 	. "github.com/theplant/pak/share"
-	"launchpad.net/goyaml"
+	"gopkg.in/go-yaml/v2/yaml"
 )
 
 type PakInfo struct {
@@ -62,13 +63,13 @@ func GetPakInfo(params GpiParams) (pakInfo PakInfo, paklockInfo PaklockInfo, err
 		return PakInfo{}, PaklockInfo{}, nil
 	}
 
-	err = goyaml.Unmarshal(pakInfoBytes, &pakInfo)
+	err = yaml.Unmarshal(pakInfoBytes, &pakInfo)
 	if err != nil {
 		return PakInfo{}, PaklockInfo{}, nil
 	}
 
 	paklockInfo = PaklockInfo{}
-	err = goyaml.Unmarshal(paklockInfoBytes, &paklockInfo)
+	err = yaml.Unmarshal(paklockInfoBytes, &paklockInfo)
 	if err != nil {
 		return PakInfo{}, PaklockInfo{}, nil
 	}
@@ -168,7 +169,7 @@ func pakRead(path string) (fileContent []byte, err error) {
 }
 
 func writePaklockInfo(paklockInfo PaklockInfo, option PakOption) error {
-	content, err := goyaml.Marshal(&paklockInfo)
+	content, err := yaml.Marshal(&paklockInfo)
 	if err != nil {
 		return err
 	}

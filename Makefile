@@ -12,4 +12,4 @@ install:
 	go get github.com/theplant/pak
 	go get github.com/wsxiaoys/terminal/color
 	go get launchpad.net/gocheck
-	go get launchpad.net/goyaml
+	go get gopkg.in/go-yaml/v2/yaml

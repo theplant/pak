@@ -2,12 +2,13 @@ package core
 
 import (
 	"fmt"
-	. "github.com/theplant/pak/share"
 	"io/ioutil"
-	. "launchpad.net/gocheck"
-	"launchpad.net/goyaml"
 	"os"
 	"testing"
+
+	. "github.com/theplant/pak/share"
+	"gopkg.in/go-yaml/v2/yaml"
+	. "launchpad.net/gocheck"
 )
 
 // Hook up gocheck into the gotest runner.
@@ -77,7 +78,7 @@ func (s *PakSuite) TestReadPakfile(c *C) {
 			AutoMatchingHostBranch: false,
 		},
 	}}
-	pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
+	pakInfoBytes, _ := yaml.Marshal(&pakInfo)
 
 	expectingPakInfo := PakInfo{
 		Packages: []PkgCfg{
@@ -176,7 +177,7 @@ func (s *PakSuite) TestReadPaklock(c *C) {
 			AutoMatchingHostBranch: false,
 		},
 	}}
-	pakInfoBytes, _ := goyaml.Marshal(&pakInfo)
+	pakInfoBytes, _ := yaml.Marshal(&pakInfo)
 
 	paklockInfo := PaklockInfo{
 		"github.com/theplant/package5": "11b174bd5acbf990687e6b068c97378d3219de04",
@@ -189,7 +190,7 @@ func (s *PakSuite) TestReadPaklock(c *C) {
 		"github.com/theplant/package1": "11b174bd5acbf990687e6b068c97378d3219de04",
 		"github.com/theplant/package2": "941af3b182a1d0a5859fd451a8b5a633f479d7bc",
 	}
-	paklockInfoBytes, _ := goyaml.Marshal(&paklockInfo)
+	paklockInfoBytes, _ := yaml.Marshal(&paklockInfo)
 	for _, paklockPath := range paklockPaths {
 		ioutil.WriteFile(paklockPath.pakfilePath, pakInfoBytes, os.FileMode(0644))
 		ioutil.WriteFile(paklockPath.path, paklockInfoBytes, os.FileMode(0644))
