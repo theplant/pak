@@ -13,6 +13,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
 	. "github.com/theplant/pak/share"
 	"github.com/wsxiaoys/terminal/color"
 )
@@ -155,25 +156,32 @@ func Get(option PakOption) (err error) {
 	doneChan := make(chan bool)
 	checksumChan := make(chan [2]string)
 
-	for i, _ := range pakPkgs {
-		pakPkgs[i].Force = option.Force
-		pakPkgs[i].Verbose = option.Verbose
-		pakPkgs[i].UsingPakMeter = len(option.PakMeter) > 0
-		pakPkgs[i].SkipUncleanPkgs = option.SkipUncleanPkgs
+	go func() {
+		for i, _ := range pakPkgs {
+			pakPkgs[i].Force = option.Force
+			pakPkgs[i].Verbose = option.Verbose
+			pakPkgs[i].UsingPakMeter = len(option.PakMeter) > 0
+			pakPkgs[i].SkipUncleanPkgs = option.SkipUncleanPkgs
 
-		pkg := pakPkgs[i]
-		go func() {
-			pkgNameAndChecksum, err := pkg.Get()
-			if err != nil {
-				errChan <- err
+			pkg := pakPkgs[i]
+			get := func() {
+				pkgNameAndChecksum, err := pkg.Get()
+				if err != nil {
+					errChan <- err
 
-				return
+					return
+				}
+
+				checksumChan <- pkgNameAndChecksum
+				doneChan <- true
 			}
-
-			checksumChan <- pkgNameAndChecksum
-			doneChan <- true
-		}()
-	}
+			if option.Concurrent {
+				go get()
+			} else {
+				get()
+			}
+		}
+	}()
 
 	// For Pak Meter
 	newPaklockInfo := PaklockInfo{}

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
 	. "github.com/theplant/pak/share"
 	"github.com/wsxiaoys/terminal/color"
 )
@@ -219,7 +220,7 @@ func (this *PakPkg) IsPkgExist() (bool, error) {
 	return true, nil
 }
 
-// Dial will try to figure out what kind version control system that the
+// Dial figures out what kind version control system that the
 // package is using and initialize the PkgProxy accordingly.
 // TODO: invoke this function inside of Sync
 func (this *PakPkg) Dial() error {

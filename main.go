@@ -19,6 +19,7 @@ var (
 	force           bool
 	skipUncleanPkgs bool
 	gogeterror      bool
+	concurrent      bool
 )
 
 func init() {
@@ -37,7 +38,8 @@ func init() {
 	// flag.BoolVar(&getLatest, "u", false, "Download the lastest revisions from remote repo before checkout.")
 	flag.BoolVar(&force, "f", false, "Force pak to remove pak branch.")
 	flag.BoolVar(&skipUncleanPkgs, "s", false, "Left out unclean packages.")
-	flag.BoolVar(&gogeterror, "e", false, "Print out go get error")
+	flag.BoolVar(&gogeterror, "e", false, "Print out go get error.")
+	flag.BoolVar(&concurrent, "c", false, "Enable concurrent download.")
 }
 
 func main() {
@@ -80,6 +82,7 @@ func getPakPkgs() {
 		Force:           force,
 		SkipUncleanPkgs: skipUncleanPkgs,
 		Verbose:         true,
+		Concurrent:      concurrent,
 	})
 
 	if err != nil {

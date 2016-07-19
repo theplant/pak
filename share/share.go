@@ -48,6 +48,8 @@ type PakOption struct {
 	// want to is get other dependent packages of the main project updated.
 	// But for package that hasn't been locked down by pak, it should be clean.
 	SkipUncleanPkgs bool
+
+	Concurrent bool
 }
 
 type PkgProxy interface {
