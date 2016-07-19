@@ -1,4 +1,4 @@
-# Pak
+# Pak [deprecated]
 
 A go packages version control tool, inspired by Bundler for Ruby.
 
