@@ -1,4 +1,6 @@
-# Pak [deprecated]
+# Pak
+
+Pak is still a working tool but not actively maintained. You are encouraged to switch to vendoring tools like [Glide](https://github.com/Masterminds/glide).
 
 A go packages version control tool, inspired by Bundler for Ruby.
 
