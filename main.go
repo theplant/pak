@@ -32,6 +32,7 @@ func init() {
 		color.Printf("%spak open [package]\n", spaces)
 		color.Printf("%spak list\n", spaces)
 		color.Printf("%spak version\n", spaces)
+		color.Printf("%spak unpak\n", spaces)
 		// fmt.Printf("%spak scan\n", spaces)
 		flag.PrintDefaults()
 	}
@@ -60,6 +61,8 @@ func main() {
 		listPakfilePkgs()
 	case "check":
 		docheck()
+	case "unpak":
+		checkToMaster()
 	case "version":
 		color.Println("@g1.5.0")
 	default:
@@ -88,6 +91,21 @@ func getPakPkgs() {
 	if err != nil {
 		color.Printf("@r%s\n", err)
 		color.Println("Pak Failed.")
+		os.Exit(1)
+	}
+}
+
+func checkToMaster() {
+	err := core.Remove(PakOption{
+		UsePakfileLock:  true,
+		Force:           true,
+		SkipUncleanPkgs: true,
+		PakMeter:        flag.Args()[1:],
+		Verbose:         true,
+	})
+
+	if err != nil {
+		color.Printf("@r%s\n", err)
 		os.Exit(1)
 	}
 }
