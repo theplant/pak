@@ -227,6 +227,58 @@ func Get(option PakOption) (err error) {
 	return nil
 }
 
+func Remove(option PakOption) (err error) {
+	pakInfo, paklockInfo, err := GetPakInfo(GpiParams{
+		Type:                 "11",
+		Path:                 "",
+		DeepParse:            true,
+		WithBasicDependences: true,
+		Verbose:              option.Verbose,
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(paklockInfo) == 0 {
+		if option.SkipUncleanPkgs {
+			return fmt.Errorf("Can't skip unclean packages without Pakfile.lock. Please run pak get first.")
+		}
+	}
+
+	var allPakPkgs []PakPkg
+	for _, pkgCfg := range pakInfo.Packages {
+		pakPkg := NewPakPkg(pkgCfg)
+
+		allPakPkgs = append(allPakPkgs, pakPkg)
+	}
+
+	pakPkgs, err := getPackages(allPakPkgs, option, paklockInfo)
+	if err != nil {
+		return
+	}
+
+	paklockInfoBackup := PaklockInfo{}
+	for k, v := range paklockInfo {
+		paklockInfoBackup[k] = v
+	}
+
+	for _, pakPkg := range pakPkgs {
+		pakPkg.Checksum = paklockInfo[pakPkg.Name]
+		pakPkg.ActionType = "Remove"
+		pakPkg.Force = option.Force
+		pakPkg.Verbose = option.Verbose
+		pakPkg.SkipUncleanPkgs = option.SkipUncleanPkgs
+
+		_, err := pakPkg.Get()
+		if err != nil {
+			fmt.Println(pakPkg.Name, err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
 func waitForPkgsProcessing(newPaklockInfo *PaklockInfo, pkgLen int, checksumChan chan [2]string, doneChan chan bool, errChan chan error) (err error) {
 	count := 0
 	for {
